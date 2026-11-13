@@ -1,0 +1,7 @@
+name: b1_phase_zscore
+family: statistical_baseline
+scorer: phase_zscore
+trim_q: 0.15
+trim_iters: 3
+z_threshold: 3.5
+min_run_len: 2

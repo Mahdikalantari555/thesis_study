@@ -1,0 +1,973 @@
+Informed Learning for Estimating Drought Stress at
+Fine-Scale Resolution Enables Accurate Yield Prediction
+Miro Miranda a, b, c,*, Marcela Charfuelan a, Matias Valdenegro Toro c and Andreas Dengel a, b
+aGerman Research Center for Artificial Intelligence, Kaiserslautern, Germany
+bDepartment of Computer Science, University of Kaiserslautern-Landau, Kaiserslautern, Germany
+cBernoulli Institute, University of Groningen, Groningen, Netherlands
+Abstract.Water is essential for agricultural productivity. Assess-
+ing water shortages and reduced yield potential is a critical factor in
+decision-making for ensuring agricultural productivity and food se-
+curity. Crop simulation models, which align with physical processes,
+offer intrinsic explainability but often perform poorly. Conversely,
+machine learning models for crop yield modeling are powerful and
+scalable, yet they commonly operate as black boxes and lack adher-
+ence to the physical principles of crop growth. This study bridges
+this gap by coupling the advantages of both worlds. We postulate
+that the crop yield is inherently defined by the water availability.
+Therefore, we formulate crop yield as a function of temporal water
+scarcity and predict both the crop drought stress and the sensitiv-
+ity to water scarcity at fine-scale resolution. Sequentially modeling
+the crop yield response to water enables accurate yield prediction.
+To enforce physical consistency, a novel physics-informed loss func-
+tion is proposed. We leverage multispectral satellite imagery, me-
+teorological data, and fine-scale yield data. Further, to account for
+the uncertainty within the model, we build upon a deep ensemble
+approach. Our method surpasses state-of-the-art models like LSTM
+and Transformers in crop yield prediction with a coefficient of de-
+termination (R 2-score) of up to 0.82 while offering high explain-
+ability. This method offers decision support for industry, policymak-
+ers, and farmers in building a more resilient agriculture in times
+of changing climate conditions. The code is publicly available at
+https://github.com/mmiranda-l/Yield-Loss.
+1 Introduction
+Closing the gap between potential and actual yields is an urgent task
+to sustain global food security [9]. Extreme weather conditions like
+droughts and floodings are pressing challenges in the agricultural
+sector, directly affecting productivity and causing substantial yield
+and economic losses every year [4, 25, 21]. The response of crop
+yields to water scarcity has been a central focus of research for
+decades, serving as a critical parameter in assessing crop resilience
+under extreme weather conditions [29]. Traditionally, simulation
+models, also known as process-based models, have been commonly
+employed to capture this relationship. Simulation models build upon
+biological and physical principles and offer high explainability, sup-
+porting decision-making in areas such as irrigation, fertilization, and
+disease control. However, crop simulation models often struggle with
+large and multidimensional data, are computationally expensive, and
+∗ Corresponding Author. Email: miro.miranda_lorenz@dfki.de
+require careful calibration. Therefore, the application of simulation
+models to large areas and high spatial resolution is limited. Further-
+more, simulation models are typically simplified representations
+of reality, relying on approximations or reference environments
+to maintain computability [16]. This can result in inaccurate per-
+formances [20]. Therefore, to mitigate these limitations, machine
+learning (ML) models are increasingly utilized for crop productivity
+estimation [41]. Recent studies demonstrate impressive scalability
+and accuracy, even at fine-scale resolution [12, 27]. ML models
+handle complex and multidimensional data efficiently [30, 22].
+However, ML models are commonly criticized for their black-box
+characteristics, limiting their transparency and explainability [6, 33].
+Additionally, ML models are seldomly designed to follow the
+underlying physical principles of plant growth [10], which can cause
+a significant lack of trust and even invalid outcomes. Incorporating
+physical consistency remains essential for opening the black-box of
+ML models, building trust in ML-based predictions, and finally for
+decision-support in the agricultural sector. Consequently, there is a
+growing demand to merge the strengths of data-driven approaches
+with the interpretability of simulation models [7, 16, 33, 44].
+This study overcomes existing limitations by coupling inter-
+pretable simulation models and high-performance ML models. We
+formulate crop yield as a function of water scarcity and sequen-
+tially learn the actualevapotranspiration, a proxy for drought and
+crop stress, and the crop susceptibility to water scarcity. This is used
+to derive the expected yield loss, by sequentially solving the crop
+yield response to water function [8] at fine-scale resolution. Ad-
+ditionally, we enforce physical consistency using a novel physics-
+informed loss function. The crop drought stress is approximated at
+10×10m spatial resolution using multispectral satellite imagery
+from the Sentinel-2 mission and coarse weather data. In detail, we
+present the following contributions:
+•We explicitly consider that crop yield is a function of water
+scarcity by incorporating the crop yield response to water func-
+tion into the loss term. Thus, we outperform several state-of-the-
+art methods in crop yield prediction while demonstrating physical
+consistency and explainability.
+•We demonstrate that the crop drought stress can be approximated
+at10×10m spatial resolution. This represents a significant
+improvement over existing simulation models, which commonly
+lack spatial detail.
+•We present a novel architecture based on a Long-Short-Term-
+arXiv:2510.18648v1  [cs.LG]  21 Oct 2025
+
+=== PAGE BREAK ===
+
+Training
+Physics 
+Loss
+Yield
+Response 
+to Water
+Yield
+Response 
+to Water
+Inference
+Weather DataMultispectral Satellite Imagery Maximum Evapotranspiration Actual Evapotranspiration Yield Data
+Data Layer
+Fusion Layer
+Simulation 
+Model
+ℎ𝑡
+ℎ𝑡
+ℎ𝑡
+iML Model Data Layer
+Fusion Layer
+Simulation 
+Model
+ℎ𝑡
+ℎ𝑡
+ℎ𝑡
+iML Model
+Ground Truth
+Figure 1.Overview of the physics-guided method for crop yield prediction. The training (left) and the inference (right) are displayed.Highlight:The
+Data is modeled pixel-wise by optimizing the model to approximate crop yield using the yield response to water function, which enhances the estimation of
+actual evapotranspiration, an indicator of drought stress. Both components are estimated at fine-scale resolution. In contrast, the simulated maximum
+evapotranspiration lacks spatial detail.
+Memory backbone with a temporal attention mechanism. Further-
+more, to explicitly account for the uncertainty in the model, we
+leverage a deep ensemble approach.
+The results are demonstrated on a publicly available yield dataset for
+cereal crops, collected in Switzerland between 2017-2021.
+2 Related Work
+Crop yield prediction using ML is an intensely studied field of re-
+search [41], especially in Earth Observation (EO). With studies fo-
+cusing on various crop types, countries, model architectures, and in-
+put features. For instance, Helber et al. [12] proposed an operational
+approach for crop yield prediction that is globally scalable for var-
+ious crop types by relying solely on high-resolution multispectral
+satellite imagery and ground truth yield data with fine-scale reso-
+lution. This approach was subsequently extended by integrating ad-
+ditional data modalities, including weather, soil, and terrain eleva-
+tion, under various data fusion schemes and time series representa-
+tions [27, 22, 23, 24]. Although, data-driven approaches represent a
+step into scalable crop yield prediction, they still operate as black-
+boxes and lack adherence to crop growth physical principles [10].
+Therefore, Najjar et al. [26] raised concerns about the transparency
+and interpretability of ML models in EO applications.
+Several studies have focused on integrating prior knowledge into the
+learning algorithm, aiming to improve the model robustness, and ex-
+plainability [33]. V on Rueden et al. [44], provide a taxonomy for
+the explicit integration of prior knowledge into the learning pipeline,
+leading to the concept of informed machine learning (iML). The sci-
+entific consistency of a model’s predictions is a fundamental require-
+ment in the natural sciences, enforcing a plausible solution space that
+follows governing physical principles. Scientific consistency can be
+commonly enforced into ML models through regularization [33, 44],
+with physics-informed (PI) learning [34, 32] being a prominent ex-
+ample. Karpatne et al. [17] argued that scientific consistency must be
+considered as a performance measure in ML when deploying models
+into practice, especially in safety-critical applications.
+Studies exist that integrate prior knowledge to enhance crop yield
+prediction. Several of which acknowledge the importance of drought
+stress. However, the majority of studies focus on enriching the data
+space with domain knowledge. For instance, Shuai and Basso [36]
+demonstrated a strong improvement by integrating a crop drought
+index into the data space of the ML model, thereby increasing the
+robustness to extreme weather conditions for maize yield prediction.
+Other studies that demonstrate improved performance by enriching
+the data space under extreme weather conditions are evidenced in
+[35]. Likewise, Jahromi et al. [15] demonstrated that including the
+evapotranspiration into the data space is particularly important for
+improving crop yield predictions using ML.
+Although several studies demonstrate the importance of domain
+knowledge, data space enrichment or data augmentation does not
+guarantee scientific consistency. In contrast, only a few studies ex-
+ist that particularly enforce scientific consistency through regulariza-
+tion. For instance, He et al. [10] presented a physics-guided approach
+for crop yield prediction by acknowledging key components of the
+carbon cycle while enforcing spatial fairness. Similarly, He et al. [11]
+presents an approach to extract physics-aware features from simula-
+tion data to estimate crop yield while preserving the physical fea-
+tures.
+To the best of our knowledge, no study exists that estimates the crop
+yield response to water scarcity at the pixel level from coarse and
+inaccurate simulation data while enforcing physical consistency and
+model interpretability.
+3 Background
+Water shortages significantly impact crop development. Conse-
+quently, substantial effort is made to monitor and model water re-
+quirements to enable timely interventions in the event of a water
+shortage. In an agricultural context, this usually involves estimating
+the cropevapotranspiration (ET).
+3.1 Evapotranspiration (ET)
+Theevapotranspiration (ET)is the sum of all biophysical processes
+in which liquid water is converted to water vapor from various sur-
+faces, including topsoil (evaporation) and vegetation (transpiration).
+The ET is a direct indicator of crop health and crop stress [2, 15]
+
+=== PAGE BREAK ===
+
+and is closely correlated with crop growth and crop yield [3, 18].
+Consequently, ET is a core component for crop management, such
+as irrigation planning and crop water deficit mitigation, and is
+particularly important in water-scarce regions. The ET is reflected
+by various components, including temperature, solar radiation, soil,
+terrain elevation, and crop properties. For a reference environment, a
+detailed description of the biophysical processes is provided by the
+Food and Agriculture Organization (FAO)-56 method [1], using the
+Penman-Monteith equation, recommended for daily ET [mm d −1]
+estimation:
+ETo =
+ 
+0.408∆(Rn−G) +γ 900
+T+273u2(es−ea)
+∆ +γ(1 + 0.34u 2)
+!
+,(1)
+where:
+ETo: reference evapotranspiration [mm day−1]
+Rn: net radiation at the crop surface [MJ m−2day−1]
+G: soil heat flux density [MJ m−2day−1]
+T: mean daily temperature at 2m [°C]
+u2: wind speed at 2m [m s−1]
+es andea: saturated and actual vapor pressure [kPa]
+∆slope vapor pressure curve [kPa °C−1]
+γ: psychrometric constant [kPa °C−1]
+In an agricultural context and for a specific crop type, Allen et al.
+[1] differentiates between the maximum ET (ET x) and the actual
+ET (ETa). The maximum ET is defined under standard and non-
+limiting environmental conditions and is solely defined by climate
+conditions and crop-specific parameters, achieving full productivity,
+such as disease-free, well-fertilized, and under optimum soil water
+conditions. The maximum ET is defined by:
+ETx =K c·ET o,(2)
+whereKc is a dimensionless coefficient, varying predominantly with
+crop-specific characteristics that distinguishes a specific crop type
+from the reference environment. OftenK c is separated into a dual
+crop coefficient, one for crop transpiration and one for soil evapo-
+ration. In this study the dual crop coefficient is used. Note that the
+actual ET can be greater than the reference ET, depending on theKc
+values.
+In contrast, theETa represents actual ET under limiting environmen-
+tal conditions caused by low water potential, resulting in water stress
+and a reduction in ET. The actual ET is defined by:
+ETa =K s·Kc·ET o,(3)
+withK s being a water stress coefficient that is determined by the
+crop type and the growth stage. Usually, the stress coefficient only
+impacts the crop transpiration. This results in a reduction of the ET,
+and ultimately causing a reduction in crop productivity. For instance,
+Ks <1for water-limiting environments, andK s = 1otherwise.
+Various factors cause productivity-limiting conditions, including soil
+infertility, soil salinity, limited soil water content, diseases, and poor
+management. Nevertheless, the stress coefficientK s is commonly
+idealized by simulation models and therefore may not accurately re-
+flect the actual conditions in the field, particularly in water-scarce
+regions [2]. However, in the light of extreme weather conditions, the
+frequency of severe droughts and floodings is expected to increase,
+causing either water scarcity or water abundance [16, 4]. Therefore,
+accurate modeling of crop water stress is a fundamental challenge in
+EO.
+3.2 Evapotranspiration & Yield Loss
+In an earlier work, the FAO described the relationship between ET
+and the relative yield loss [8], stating that the relative reduction in
+ET is related to the relative reduction in yield:
+yl =
+
+1− ya
+Yx
+
+=K y
+
+1− ETa
+ETx
+
+(4)
+where:
+yl: relative yield loss [%]
+ya: actual yield
+Yx: potential maximum yield
+Ky: yield response factor
+The dimensionless yield response factorK y represents the effect of
+a reduction in ET on the crop yield by capturing the complex rela-
+tionship between ET and productivity. More specifically,Ky >1in-
+dicates high sensitivity to water deficits with a proportionally larger
+yield reduction, andK y <1indicates higher resilience to water
+deficits. Different studies exist that have empirically estimatedK y
+coefficients for various crops. However, often reporting discrepan-
+cies, making the equation difficult to solve in practice. Furthermore,
+Ky values change over the growing period since many crops ex-
+hibit variable susceptibility to water scarcity over the growing period.
+This subsequently increases the difficulty of accurately estimating
+the yield response factor. An approximation for various crop types
+is given in [39]. For example, cereal crops are reported with aK y
+value of approximately 0.5 during vegetative phases and 1.5 during
+flowering with an average value of 1.05.
+3.2.1 Problem Definition & Hypothesis
+More importantly, whileET x can be more or less accurately
+estimated by using simulation models, estimating theET a with
+high precision is challenging because of the complexity of an
+agro-ecological environment. This makes Eq. 4 difficult to solve
+accurately in practice. Accurately estimatingET a usually involves
+field trials that are time-consuming, expensive, and not scalable over
+large areas [28]. Additionally, simulation models are often restricted
+to coarse spatial resolution due to computational complexity and
+low-resolution weather data, making in-field management (e.g.,
+irrigation) difficult.
+In this work, we address this limitation. We hypothesize that we
+can estimate the actual ET (ET a) and the susceptibility to water
+scarcity (Ky) using a neural network (NN). This serves a dual pur-
+pose. First, estimatingET a andK y using a NN mitigates the lim-
+itations of the commonly used and inaccurate simulation models.
+Thus, we can approximate ET at a higher spatial resolution than the
+simulation models with high precision. Here, the multispectral satel-
+lite imagery and the ground truth yield data enable a form of super-
+resolution. Additionally, this data helps to capture the complex rela-
+tionship between crop yield and water stress. As demonstrated in [2],
+ETa can be approximated using satellite imagery and remote sens-
+ing technologies, which provides substance for our model. Secondly,
+by using the yield response to water function (Eq. 4), we enable yield
+prediction with physical consistency, thereby addressing the limita-
+tion of commonly employed black-box ML models.
+
+=== PAGE BREAK ===
+
+4 Methodology
+Given the input datax∈ X, wherexis a multivariate time se-
+ries withTtime steps,x= (x t)T
+t=0, the actual target yield data
+ya∈Y a, and the maximum evapotranspirationET x∈ET x, given
+as a time series withTtime steps,ET x = (ET t
+x)T
+t=0. We aim to
+learn a functionf θ(x) = [ETa,Ky]by optimizing over the model’s
+parametersθ, such that:K y
+
+1− ETa
+ETx
+
+=
+
+1− ya
+Yx
+
+. Note that
+bothET a = (ETt
+a)T
+t=0 andKy = (Kt
+y)T
+t=0 are estimated over time.
+The initial condition is defined byy l(0) = 0, and the final condition
+is defined byy l(T) =
+
+1− ya
+Yx
+
+. The cumulative yield loss at the
+end of the time series is then given as:
+yl =
+Z T
+0
+Kt
+y
+
+1− ETt
+a
+ETtx
+
+dt≈
+TX
+t=0
+Kt
+y
+
+1− ETt
+a
+ETtx
+
+,(5)
+providing us with accurate and physically consistent estimations of
+the relative yield loss. The final prediction of the actual yield is given
+by:
+ˆya =y l·Yx.(6)
+Therefore, optimizing the model to approximateˆya improves its es-
+timations ofET a. We deriveYx in section 4.2.
+4.1 Optimization
+We propose enforcing physical constraints, such that the reduction in
+ET corresponds to the observed reduction in yield. We assume that
+simulatedET x values are sufficiently accurate. This is supported by
+previous studies [5], allowing us to predictET a andK y to achieve
+an accurate solution. For this,∀t∈[0,T] : 0≤ET t
+a ≤ET t
+x
+must hold. We describe the process of generatingET x values with
+a simulation model in section 4.2. To estimate the yield reduction
+at time steptas a function of a reduction in ET, a two-component
+loss term is proposed, consisting of a data-dependent partL l and a
+physics partLphys:
+Ltotal =λ 1Ll +λ 2Lphys (7)
+Ll =E
+
+(ˆya−ya)2
+(8)
+Lphys =E
+h
+1{ETa<0}·(ET a)2
+| {z }
+lower bound penalty
++
+1{ETa>ETx}·(ET a−ET x)2
+| {z }
+upper bound penalty
++
+1{0≤ETa≤ETx}·(ET a−ET x)2
+| {z }
+within bounds MSE
+i
+(9)
+Here,1{·}is an indicator function, which equals 1 if the condition
+inside the braces is true and 0 otherwise. The data-dependent com-
+ponent pushes the network to learnETa such that by using Eq. 6 the
+predicted yield (ˆya) is close to the actual yield (y a) of the ground
+truth data. The second component forces the network to maintain
+ETa values bounded between [0,ET x] while consistently close to
+ETx to solve Eq. 4. Moreover,λ 1 andλ 2 are hyperparameters that
+controls the weighting of both terms.
+4.2 Dataset
+Ground Truth Yield DataFor training and evaluation, a pub-
+licly available yield data set is used 1. This data set was presented
+1 https://www.research-collection.ethz.ch/handle/20.500.11850/581023
+by Perich et al. [30] and we refer to it asSwissYield. The data set
+comprises 54,098 yield samples from 54 yield maps of cereal crops
+recorded in Switzerland between 2017 and 2021. The data is char-
+acterized by georeferenced data points, collected by combine har-
+vesters, containing information about the yield in tons/hectare [t/ha]
+in fine-scale resolution. After applying data preprocessing, Perich
+et al. [30] rasterized the target data to10×10m pixel resolution
+using the geocube 2 package with linear interpolation. For more de-
+tails, we refer the reader to [30]. For simplicity, we define the maxi-
+mum yield sample as the maximum potential yield across the entire
+dataset:
+Yx = max(Ya).(10)
+Simulated EvapotranspirationFor each field, we generate simu-
+lation data for the cropETx that is used for additional network regu-
+larization. For the simulations, we employ the FAO paper-56 [1] that
+simulatesET x over time. We use a publicly available Python imple-
+mentation 3 [40]. The relevant meteorological data that is described
+in Eq. 1 is acquired from the ERA5 global reanalysis program [13]
+for every data sample. Features that are not available at 2 m height
+are adjusted following [1]. Relevant soil data is collected from the
+SoilGrids [31] and Hihydrosoil [37] project for every sample. Crop-
+specific parameters are taken from [1, 28]. For detailed information
+about the implementation, we refer to [40].
+Training DataAs the model input, time series data from the
+Sentinel-2 (S2) satellite mission is used. S2 data provides multispec-
+tral information in a wide range of the electromagnetic spectrum with
+a high revisit time of approximately 5 days at the Equator and a spa-
+tial resolution of up to10×10m. S2 largely contributed to the recent
+success in EO by supporting services and applications of agriculture,
+land monitoring, climate change, and risk mapping.
+Additionally, meteorological data is acquired per field and incorpo-
+rated into the network to better account for extreme environmental
+conditions. More specifically, the total precipitation and the mini-
+mum and maximum temperature are used, derived from ERA5 global
+reanalysis [13]. Since meteorological and S2 data have different tem-
+poral and spatial resolutions, data preprocessing and data fusion are
+required. Data modalities are fused at the input level using the raw
+time series of S2 images by aggregating weather features between
+S2 time steps, following [27]. The characteristics of the final data set
+are given in Table 1. Figure 2 illustrates a time series of input data
+and simulation data for a randomly selected field. Note that both the
+meteorological and simulation data are characterized by daily mea-
+surements but lack spatial information. Moreover, S2 imagery has
+fewer time steps available compared to meteorological and simula-
+tion data. Additionally, we highlight that ET correlates with the tem-
+perature and the vegetation that is depicted in the S2 images. More
+importantly, we emphasize that only minor differences are observed
+between the maximum and actual ET, highlighting the challenge of
+accurately solving the yield response to water function (Eq. 4) at
+fine-scale resolution using simulation models alone.
+4.3 Architecture
+For the implementation, we leverage a recurrent neural network
+(RNN) architecture, more specifically a long short-term memory
+(LSTM) [14] backbone with 2 layers, where each hidden state is
+passed to a sequential layer with 128 hidden units, incorporating a
+linear layer, batch normalization, and dropout of 0.2. Finally, two
+2 https://pypi.org/project/geocube/
+3 https://github.com/kthorp/pyfao56
+
+=== PAGE BREAK ===
+
+Table 1.Overview of the yield dataset and its characteristics.
+Dataset Countries Crops Y ears Fields Pixel-Level Samples Time Steps Resolution Features
+Spatial Temporal
+SwissYield [30] 1 1 2017–2021 54✓54,098 16-55 10m 5 days 14
+seeding harvesting
+Time Series of Satellite Images
+seeding harvesting
+0
+10
+20
+30
+Time Series of Weather Data
+Mean Temperature [°C]
+Total Precipitation [mm]
+seeding harvesting
+Growing Period
+0
+2
+4
+Time Series of Evapotranspiration Data
+ETa [mm/d]
+ETx [mm/d]
+Figure 2.Example time series from seeding to harvesting of the training
+and simulation data of a randomly selected field.Top:Time series of
+satellite images in RGB.Center:Time Series of meteorological data.
+Bottom:Simulated maximum and actual evapotranspiration (ET).
+Takeaway:Maximum and actual ET values are almost consistently identical
+throughout the season in this example.
+linear layers are incorporated with a single output channel each,
+predictingK t
+y andET t
+a, respectively. We refer to this network as
+physics-guided LSTM (PG-LSTM). LSTM networks have shown
+great performance in sequence forecasting even over Transformer
+models [38], also in crop yield prediction [12]. However, since
+LSTM models can struggle with very long and multidimensional
+sequences, we evaluate the inclusion of an attention mechanism,
+as proposed in [10]. More specifically, we employ the scaled
+dot-product attention [42], as it has been used in crop yield predic-
+tion [27]. We refer to this model as PG-LSTM attn. A schematic
+overview of the training and inference scheme of the proposed
+method is given in Figure 1. The data is processed pixel-wise and
+fused at the input level. Moreover, simulatedET x values are used
+in the optimization loss to guide the training. At each time step, the
+model produces an estimation ofET a andK y which is then used
+to calculate the yield through the yield response to water function.
+S2 images and ground truth yield data enable the estimation ofET a
+and crop yield at the pixel resolution.
+Uncertainty:Since we aim to estimate two components (ET a
+andK y) this problem becomes ill-defined, increasing the solution
+space and potentially introducing uncertainty in the predictions.
+Therefore, we must account for the uncertainty in the model. We do
+so by using a deep ensembles approach [19]. Deep ensembles are a
+powerful tool for uncertainty estimation that affectively approximate
+Bayesian marginalization while also improving accuracy and out-
+of-distribution robustness. Deep ensembles are becoming the gold
+standard in estimating well-calibrated predictive distributions [45].
+We train 10 separate ensemble members to estimate the uncertainty
+in the proposed method.
+4.4 Experimental Setup
+For each experiment, a K-fold cross-validation (K=10) is performed,
+where we present the result as the average across folds. Moreover,
+we perform a Leaf-One-Year-Out (LOYO) cross-validation scenario,
+where one year is held out during training and used only for
+evaluation to estimate the temporal transferability. To evaluate the
+yield prediction performance, standard regression metrics are used.
+This includes the coefficient of determination (R 2-score), mean
+absolute error (MAE), mean absolute percentage error (MAPE),
+root-mean-square error (RMSE), and the Bias. For qualitative
+evaluation, we visually evaluate the predicted in-field variability, low
+spatial prediction error, and a match between predicted and target
+distributions. Additionally, we visually evaluate the predicted actual
+ET using agricultural experts.
+We compare the PG approach against several state-of-the-art models
+for crop yield prediction without any physical components and
+regularization. This includes a LSTM and a Transformer architec-
+ture. Moreover, we include a simple linear regression model. For
+the LSTM model, we implement the architecture as described in
+[27]. The Transformer model is based on the Transformer Encoder
+as introduced by [43] with two layers and a convolution operation
+that maps the input dimension to the hidden size of 128. Finally, a
+multilayer perceptron with ReLU activation predicts the final yield.
+Between these operations, Layer Normalization is applied.
+For all NN models, training is conducted using the ADAM op-
+timizer for a maximum of 100 epochs. The learning rate is set to
+0.001, and the batch size is 512. A reduce-on-plateau learning rate
+scheduler is employed during training. For regularization, early stop-
+ping is applied if there is no improvement on the validation set for 10
+consecutive epochs.
+4.5 Results
+4.5.1 Yield Prediction
+We first investigate whether the proposed model is competitive in
+crop yield prediction by evaluating the yield prediction performance
+against state-of-the-art models. The quantitative results are presented
+in Table 2. For our method, we use the last time steps for evalu-
+ation and report the average across all ensemble members. Interest-
+ingly, both PG models outperform all state-of-the-art models, includ-
+ing Transformer, LSTM, and Linear Regression by a great margin.
+For instance, the PG-LSTMattn model improves 9 percentage points
+(p.p.) over the Transformer model inR 2-score and 2 p.p. over the
+standard LSTM model. As expected, the Linear Regression model
+exhibits the poorest performance but still achieves a noteworthyR 2-
+score of 0.7. Comparing both PG-LSTMattn and PG-LSTM, we ob-
+serve only minor differences, however, with a slightly better perfor-
+mance of the PG-LSTMattn.
+A qualitative example field is depicted in Figure 3 for the PG-
+LSTMattn. Notably, the model exhibits high in-field variability that
+closely aligns with the target data.
+4.5.2 Physical Consistency
+Furthermore, we highlight in Figure 3 that the predictedET a values
+now have a spatial resolution of10×10m, compared to a single
+value before. We evaluate this for the entire time series. We notice
+
+=== PAGE BREAK ===
+
+Table 2.Overview table of yield prediction performance of different
+models.Highlight:The physics-guided models outperform state-of-the-art
+methods on main metrics.
+Option R2-score
+-
+MAE
+t/ha
+MAPE
+%
+RMSE
+t/ha
+BIAS
+t/ha
+PG-LSTMattn 0.82 0.59 0.11 0.86-0.01
+PG-LSTM 0.81 0.590.110.87 0.07
+Transformer 0.73 0.74 0.14 1.05 0.41
+LSTM 0.8 0.62 0.12 0.9 0.04
+Linear Regression 0.7 0.81 0.17 1.10
+Figure 3.Example predictions of an entire field. Each row represents a
+single field.Left:Ground truth yield map,center:predicted yield map,
+right:predicted actual ET.Highlight:The actual ET originally had no
+spatial resolution at the pixel level. Now we observe a clear correlation
+between the actual ET and the predicted yield, such that high ET values
+correlate with high yield values.
+that the predictedET a values correlate significantly with the target
+yield data at later time steps, suggesting that the model learned the
+relationship between yield and ET at the pixel-level. More specifi-
+cally, highETa values correlate with a higher yield as desired. Con-
+versely, areas with lowerETa correspond to lower yields, indicating
+crop stress. This is highlighted by the significant correlation of the
+final prediction with the ground truth yield data. This underlines the
+capabilities of estimating the crop yield reduction over time through
+learning the important features of the crop water use. In the fol-
+lowing, we evaluate the physical consistency of the proposed ap-
+proaches. In Figure 4 we illustrate the sequential estimations of the
+simulatedET x and predictedET a values for the same field as de-
+picted in Figure 3. On the right, we show the estimatedK y values
+alongside the normalized difference vegetation index (NDVI). The
+NDVI is derived from the satellite imagery and serves as an indica-
+tor of vegetation density and plant health. It can be used to evaluate
+the physical consistency of the models, as an increase in ET should
+be accompanied by high NDVI values until senescence. We display
+the mean prediction forET a andKy of all ensemble members over
+all field samples, together with a buffer of±2σto assess the tem-
+poral uncertainty. First, we notice that the uncertainty for theET a
+values is lower compared to theKy values. This can be explained by
+Table 3.Overview of the model performance without estimating the crop
+susceptibility to water scarcity (Ky).Takeway:Using constantK y values
+from previous research, still produces accurate yield estimates.
+Option R2-score
+-
+MAE
+t/ha
+MAPE
+%
+RMSE
+t/ha
+BIAS
+t/ha
+PG-LSTMattn 0.26 1.28 0.21 1.73 -0.18
+PG-LSTM 0.74 0.72 0.14 1.02 0.13
+Table 4.Performance overview for the Leaf-One-Year-Out
+cross-validation scenario.Takeaway:All models struggle to predict
+unknown years.
+Option
+R2-score
+-
+RMSE
+t/ha
+2017 2018 2019 2020 2021 2017 2018 2019 2020 2021
+PG-LSTMattn 0.09 -0.38 0.190.1 0.29 1.87 1.93 1.6 2.24 2.92
+PG-LSTM 0.14 0.040.41-0.71 0.26 1.82 1.481.382.161.89
+Transformer 0.310.30.31 -0.31 -0.61 1.63 1.27 1.48 1.89 2.79
+LSTM 0.24 0.29 0.25 -0.68 -0.91 1.711.271.552.143.03
+Linear Regression0.37-0.36 -0.3 -1.63 -0.99 1.561.76 2.04 2.68 3.1
+the fact thatK y acts as a free parameter, which can result in higher
+uncertainties. We observe strong consistency between the simulated
+ETx and predictedET a values, following the conditions defined in
+Sec. 4, indicating that the model captured important agronomic prop-
+erties.ET a values are consistently lower thanETx, indicating yield-
+limiting conditions, such as water scarcity. Nevertheless, a consistent
+increase in ET over the growing period is observed, which correlates
+with an increase in NDVI andK y, indicating greater susceptibility
+to water scarcity at later growth stages, as reported in [39].
+In Figure 5 we display the simulatedET x and predictedET a val-
+ues averaged over the dataset. Additionally, the model performance
+over time, expressed inR 2-score, is shown alongside the estimated
+yield loss. We observe similar behavior as in the single field exam-
+ple. A consistent increase in ET over the growing period is observed,
+with a reduction in predicted yield loss and an improvement in yield
+prediction performance. We highlight that the predicted yield loss
+negatively correlates with the predicted ET, with a Pearson correla-
+tion of -0.45. This indicates that the model learned the relationship
+between reduction in ET and the corresponding reduction in yield.
+4.5.3 Ablation Studies
+Assessing the importance of the yield response factor:To as-
+sess the importance of the free parameterK y, we illustrate in Ta-
+ble 3 the model performance of the PG methods that estimate only
+theET a values. ForK y a constant of 1.05 is defined as provided
+in [39]. Unexpectedly, the PG-LSTM significantly outperforms the
+PG-LSTMattn by 48 p.p. inR 2 and by 0.71 t/ha in RMSE. However,
+PG-LSTM still achieves competitive yield prediction performance
+with anR 2 of 0.74, thereby outperforming the Transformer and Lin-
+ear Regression model, as evidenced before in Table 2. Moreover, this
+suggests that while theK y is a meaningful parameter to estimate,
+previously reported values are still providing sufficient information
+to study the relationship between ET and yield reduction.
+Temporal Transferability:Table 4 presents the temporal trans-
+ferability of all methods under the LOYO cross-validation scenario.
+Notably, all methods exhibit significantly lower performance when
+applied to unseen years, with a maximumR 2 of 0.41 of the PG-
+LSTM in 2019. In particular, the Linear Regression model demon-
+strates the poorest temporal transferability. In contrast, PG-LSTM
+and PG-LSTMattn achieve competitive performance compared to ex-
+isting state-of-the-art methods, outperforming them in 2019 and
+2021.
+
+=== PAGE BREAK ===
+
+seeding harvesting
+0
+10
+20
+30ET [mm]
+ETapred
+ETxsim
+seeding harvesting
+0.25
+0.50
+0.75
+1.00
+1.25
+1.50
+ Ky
+NDVI
+Figure 4.Single field example of the predicted agronomic properties.Left:Temporal visualization of the simulated maximumET x and learned actual
+ETa.Right:Temporal visualization of the estimated susceptibility to water scarcity (K y) and the NDVI. Predictions are illustrated with±2σto account for
+uncertainty.Highlight:Learned actualET a andKy values follow key physical principles.
+seeding harvesting
+0
+5
+10
+15
+20
+25ET [mm]
+ETapred
+ETxsim
+seeding harvesting
+0.4
+0.5
+0.6
+0.7
+0.8
+State-of-the-art
+yield loss (%)
+R2-Score
+Figure 5.Visualization of agronomic properties of the entire dataset.Left:Temporal illustration of the simulated maximum (ETsim
+x ) and learned actual
+(ETpred
+a ) crop evapotranspiration (ET), an indicator of drought stress.Right:The reduction inET a compared toET x is used to derive the reduction in
+yield (yield loss) using the yield response to water function [8]. The model accuracy is expressed by theR 2-score over time. Predictions are illustrated with
+±2σusing a deep ensemble approach.Highlight:The estimated yield loss correlates with the learned drought stress while outperforming state-of-the-art
+models.
+5 Discussion
+This study investigated the inclusion of environmental water stress
+conditions into a ML to enhance crop yield prediction by ensuring
+physical consistency. While earlier studies have explored the inte-
+gration of water stress into the data space, they have not explicitly
+enforced physical consistency through model regularization. In con-
+trast, our work explicitly formulates crop yield as a function of wa-
+ter scarcity in the loss term. We find that this approach outperforms
+existing ML models for crop yield prediction [27]. Compared to pre-
+vious work, we demonstrated high explainability and that the model
+captured the complex relationship between crop stress and productiv-
+ity. Interestingly, we experimentally demonstrated that the estimation
+of crop water stress can be approximated at fine-scale resolution us-
+ing multispectral satellite imagery and pixel-level yield data. The re-
+sults indicate promising potential by overcoming limitations in both
+simulation models and data-driven yield prediction methods.
+Although this approach represents a step towards more explainable
+and transparent yield prediction, limitations and simplifications re-
+main that must be considered. Most importantly, the size of the
+datasets impedes the development and evaluation of more powerful
+and scalable models. More data is required to deeply assess the im-
+portance of this work, particularly data from water scarce regions,
+including more crop types, regions, and years. Limited data can
+cause dramatic performance degradation, such as demonstrated in
+the LOYO cross-validation scenario (Table 4). This, moreover, un-
+derscores the need for further research and the integration of addi-
+tional transfer learning techniques [12]. Additionally, modeling ET
+is challenging [28]. Therefore, more attention must be devoted to
+calibrating the employed methods to avoid miscalibration and con-
+sequently, model overfitting. Ground truth samples of the actual ET
+are required to estimate the accuracy of this method. Future research
+should include more accurate ET values derived from field experi-
+ments and satellite data, such as evidenced in [2] to further reduce
+the uncertainty in our method. However, this work aims for high re-
+producibility, and publicly available datasets are scarce.
+6 Conclusion
+Informed Neural Networks hold significant potential for crop yield
+modeling, offering enhanced adaptability to challenging environ-
+mental conditions. We presented a novel approach to modeling
+crop productivity under environmental constraints and demonstrated
+promising experimental outcomes. The presented approach supports
+industry, policymakers, and farmers in achieving more sustainable
+and resilient agriculture.
+References
+[1] R. G. Allen, L. S. Pereira, D. Raes, M. Smith, et al. Crop
+evapotranspiration-guidelines for computing crop water requirements-
+fao irrigation and drainage paper 56.Fao, Rome, 300(9):D05109, 1998.
+[2] R. G. Allen, M. Tasumi, and R. Trezza. Satellite-based energy bal-
+ance for mapping evapotranspiration with internalized calibration (met-
+ric)—model.Journal of irrigation and drainage engineering, 133(4):
+380–394, 2007.
+
+=== PAGE BREAK ===
+
+[3] R. G. Allen, L. S. Pereira, T. A. Howell, and M. E. Jensen. Evapo-
+transpiration information reporting: I. factors governing measurement
+accuracy.Agricultural Water Management, 98(6):899–920, 2011.
+[4] N. K. Arora. Impact of climate change on agriculture production and its
+sustainable solutions.Environmental sustainability, 2(2):95–96, 2019.
+[5] J. Cai, Y . Liu, T. Lei, and L. S. Pereira. Estimating reference evapotran-
+spiration with the fao penman–monteith equation using daily weather
+forecast messages.Agricultural and Forest Meteorology, 145(1-2):22–
+35, 2007.
+[6] D. Castelvecchi. Can we open the black box of ai?Nature News, 538
+(7623):20, 2016.
+[7] T. Dash, S. Chitlangia, A. Ahuja, and A. Srinivasan. A review of some
+techniques for inclusion of domain-knowledge into deep neural net-
+works.Scientific Reports, 12(1):1040, 2022.
+[8] J. Doorenbos and A. Kassam. Yield response to water.Irrigation and
+drainage paper, 33:257, 1979.
+[9] T. Fischer, D. Byerlee, and G. Edmeades. Crop yields and food security:
+will yield increases continue to feed the world? InCapturing Opportu-
+nities and Overcoming Obstacles in Australian Agronomy, 2012.
+[10] E. He, Y . Xie, L. Liu, W. Chen, Z. Jin, and X. Jia. Physics guided neural
+networks for time-aware fairness: an application in crop yield predic-
+tion. InProceedings of the AAAI Conference on Artificial Intelligence,
+volume 37, pages 14223–14231, 2023.
+[11] E. He, Y . Xie, L. Liu, Z. Jin, D. Zhang, and X. Jia. Knowledge guided
+machine learning for extracting, preserving, and adapting physics-aware
+features. InProceedings of the 2024 SIAM International Conference on
+Data Mining (SDM), pages 715–723. SIAM, 2024.
+[12] P. Helber, B. Bischke, P. Habelitz, C. Sanchez, D. Pathak, M. Miranda,
+H. Najjar, F. Mena, J. Siddamsetty, D. Arenas, et al. Crop yield predic-
+tion: An operational approach to crop yield modeling on field and sub-
+field level with machine learning models. InIGARSS - IEEE Interna-
+tional Geoscience and Remote Sensing Symposium, pages 2763–2766.
+IEEE, 2023.
+[13] H. Hersbach, B. Bell, P. Berrisford, S. Hirahara, A. Horányi, J. Muñoz-
+Sabater, J. Nicolas, C. Peubey, R. Radu, D. Schepers, et al. The ERA5
+global reanalysis.Quarterly Journal of the Royal Meteorological Soci-
+ety, 146(730):1999–2049, 2020.
+[14] S. Hochreiter and J. Schmidhuber. Long Short-Term Memory.Neural
+Computation, 9(8):1735–1780, 1997. doi: 10.1162/neco.1997.9.8.1735.
+[15] M. N. Jahromi, S. Zand-Parsa, F. Razzaghi, S. Jamshidi, S. Didari,
+A. Doosthosseini, and H. R. Pourghasemi. Developing machine learn-
+ing models for wheat yield prediction using ground-based data, satellite-
+based actual evapotranspiration and vegetation indices.European Jour-
+nal of Agronomy, 146:126820, 2023.
+[16] Y . Kang, S. Khan, and X. Ma. Climate change impacts on crop yield,
+crop water productivity and food security–a review.Progress in natural
+Science, 19(12):1665–1674, 2009.
+[17] A. Karpatne, G. Atluri, J. H. Faghmous, M. Steinbach, A. Banerjee,
+A. Ganguly, S. Shekhar, N. Samatova, and V . Kumar. Theory-guided
+data science: A new paradigm for scientific discovery from data.IEEE
+Transactions on knowledge and data engineering, 29(10):2318–2331,
+2017.
+[18] A. Khan, C. O. Stöckle, R. L. Nelson, T. Peters, J. C. Adam, B. Lamb,
+J. Chi, and S. Waldo. Estimating biomass and yield using metric evapo-
+transpiration and simple growth algorithms.Agronomy journal, 111(2):
+536–544, 2019.
+[19] B. Lakshminarayanan, A. Pritzel, and C. Blundell. Simple and scalable
+predictive uncertainty estimation using deep ensembles.Advances in
+neural information processing systems, 30, 2017.
+[20] G. Leng and J. W. Hall. Predicting spatial and temporal variability in
+crop yields: an inter-comparison of machine learning, regression and
+process-based models.Environmental research letters: ERL [Web site],
+15(4):044027, 2020.
+[21] G. S. Malhi, M. Kaur, and P. Kaushik. Impact of climate change on
+agriculture and its mitigation strategies: A review.Sustainability, 13
+(3):1318, 2021.
+[22] F. Mena, D. Pathak, H. Najjar, C. Sanchez, P. Helber, B. Bischke, P. Ha-
+belitz, M. Miranda, J. Siddamsetty, M. Nuske, et al. Adaptive fusion of
+multi-modal remote sensing data for optimal sub-field crop yield pre-
+diction.Remote Sensing of Environment, 318:114547, 2025.
+[23] M. Miranda, D. Pathak, M. Nuske, and A. Dengel. Multi-modal fusion
+methods with local neighborhood information for crop yield prediction
+at field and subfield levels. InIGARSS 2024-2024 IEEE International
+Geoscience and Remote Sensing Symposium, pages 4307–4311. IEEE,
+2024.
+[24] M. Miranda, F. Mena, M. Charfuelan, and A. Dengel. Informed learning
+for efficient crop yield prediction. InIGARSS 2025-2026 IEEE Inter-
+national Geoscience and Remote Sensing Symposium. IEEE, 2025.
+[25] A. Molotoks, P. Smith, and T. P. Dawson. Impacts of land use, popu-
+lation, and climate change on global food security.Food and Energy
+Security, 10(1):e261, 2021.
+[26] H. Najjar, M. Miranda, M. Nuske, R. Roscher, and A. Dengel. Ex-
+plainability of sub-field level crop yield prediction using remote sens-
+ing.IEEE Journal of Selected Topics in Applied Earth Observations
+and Remote Sensing, 2025.
+[27] D. Pathak, M. Miranda, F. Mena, C. Sanchez, P. Helber, B. Bischke,
+P. Habelitz, H. Najjar, J. Siddamsetty, D. Arenas, M. V ollmer, M. Char-
+fuelan, M. Nuske, and A. Dengel. Predicting Crop Yield with Machine
+Learning: An Extensive Analysis of Input Modalities and Models on
+a Field and Sub-Field Level. InIGARSS- IEEE International Geo-
+science and Remote Sensing Symposium, pages 2767–2770, 2023. doi:
+10.1109/IGARSS52108.2023.10282318.
+[28] L. Pereira, P. Paredes, D. Hunsaker, R. López-Urrea, and Z. M. Shad.
+Standard single and basal crop coefficients for field crops. updates and
+advances to the fao56 crop water requirements method.Agricultural
+Water Management, 243:106466, 2021.
+[29] L. S. Pereira, R. G. Allen, M. Smith, and D. Raes. Crop evapotran-
+spiration estimation with fao56: Past and future.Agricultural water
+management, 147:4–20, 2015.
+[30] G. Perich, M. O. Turkoglu, L. V . Graf, J. D. Wegner, H. Aasen, A. Wal-
+ter, and F. Liebisch. Pixel-based yield mapping and prediction from
+Sentinel-2 using spectral indices and neural networks.Field Crops Re-
+search, 292:108824, 2023.
+[31] L. Poggio, L. M. De Sousa, N. H. Batjes, G. Heuvelink, B. Kempen,
+E. Ribeiro, and D. Rossiter. SoilGrids 2.0: producing soil information
+for the globe with quantified spatial uncertainty.Soil, 7(1):217–240,
+2021.
+[32] M. Raissi, P. Perdikaris, and G. E. Karniadakis. Physics-informed neu-
+ral networks: A deep learning framework for solving forward and in-
+verse problems involving nonlinear partial differential equations.Jour-
+nal of Computational physics, 378:686–707, 2019.
+[33] R. Roscher, B. Bohn, M. F. Duarte, and J. Garcke. Explainable machine
+learning for scientific insights and discoveries.Ieee Access, 8:42200–
+42216, 2020.
+[34] S. H. Rudy, S. L. Brunton, J. L. Proctor, and J. N. Kutz. Data-driven
+discovery of partial differential equations.Science advances, 3(4):
+e1602614, 2017.
+[35] M. Shahhosseini, G. Hu, I. Huber, and S. V . Archontoulis. Coupling
+machine learning and crop modeling improves crop yield prediction in
+the us corn belt.Scientific reports, 11(1):1606, 2021.
+[36] G. Shuai and B. Basso. Subfield maize yield prediction improves when
+in-season crop water deficit is included in remote sensing imagery-
+based models.Remote Sensing of Environment, 272:112938, 2022.
+[37] G. Simons, R. Koster, and P. Droogers. Hihydrosoil v2. 0-high reso-
+lution soil maps of global hydraulic properties.Future Works.[online]
+Available from https://www. futurewater. eu/projects/hihydrosoil, 2020.
+[38] I. Sonata and Y . Heryadi. Comparison of lstm and transformer for time
+series data forecasting. In2024 7th International Conference on In-
+formatics and Computational Sciences (ICICoS), pages 491–495, 2024.
+doi: 10.1109/ICICoS62600.2024.10636892.
+[39] P. Steduto, T. C. Hsiao, E. Fereres, D. Raes, et al.Crop yield response
+to water, volume 1028. fao Rome, Italy, 2012.
+[40] K. R. Thorp. pyfao56: Fao-56 evapotranspiration in python.SoftwareX,
+19:101208, 2022.
+[41] T. Van Klompenburg, A. Kassahun, and C. Catal. Crop yield prediction
+using machine learning: A systematic literature review.Computers and
+Electronics in Agriculture, 177:105709, 2020.
+[42] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N.
+Gomez, L. Kaiser, and I. Polosukhin. Attention is all you need. In
+Proceedings of the 31st International Conference on Neural Informa-
+tion Processing Systems, NIPS’17, page 6000–6010, Red Hook, NY ,
+USA, 2017. Curran Associates Inc. ISBN 9781510860964.
+[43] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N.
+Gomez, Ł. Kaiser, and I. Polosukhin. Attention is all you need.Ad-
+vances in neural information processing systems, 30, 2017.
+[44] L. V on Rueden, S. Mayer, K. Beckh, B. Georgiev, S. Giesselbach,
+R. Heese, B. Kirsch, J. Pfrommer, A. Pick, R. Ramamurthy, et al. In-
+formed machine learning–a taxonomy and survey of integrating prior
+knowledge into learning systems.IEEE Transactions on Knowledge
+and Data Engineering, 35(1):614–633, 2021.
+[45] A. G. Wilson and P. Izmailov. Bayesian deep learning and a proba-
+bilistic perspective of generalization.Advances in neural information
+processing systems, 33:4697–4708, 2020.

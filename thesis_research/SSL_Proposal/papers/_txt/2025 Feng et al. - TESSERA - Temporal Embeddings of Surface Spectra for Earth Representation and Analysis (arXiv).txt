@@ -1,0 +1,2584 @@
+TESSERA: Temporal Embeddings of Surface Spectra for
+Earth Representation and Analysis
+Zhengpeng Feng1 Clement Atzberger2† Sadiq Jaffer1† Jovana Knezevic1 Silja Sormunen3
+Robin Young1 Madeline C. Lisaius1 Markus Immitzer2 Toby Jackson4 James Ball1
+David A. Coomes1 Anil Madhavapeddy1 Andrew Blake1 Srinivasan Keshav1∗
+1University of Cambridge 2dClimate Labs 3Aalto University 4University of Bristol
+† Equal contribution.{zf281, sj514, ray25, mcl66, avsm2, sk818}@cam.ac.uk
+Abstract
+Satellite Earth-observation (EO) time series in the optical
+and microwave ranges of the electromagnetic spectrum are
+often irregular due to orbital patterns and cloud obstruc-
+tion. Compositing addresses these issues but loses informa-
+tion with respect to vegetation phenology, which is critical
+for many downstream tasks. Instead, we present TESSERA,
+a pixel-wise foundation model for multi-modal (Sentinel-
+1/2) EO time series that learns robust, label-efficient em-
+beddings. During model training, TESSERA uses Barlow
+Twins and sparse random temporal sampling to enforce in-
+variance to the selection of valid observations. We employ
+two key regularizers: global shuffling to decorrelate spatial
+neighborhoods and mix-based regulation to improve invari-
+ance under extreme sparsity. We find that for diverse clas-
+sification, segmentation, and regression tasks, TESSERA
+embeddings deliver state-of-the-art accuracy with high la-
+bel efficiency, often requiring only a small task head and
+minimal computation. To democratize access, adhere to
+FAIR principles, and simplify use, we release global, an-
+nual, 10m, pixel-wise int8 embeddings together with open
+weights/code and lightweight adaptation heads, thus pro-
+viding practical tooling for large-scale retrieval and infer-
+ence at planetary scale. All code and data are available at
+https://github.com/ucam-eo/tessera.
+1. Introduction
+Earth Observation (EO) satellites continuously observe our
+planet, yet cloud cover, irregular revisit intervals depend-
+ing on latitude, sensors that differ in repeat period, spatial
+and spectral resolutions, and noise complicate the result-
+ing time series. For many EO applications, such as agri-
+culture, forestry, and environmental monitoring, clouds fre-
+quently obscure the evolution of target phenomena. Al-
+*Corresponding author.
+though compositing can yield cloud-free mosaics and re-
+duce noise in microwave measurements, it flattens phe-
+nological dynamics and transient events that downstream
+models require [117].
+Recent remote-sensing foundation models (RSFMs)
+have made substantial progress in large-scale pretraining,
+yet most assume heavily preprocessed cloud-filtered inputs.
+These predominantly patch-based models train on com-
+posites or temporal averages, a simplification that discards
+partly-clouded observations that contain valuable temporal
+information. Consequently, learned embeddings often bias
+toward idealized, cloud-free conditions, limiting their ro-
+bustness to the irregular, incomplete sampling that charac-
+terizes operational EO time series [110].
+We approach learning EO-based embeddings differently:
+rather than filtering imperfect observations, we use Barlow
+Twins [53, 116] to create embeddings that are robust to tem-
+poral sampling variability. Specifically, by forcing embed-
+dings to be invariant to randomly selected subsets of cloud-
+free observations from the same location, our embeddings
+model consistent physical processes, which results in their
+generalization across sensors, seasons, and regions.
+Building on work by Lisaiuset al.[53], which describes
+the use of Barlow Twins for EO for optical data streams, we
+introduce TESSERA, a pixel-wise RSFM for multi-modal
+(Sentinel-1/2) sequences. Our work differs from that of
+Lisaiuset al.[53] in four additional ways. First, their
+work created embeddings from Sentinel 2 alone, whereas
+TESSERA combines observations from Sentinel 1 and 2
+in a novel architecture. Second, we introduce two comple-
+mentary regularizers: global shuffling to disrupt short-range
+spatial correlations, while mix-based regularization blends
+observations across time and samples to stabilize learning
+under severe sparsity.
+Third, unlike nearly all prior work, open-source global,
+annual, pixel-wise int8 embeddings for each 10m×10m
+location on land, along with open-source model weights,
+arXiv:2506.20380v7  [cs.LG]  12 Apr 2026
+
+=== PAGE BREAK ===
+
+Figure 1.TESSERA advances the embedding-as-data approach for Earth Observation.It delivers(a)analysis-ready global-scale
+products,(b)pixel-wise, high-fidelity representations, and has(c)state-of-the-art downstream accuracy.
+code, and theGeoTesseraPython library [58] to effi-
+ciently retrieve embeddings from our data store for large-
+scale inference. TESSERA embeddings can be paired with
+lightweight adaptation heads (small MLPs or shallow con-
+volutional models) to achieve high performance with min-
+imal computation, enabling rapid prototyping and straight-
+forward deployment. TESSERA thus emphasizes usability
+through the FAIR principles (Findable, Accessible, Interop-
+erable, and Reusable).
+Finally, we evaluate TESSERA on a wide range of clas-
+sification, segmentation, and regression benchmarks span-
+ning multiple regions and label regimes. We find that our
+embeddings remain consistent when calendars shift, sea-
+sons are partially missing, or cloud cover is dense. More-
+over, we achieve state-of-the-art accuracy with strong la-
+bel efficiency, particularly under low-label conditions, and
+the TESSERA embeddings degrade gracefully under heavy
+cloud cover. Ablations confirm that temporal sampling in-
+variance, global shuffling, and mix-based regulation con-
+tribute each to robustness and generalization.
+Our contributions are:
+1.Global, pixel-wise, label-efficient embeddings.We
+use a novel self-supervised architecture to train a multi-
+modal (S1/S2) pixel-wise RSFM.
+2.FAIR embeddings-as-data.We are releasing global,
+annual, 10 m, pixel-wise int8 embeddings with open-
+source weights, code, and a Python library—advancing
+FAIR deployment-ready resources.
+3.Comprehensive evaluation.We compare our embed-
+dings with a large number of other state-of-the-art foun-
+dation models and find that, for diverse classification,
+segmentation, and regression tasks, TESSERA embed-
+dings deliver outstanding performance.
+2. Related Work
+2.1. Foundation Models for Earth Observation
+Remote-sensing foundation models (RSFMs) have rapidly
+advanced along several methodological lines. A large body
+of work has used self-supervised pretraining using either
+contrastive objectives (e.g., SeCo [61], SkySense [33])
+or masked image modeling (e.g., SatMAE [17], Scale-
+MAE [73], Cross-Scale MAE [86], S2MAE [49], Sat-
+MAE++ [67]). Other variants leverage global–local view
+alignment or distilled objectives (e.g., DINO-MM/DINO-
+MC [101, 108]). Model scopes have expanded from single-
+modality encoders toward broader families such as RingMo
+and RingMo-Lite [83, 103], Satlas [8], Prithvi and Prithvi-
+EO-2.0 [78, 84], GFM/msGFM [34, 63], Skysense series
+[33, 57, 109, 122, 124]. Work on multi-sensor fusion explic-
+itly integrates optical and SAR (e.g., CROMA [31], Sky-
+Sense [33], RingMo-Sense [115]). In parallel, early efforts
+like MOSAIKS [74] explored lightweight universal features
+to lower adoption barriers.
+Despite these advances, most RSFMs are trained on
+patch-based input and implicitly assume that the data has
+been preprocessed (e.g., aggressive cloud filtering or tempo-
+ral averaging). Such assumptions simplify pretraining, but
+discard partially cloudy images that still carry useful tempo-
+ral signals, biasing representations toward idealized, cloud-
+free conditions. Moreover, strong performance typically re-
+quires fine-tuning the backbone for each downstream task,
+which can be compute- and label-intensive for EO users.
+2.2. Embedding-Based Foundation Models
+A complementary line of work deliversembeddings-as-
+data: precomputed, generic, task-agnostic features that can
+be easily adapted with lightweight heads (shown in Fig-
+ure 2 c). Representative models include Presto [91], which
+learns pixel-level temporal representations, and Google’s
+AlphaEarth [13], which provides precomputed embeddings
+as a ready-for-analysis product. This paradigm reduces
+computational costs and democratizes access to high per-
+formance; however, existing approaches are often not fully
+open-sourced, lack pixel-level granularity at a global scale,
+or do not explicitly account for irregular temporal sampling.
+Our work follows the embedding-based paradigm while
+addressing these gaps. TESSERA introduces temporal sam-
+pling invariance to handle cloud- and orbital pattern induced
+irregularity and combines redundancy reduction with global
+
+=== PAGE BREAK ===
+
+Figure 2.Downstream adaptation paradigms. (a–b)Most
+RSFMs require fine-tuning the encoder or training task-specific
+decoders and often do not expose intermediate embeddings.(b-
+c) TESSERAproduces fixed, task-agnostic embeddings that plug
+into lightweight heads, avoiding backbone fine-tuning.
+shuffling and mix-based regulation for robustness. In con-
+trast to prior embedding releases, we provide FAIR global,
+annual, 10 m pixel-wise embeddings, together with open
+weights, code, and theGeoTesseralibrary [58] enabling
+analysis-ready use without backbone fine-tuning.
+3. TESSERA
+3.1. d-pixel: A Representation for Temporal Data
+We consider remote sensing data [27, 28] withCchannels
+(spectral bands or polarizations). Each data tileR t at timet
+is represented as a 3D array with dimensions:
+Rt∈R W×H×C
+whereWis the width (longitude dimension),His the
+height (latitude dimension), andCis the number of spec-
+tral channels.
+Each tile is accompanied by a corresponding binary
+maskV t of dimensions:
+Vt∈{0,1} W×H
+whereV t(i,j) = 0indicates clouding or missing data for
+the pixel at spatial coordinates(i,j), andV t(i,j) = 1indi-
+cates valid data.
+Temporal Data StackingWe stack resampled and
+spatially-aligned tiles over a time period that spansTtime
+steps (t= 0,1,...,T−1). The temporal data stack is de-
+fined as
+D= [R 0,R 1,...,R T−1 ]
+M= [V 0,V 1,...,V T−1 ]
+Time Series Extraction and d-pixel DefinitionFor a
+given spatial location(i,j)and spectral channelc, the time
+seriesS i,j,c represents all channelcvalues at coordinates
+(i,j)over the entire time period:
+Si,j,c = [R 0(i,j,c),R 1(i,j,c),...,R T−1 (i,j,c)]
+We define ad-pixelP i,j as the collection of all spectral
+channels by timesteps at a given spatial location(i,j):
+Pi,j(c) =S(i,j,c)
+In other words, the d-pixel provides all spectral values
+(Sentinel-2) or backscatter values (Sentinel-1) at a given
+point over time. Note that d-pixels are usually sparse and
+are accompanied by a mask vectorm i,j of sizeTthat in-
+dicates the timesteps for which there are valid data, with a
+value of 1 indicating that the corresponding row inP i,j is
+valid. The d-pixel formulation preserves the full temporal
+phenology while gracefully accommodating irregular sam-
+pling.
+3.2. Model Architecture
+TESSERA employs a simple yet efficient dual-branch en-
+coder architecture to process optical and radar modalities
+separately before fusion.
+Modality Encoders.Each encoder receives a masked
+time series{(P (t)
+i,j,m (t)
+i,j )}T
+t=1. Valid observations are em-
+bedded via a linear projectionϕ:R C→R d, and temporal
+context is injected via learnable Day-of-Year (DoY) posi-
+tional encodings:
+et =ϕ(P (t)
+i,j ) +ψ(DoY(t)),
+whereψ(·)maps the normalized day of the year to ad-
+dimensional embedding space. The sequence{e t}t:m(t)
+i,j =1
+is padded to a fixed lengthL= 40via sampling with re-
+placement if necessary, then processed by a 4-layer Trans-
+former encoder with multi-head self-attention:
+H=TransformerEncoder([e t1,...,e tL ]).
+A GRU-based pooling layer aggregates the temporal se-
+quence into a fixed-size vector:
+zmod =GRU(H)∈R 128.
+Feature Fusion and Quantization.The optical embed-
+dings (z S2) and radar embeddings (z S1) are concatenated
+and passed through a 2-layer MLP to produce the fused 128-
+dimensional embedding:
+z=MLP([z S2;z S1])∈R 128.
+We apply Quantization-Aware Training (QAT) to compress
+zinto 8-bit integers, reducing storage by∼4×with negligi-
+ble performance loss.
+Projector Network.For training,zis expanded to 16,384
+dimensions using a deep projector MLP:
+ˆz=Projector(z)∈R 16384,
+which is discarded during inference.
+
+=== PAGE BREAK ===
+
+Figure 3.Overview of the TESSERA processing pipeline. (a)Overall architecture: multi-temporal Sentinel-1/2 observations are con-
+verted into modality-specificd-pixels, augmented twice, and encoded by dual branches with shared weights to produce compact 128-D
+embeddings.(b)Zoom-in on the Sentinel-1 branch: temporal sequences are processed by a 4-block Transformer followed by GRU pooling
+to capture dynamic backscatter patterns before fusion into the joint TESSERA embedding.
+3.3. Pretraining
+TESSERA is pretrained on∼800 million d-pixels sampled
+from 3,012 global MGRS tiles (2017–2024), using 16 AMD
+MI300X GPUs (192GB GPU RAM each). For each d-pixel,
+two augmented views(Y A,Y B)are generated by indepen-
+dently sampling 40 valid time steps from the Sentinel-1
+and Sentinel-2 time series. The model is trained for one
+epoch with a global batch size of 32,768 using AdamW
+(η= 0.002, weight decay10 −6), with a linear warmup fol-
+lowed by cosine decay.
+The network processes these two views (Y A,Y B)
+through the dual-encoder and the projector to produce
+batch-normalized embeddingsZ A andZ B. The standard
+Barlow Twins loss function,L BT , is defined as [116]:
+LBT =
+X
+i
+(1−C ii)2 +λ BT
+X
+i
+X
+j̸=i
+C 2
+ij
+Here,Cis the cross-correlation matrix computed be-
+tween the batch-normalized embeddingsZ A andZ B. The
+indicesiandjiterate over the dimensions of the embedding
+vectors. The first term (invariance term) encourages similar
+embeddings for different views of the same input (Cii→1).
+The second term (redundancy reduction term) promotes in-
+formation efficiency by minimizing the correlation between
+different embedding dimensions (C ij →0fori̸=j),
+weighted byλ BT . We used the value ofλ BT = 5×10 −3
+as recommended in Reference [116].
+To further enhance the robustness of the model and
+mitigate overfitting, TESSERA incorporates an additional
+mix-up regularization termL M IX, inspired by Bandara et
+al. [7]. For each training batch, this involves shuffling
+one set of views (e.g.,Y B) along the batch dimension to
+createY S =Shuffle(Y B), then generating a mixed view
+YM =α mixYA + (1−α mix)YS. The mixing coefficient
+αmix is sampled from a uniform distribution in the unit in-
+tervalα mix∼U(0,1). The embeddingsZ M andZ S are
+obtained from their respective views. The mix-up loss pe-
+nalizes deviations from the assumption that a linear interpo-
+lation in the input space corresponds to a linear interpolation
+in the embedding space.
+C M A
+target =α mix(ZA)TZA + (1−α mix)(ZS)TZA
+C M S
+target =α mix(ZA)TZS + (1−α mix)(ZS)TZS
+LM IX = 1
+2 (∥C M A−C M A
+target∥2
+F +∥C M S−C M S
+target∥2
+F )
+whereC M A = (Z M )TZA andC M S = (Z M )TZS are
+the actual cross-correlation matrices from the model out-
+put. The total loss function optimized during training is a
+weighted sum:
+Ltotal =L BT +λ mixLM IX
+
+=== PAGE BREAK ===
+
+whereλ mix controls the strength of the mix-up regulariza-
+tion. We foundλ mix = 1.0(as recommended by [7]) to be
+effective based on our experiments.
+Crucially, we implement aglobal shufflingstrategy
+that randomizes d-pixels across all geographic tiles before
+batching, smoothing the loss curve, preventing spatial auto-
+correlation, and improving generalization (see the supple-
+mentary materials).
+3.4. Inference
+Following pretraining, the TESSERA dual encoder (with
+frozen weights and excluding the projector) is used to gen-
+erate an annual 128-dimensional embedding for every 10m
+pixel globally. This involves making inferences from a sam-
+ple of length 40 from the annual Sentinel-1 and Sentinel-2
+time series for each pixel through the trained encoders. To
+ensure that our maps are gap-free, random sampling with re-
+placement is used to generate augmentations from d-pixels
+that have fewer than 40 non-cloudy observations. The pri-
+mary output of this inference stage is a set of annual, global,
+10m resolution TESSERA embedding maps. These maps
+are designed as readily usable multidimensional geospatial
+data layers. This “Embeddings-as-Data” approach signifi-
+cantly lowers the barrier to entry for end-users, as these rich,
+precomputed features can be directly ingested by down-
+stream models without the need for raw satellite data pro-
+cessing, running the TESSERA model itself (see supple-
+mentary materials). We release embeddings through the
+pip-installableGeoTesseraPython library, enabling easy
+access and integration into downstream workflows.
+4. Experiments
+4.1. Experimental Setup
+Datasets.We evaluateTESSERAon six representative
+benchmarks that span classification, segmentation, and re-
+gression tasks. All datasets use multi-temporal Sentinel-1/2
+imagery:
+•TreeSatAI-TS: Tree species classification in Germany.
+•PASTIS-R: Parcel segmentation in France.
+•Austrian Crop (Classification): Crop type classification
+in Austria [1].
+•Biomassters: Above-Ground Biomass (AGB) regression
+in Finland [65].
+•Borneo Canopy Height: Canopy height regression in
+Malaysia [18].
+•Austrian Crop (Segmentation): Crop semantic segmen-
+tation in Austria [1].
+To ensure comprehensive evaluation, we select two
+datasets per task whenever possible: one large-scale (e.g.,
+continental or national coverage) and one fine-grained re-
+gional dataset. This design validates both geographic
+transferability and fine-detail modeling capability. High-
+resolution multi-temporal S1+S2 datasets with dense la-
+bels are scarce; hence, we additionally contribute two
+new benchmarks:Austrian Crop(parcel-level crop map-
+ping) andBorneo Canopy Height(LiDAR-calibrated for-
+est structure in Southeast Asia).
+Baselines.We compare against a comprehensive suite of
+representative remote-sensing foundation models (RSFMs):
+CROMA [31], DOFA [112], Prithvi [78], Remote-
+CLIP [54], SatlasNet [8], Scale-MAE [73], Spectral-
+GPT [36], Galileo [92], Skysense [33], Presto [91], and Al-
+phaEarth [13]. We also include standard UNet [75] and
+ViT [24] baselines for reference.
+Implementation.For embedding-based models
+(TESSERA, Presto, AlphaEarth), we train a 2-layer
+MLP for pixel-wise classification, and a lightweight UNet
+for patch-based classification, segmentation, and regres-
+sion. Patch-based models are fine-tuned using UPerNet
+heads. All models are evaluated at 1%, 30% and 100% label
+ratios to study label efficiency. Additional implementation
+details are in the supplementary material.
+4.2. Classification Results
+Patch-based classification: TreeSatAI-TS.Table 1 (a1)
+reports results on TreeSatAI-TS, a national-scale forest
+species benchmark.TESSERAachieves a state-of-the-art
+F1-score of77.96with full supervision, significantly out-
+performing all other models, including the next-best com-
+petitor, AlphaEarth (76.90) * and the strongest fine-tuned
+baseline, the UNet Baseline (73.30). This highlights how
+our pixel-level temporal modeling effectively captures phe-
+nological variations, which improve class separability [39].
+Notably, TESSERA’s superiority is even more pronounced
+in the few-shot setting: at 1% labels, it achieves an F1 score
+of60.58, surpassing the second-best model, AlphaEarth
+(52.79), by nearly 8 points.
+Pixel-wise crop classification: Austrian Crop.On the
+Austrian Cropdataset (Table 1 (a2)), TESSERA demon-
+strates strong performance. As visualized in Figure 4 (a), it
+consistently surpasses Presto and AlphaEarth in all standard
+label ratios (1%-30%). The performance gap is most pro-
+nounced in the low-data regime: at just 1% labeled data,
+TESSERA achieves a66.15F1 score. This outperforms
+AlphaEarth (37.22) by more than 28.9 points and Presto
+(32.74) by more than 33.4 points. We further investigate ex-
+treme label scarcity in Figure 4 (b), evaluating performance
+with only 1 to 20 labeled samples per class. In this challeng-
+ing few-shot scenario, TESSERA’s performance remains
+robust and scales gracefully (e.g.,∼0.5 F1 with just 4 sam-
+ples/class), while the F1 scores of other models are below
+0.4.
+*The TESSERA encoder (45.7M parameters) used during these tasks
+is also significantly smaller than AlphaEarth’s (480M parameters).
+
+=== PAGE BREAK ===
+
+Table 1.Results across tasks. (a) Classification: F1↑on TreeSatAI-TS and Austrian Crop (left column; TreeSatAI-TS showsorigi-
+nal/finetuned).(b) Segmentation: mIoU↑on PASTIS-R and Austrian Crop (original/finetunedfor CROMA–ViT Baseline; single eval-
+uation for Presto, AlphaEarth, TESSERA).(c) Regression: RMSE↓on Biomassters and Borneo CHM (original/finetunedfor baselines;
+single evaluation otherwise).best; second .
+(a1) Classification — TreeSatAI-TS (F1↑)
+Model TreeSatAI-TS
+1% 30% All
+CROMA[31] 39.73/43.14 62.44/63.24 70.21/72.09
+DOFA[112] 35.04/40.15 59.23/63.46 66.88/67.20
+Prithvi[78] 37.21/41.89 60.01/60.66 65.86/67.04
+RemoteCLIP[54] 34.94/37.77 57.52/59.70 68.32/68.03
+SatlasNet[8] 33.86/37.83 56.80/61.31 66.27/67.85
+Scale-MAE[73] 36.20/40.96 59.26/61.29 70.20/73.12
+SpectralGPT[36] 41.82/45.66 59.77/60.64 71.04/72.23
+Galileo[92] 39.99/42.38 59.42/61.94 69.44/72.17
+Skysense[33] 39.72/41.39 61.88/64.80 69.35/72.24
+UNet Baseline[75] 39.88/40.43 60.03/62.22 71.39/73.30
+ViT Baseline[24] 40.52/41.70 61.79/65.62 72.24/72.60
+Presto[91] 46.02 61.45 67.81
+AlphaEarth[13] 52.79 71.94 76.90
+TESSERA (Ours) 60.58 75.42 77.96
+(a2) Classification — Austrian Crop (F1↑)
+Model Austrian Crop
+1% 3% 5% 7% 10% 15% 20% 30%
+Presto[91] 32.74 37.63 40.26 41.50 43.94 46.01 49.74 57.89
+AlphaEarth[13] 37.22 40.06 42.73 45.08 48.01 50.47 52.47 56.36
+TESSERA (Ours) 66.15 71.62 74.32 77.22 78.69 80.12 80.79 82.09
+(b) Segmentation — PASTIS-R / Austrian Crop (mIoU↑)
+Model PASTIS-R Austrian Crop
+1% 30% All 1% 30% All
+CROMA[31] 7.61/12.33 21.62/23.78 36.24/41.29 5.64/5.19 12.89/15.76 17.10/18.28
+DOFA[112] 4.82/5.53 19.28/21.74 25.94/29.55 4.90/4.92 10.05/14.00 17.14/17.39
+Prithvi[78] 8.24/11.01 24.86/29.51 34.09/39.52 4.36/3.82 11.12/14.35 16.25/18.60
+RemoteCLIP[54] 5.50/7.55 11.72/16.40 20.17/21.03 3.52/3.37 7.76/10.12 11.16/15.15
+SatlasNet[8] 9.54/11.58 17.86/21.48 21.02/31.38 4.27/4.05 8.45/9.64 15.61/18.97
+Scale-MAE[73] 5.57/7.86 16.34/18.48 23.96/28.51 4.48/4.93 7.42/10.31 13.75/15.22
+SpectralGPT[36] 11.25/15.95 26.23/29.33 35.10/40.28 4.85/4.17 13.77/15.20 20.58/22.84
+Galileo[92] 9.78/11.83 15.63/17.91 27.92/35.28 9.95/9.03 14.24/15.89 22.80/26.16
+Skysense[33] 13.42/14.47 28.54/32.54 32.87/36.41 8.93/9.38 15.29/16.12 26.82/31.08
+UNet Baseline[75] 13.52/16.44 25.75/30.08 30.16/37.56 10.64/11.40 14.95/15.10 27.00/30.57
+ViT Baseline[24] 12.58/15.72 29.43/34.07 37.37/42.57 10.88/10.03 15.26/16.75 30.72/31.77
+Presto[91] - - - 14.25 27.93 34.04
+AlphaEarth[13] 27.12 46.42 51.08 14.64 21.75 25.70
+TESSERA (Ours) 27.5446.04 50.68 28.20 48.29 53.12
+(c) Regression — Biomassters / Borneo CHM (RMSE↓)
+Model Biomassters Borneo CHM
+1% 30% All 1% 30% All
+CROMA[31] 46.58/44.28 39.24/36.80 37.14/35.07 44.52/41.89 31.25/29.67 20.56/19.48
+DOFA[112] 51.86/47.84 45.72/43.59 43.05/41.10 43.96/40.68 28.97/27.93 17.63/17.51
+Prithvi[78] 43.89/39.37 41.49/38.68 41.12/38.88 43.50/44.27 29.42/27.80 19.71/19.41
+RemoteCLIP[54] 61.70/61.01 52.13/51.32 49.21/47.92 43.24/43.10 32.78/30.78 28.30/27.59
+SatlasNet[8] 49.51/44.64 44.24/43.23 41.93/41.36 45.85/43.01 34.01/32.26 22.03/21.02
+Scale-MAE[73] 56.41/51.51 51.02/49.34 47.05/45.17 47.51/46.72 32.00/31.11 21.12/20.41
+SpectralGPT[36] 64.81/62.28 38.54/36.12 36.87/36.12 43.91/43.65 26.03/25.08 16.53/15.89
+Galileo[92] 52.72/49.15 39.55/36.82 38.52/36.92 44.82/42.78 32.18/31.92 20.48/20.27
+Skysense[33] 47.52/42.28 37.51/37.10 32.52/30.78 42.74/40.96 27.42/26.65 16.56/15.58
+UNet Baseline[75] 44.62/41.70 37.92/36.16 36.41/35.17 41.81/38.61 28.01/26.02 17.79/16.87
+ViT Baseline[24] 48.24/49.42 38.56/38.27 37.98/37.52 42.02/39.95 27.87/26.61 16.48/15.77
+Presto[91] - - - 36.43 20.95 17.88
+AlphaEarth[13] 35.45 32.33 29.59 36.03 20.62 16.11
+TESSERA (Ours) 32.50 29.15 27.43 34.82 15.18 12.21
+Table 2.Model specification.Multi-temporal and multi-modal
+(multiple satellite sources) flags, venue, and parameter size.
+Params (M)indicates encoder frozen / fully fine-tuned.
+Model Multi-
+temporal
+Multi-
+modal
+Publication Params (M)
+CROMA×✓NeurIPS’23 49.1 / 704.9
+DOFA×✓arXiv’24 40.6 / 151.7
+Prithvi✓ ✓arXiv’24 40.6 / 126.8
+RemoteCLIP×✓TGRS’24 40.6 / 128.1
+SatlasNet✓ ✓ICCV’23 33.3 / 121.2
+Scale-MAE× ×ICCV’23 49.1 / 352.2
+SpectralGPT✓×TPAMI’24 183.5 / 268.9
+Galileo✓ ✓ICML’25 39.4 / 125.9
+Skysense✓ ✓CVPR’24 36.5 / 341.5
+UNet× ×MICCAI’15 14.8 / 14.8
+ViT-B/16× ×ICLR’21 125.1 / 125.1
+Presto✓ ✓arXiv’23 30.2 / 30.2
+AlphaEarth✓ ✓arXiv’25 30.1 / 30.1
+TESSERA (Ours)✓ ✓– 30.2 / 30.2
+4.3. Segmentation Results
+Field parcel segmentation: PASTIS-R.On the large-
+scale PASTIS-R benchmark (Table 1 (b)), TESSERA
+achieves competitive performance. With full labels, it
+obtains50.68mIoU, ranking second and just behind Al-
+phaEarth (51.08). However, in the low-label regime (1%
+labels), TESSERA (27.54) surpasses AlphaEarth (27.12)
+and significantly outperforms all fine-tuned baselines, such
+as the UNet Baseline (16.44) and Skysense (14.47). Un-
+like some RSFMs that require compute-heavy decoders
+(>100M parameters), our compact 30M-parameter UNet
+Figure 4.Label-efficient crop classification on Austrian Crop.
+(a)Weighted F1 vs. training label ratio using a small head on
+frozen embeddings.(b)Few-shot performance. TESSERA attains
+strong accuracy with very few labels; error bars denote variation
+over runs.
+suffices. This demonstrates that spatial context can be
+learned efficiently using TESSERA’s pre-trained temporal
+embeddings.
+Regional crop segmentation: Austrian Crop.For the
+fine-grained Austrian Crop segmentation task, TESSERA
+achieves53.12mIoU, establishing a new SOTA and signif-
+icantly improving over both AlphaEarth (25.70) by +27.4
+points and Presto (34.04) by +19.0 points. This perfor-
+mance gain is consistent across all label regimes, especially
+
+=== PAGE BREAK ===
+
+at 1% labels (TESSERA:28.20vs AlphaEarth: 14.64), con-
+firming the effective transferability of temporally coherent
+embeddings. TESSERA yields sharper parcel edges and re-
+duces confusion among visually similar crops (see supple-
+mentary materials), indicating its ability to maintain seman-
+tic consistency over time.
+4.4. Regression Results
+Above-ground biomass estimation: Biomassters.As
+shown in Table 1 (c), TESSERA achieves an RMSE of
+27.43t/ha with full labels – outperforming all other foun-
+dation models, including the next-best, AlphaEarth (29.59
+t/ha). This result surpasses the strongest fine-tuned RSFM
+baseline, Skysense (30.78 t/ha). The results demonstrate
+that temporal embeddings capture biomass dynamics effec-
+tively, even under limited supervision. Figure 5 provides
+a detailed comparison for this task after clipping implau-
+sibly high biomass values above 500 t/ha to this thresh-
+old. In this analysis, TESSERA (26.61t/ha) nearly matches
+the best-performing supervised task-specific model (25.90
+t/ha), which won the Biomassters competition of more
+than 1000 submissions. The figure further illustrates that
+TESSERA maintains consistent performance in all label ra-
+tios, shows minimal bias in all biomass ranges, and gen-
+erates spatially coherent AGB maps with only 4% of total
+labels.
+Canopy height regression: Borneo Canopy Height.In
+the Borneo CHM dataset, TESSERA again demonstrates
+superior performance, achieving the lowest RMSE of12.2
+m. This result significantly outperforms all other models,
+including AlphaEarth (16.1 m), Presto (17.9 m), and the
+best-performing fine-tuned RSFM such as Skysense (15.6
+m) and the ViT Baseline (15.8 m). We also compare with
+DINOv2-derived and Sentinel-2 composite height maps,
+where TESSERA demonstrates the closest agreement with
+LiDAR ground truth (see supplementary materials).
+5. Discussion & Ablation Studies
+We validate our design choices on the Austrian Crop clas-
+sification task. Table 3 summarizes the results; in the fol-
+lowing we organize the findings with brief Q&A headings
+and defer all methodological details to the supplementary
+material.
+Do shuffling and mixup help?Yes. Removing global
+shuffling or mixup drops validation F1 by−9.2/−11.1and
+RankMe score by−0.116/−0.106. Removing both leads to
+the largest fall (−14.7F1; see Table 3). The two strategies
+are complementary: shuffling smoothes the loss curve, mit-
+igates spatial autocorrelation while mixup helps to prevent
+feature overfitting [7].
+How robust are the embeddings to cloudiness?We find
+that when the annual number of non-cloudyvalidSentinel-
+Figure 5.Biomassters AGB regression. (a)RMSE/R 2/MB
+(mean bias) vs. label fraction.(b)Predicted AGB vs. Ground truth
+AGB.(c)Spatial AGB maps from TESSERA trained with 4% la-
+bels.(d)Predicted vs. ground-truth scatter. TESSERA closely
+tracks the task-specific winner with significantly fewer labels.
+Table 3.Ablation on the Austrian Crop dataset.We reportVal-
+idation F1andRankMe(higher↑is better). Parentheses show
+change vs. the Baseline.
+Configuration Val. F1 (↑) RankMe (↑)
+Baseline (Full Model) 77.3 0.963
+w/o Global Data Shuffling 68.1 (-9.2) 0.847 (-0.116)
+w/o Mixup Regularization 66.2 (-11.1) 0.857 (-0.106)
+w/o Sentinel-1 Data 74.2 (-3.1) 0.931 (-0.032)
+w/o Shuffling & Mixup 62.6 (-14.7) 0.867 (-0.096)
+w/o Embedding Quantization 77.9 (+0.6) 0.972 (+0.009)
+w/o Pretraining 43.8(-33.5) -
+2 observations drops≤10, Macro-F1 performance drops
+sharply (see Figure 6). At a global scale, we find that em-
+beddings are quite robust to cloudiness since there are more
+than 70 observations per year for each orbit.
+Is fine-tuning weights necessary?Self-supervised pre-
+training of the encoder yields large performance gains com-
+pared to randomly initialized weights, a +33.5 F1 improve-
+ment in the Austrian Crop classification task. Pretraining,
+somewhat surprisingly, makes subsequent finetuning un-
+necessary: Figure 6 (b) shows that finetuning the encoder
+provides no benefit. This suggests that the embeddings en-
+capsulate a highly generalized representation.
+Are regional embeddings necessary?We find that re-
+training with region-specific data offers negligible gains
+(Figure 6 c). A single global model is sufficient for high
+performance across diverse geographies, reinforcing the
+Embeddings-as-Dataparadigm and making costly regional
+retraining unnecessary.
+
+=== PAGE BREAK ===
+
+Figure 6.Robustness and sensitivity analyses. (a)Cloud robustness:performance remains stable until Sentinel-2 valid observations per
+year drop below∼20, after which accuracy degrades markedly.(b)Finetuning impact:evaluating the effect of three different learning rate
+strategies during finetuning.(c)Embedding specificity:comparing the performance of a global embedding versus an embedding retrained
+on region-specific data.(d)Temporal sampling uncertainty:selectingL=40timesteps within a year produces consistently similar results
+across random choices.
+Figure 7.Scaling behavior. (a)Projector depth/width sweep: val-
+idation F1 improves with capacity; † marks the max-F1 setup un-
+der memory constraints; * denotes the chosenTESSERA v1.0.
+(b)Validation F1 scales predictably with training FLOPs and pa-
+rameters, withv1.0near the compute-accuracy frontier.
+Can a spatial head recover spatial context?Yes. Al-
+though pretraining is pixel-wise (with no explicit spatial
+structure), adding a spatial head (e.g., a UNet) consistently
+improves segmentation and regression tasks, with larger
+gains at higher label budgets. This suggests that spatial cues
+can be injecteddownstreamefficiently without complicat-
+ing pretraining or creating purely pixel-based embeddings.
+How sensitive are embeddings to random temporal
+sampling?Not much. WithL=40temporal samples,
+repeated random draws produce tightly clustered results
+(low variance), consistent with our time-sampling invari-
+ance objective (shown in Figure 6 c). We also compare
+L∈ {20,40,96,365}and find thatL=40is the accu-
+racy–efficiency sweet spot (see supplementary material).
+Scaling laws.Figure 7 shows that the performance scales
+predictably with the depth/width of the projector, FLOPs,
+and the parameters; TESSERA v1.0 (star) lies near the
+optimal compute–accuracy frontier, while the dagger (†)
+marks the maximum-F1 configuration constrained by mem-
+ory/batch size.
+Flexibility of the inference time window.In the default
+setting, TESSERA is trained using a one-year temporal
+window. However, this one-year window is not a strict re-
+quirement. We find that applying the model to shorter sea-
+sonal windows during inference (e.g., only from spring to
+autumn) still yields effective embeddings (see supplemen-
+tary materials for seasonal window analyses on the Austrian
+crop dataset).
+Doesint8quantization significantly degrade perfor-
+mance?No: there is only a small drop in performance.
+Removing quantization slightlyimprovesmetrics (e.g.,
++0.6F1 and+0.009RankMe in Table 3), indicating that
+int8introduces minor information loss. However, using
+int8compresses the embeddings to∼25%of thefp32
+storage footprint (and reduces I/O), which is attractive for
+global-scale products and for use on an edge device.
+6. Conclusion
+We introduced TESSERA, a pixel-wise foundation model
+for Earth Observation that learns robust representations
+from sparse, multi-modal time series via temporal sampling
+invariance. Extensive experiments show that TESSERA es-
+tablishes a new state-of-the-art across diverse tasks with un-
+paralleled label efficiency. We pioneer the “Embeddings-
+as-Data” paradigm, releasing analysis-ready global embed-
+dings via theGeoTesseralibrary to lower barriers for
+geospatial analysis and empower future research.
+7. Acknowledgments
+We thank UKRI (MR/Z505456/1), DAWN, AMD, Vultr,
+the STFC Durham DiRAC HPC Facility (ST/P002293/1,
+ST/R002371/1, ST/S002502/1, ST/R000832/1) and the
+Microsoft AI For Good Lab for resources. Donations
+from Tarides, Jane Street, Google, Dr. Robert Sansom and
+John Bernstein also financially supported this research.
+
+=== PAGE BREAK ===
+
+References
+[1] INVEKOS Schl ¨age ¨Osterreich 2022 - Open Government
+Data Austria. 5, 23
+[2] Peri Akiva, Matthew Purri, and Matthew Leotta. Self-
+supervised material and texture representation learning for
+remote sensing tasks. In2022 IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), pages
+8193–8205, 2022. 29
+[3] Xiao An, Wei He, Jiaqi Zou, Guangyi Yang, and Hongyan
+Zhang. Pretrain a remote sensing foundation model by
+promoting intra-instance similarity.IEEE Transactions on
+Geoscience and Remote Sensing, 62:1–15, 2024. 30
+[4] Guillaume Astruc, Nicolas Gonthier, Clement Mallet, and
+Loic Landrieu. Omnisat: Self-supervised modality fusion
+for earth observation. InEuropean Conference on Com-
+puter Vision, pages 409–427. Springer, 2024. 30
+[5] Guillaume Astruc, Nicolas Gonthier, Clement Mallet, and
+Loic Landrieu. Anysat: One earth observation model for
+many resolutions, scales, and modalities, 2025. 30
+[6] Kumar Ayush, Burak Uzkent, Chenlin Meng, Kumar Tan-
+may, Marshall Burke, David Lobell, and Stefano Er-
+mon. Geography-aware self-supervised learning. In2021
+IEEE/CVF International Conference on Computer Vision
+(ICCV), pages 10161–10170, 2021. 29
+[7] Wele Gedara Chaminda Bandara, Celso M. De Melo, and
+Vishal M. Patel. Guarding barlow twins against overfitting
+with mixed samples, 2023. 4, 5, 7
+[8] Favyen Bastani, Piper Wolters, Ritwik Gupta, Joe Ferdi-
+nando, and Aniruddha Kembhavi. SatlasPretrain: A Large-
+Scale Dataset for Remote Sensing Image Understanding
+. In2023 IEEE/CVF International Conference on Com-
+puter Vision (ICCV), pages 16726–16736, Los Alamitos,
+CA, USA, 2023. IEEE Computer Society. 2, 5, 6, 23, 29
+[9] Hanbo Bi, Yingchao Feng, Boyuan Tong, Mengyu Wang,
+Haichen Yu, Yongqiang Mao, Hao Chang, Wenhui Diao,
+Peijin Wang, Yue Yu, Hanyang Peng, Yehong Zhang, Kun
+Fu, and Xian Sun. Ringmoe: Mixture-of-modality-experts
+multi-modal foundation models for universal remote sens-
+ing image interpretation, 2025. 30
+[10] Gerald Blasch, Yoseph Alemayehu, Louise Lesne, Jolan
+Wolter, Matthieu Taymans, Tsegaab Tesfaye, Tamirat Ne-
+gash, Mequanint Andulalem, Kitessa Gutu, Megersa De-
+bela, et al. Ethiopian crop type 2020 (ethct2020) dataset:
+Crop type data for environmental and agricultural re-
+mote sensing applications in complex ethiopian smallholder
+wheat-based farming systems (meher season 2020/21).
+Data in Brief, 54:110427, 2024. 19
+[11] Nikolaos Ioannis Bountos, Arthur Ouaknine, Ioannis Pa-
+poutsis, and David Rolnick. Fomo: Multi-modal, multi-
+scale and multi-task remote sensing foundation models for
+forest monitoring, 2025. 30
+[12] Nassim Ait Ali Braham, Conrad M Albrecht, Julien Mairal,
+Jocelyn Chanussot, Yi Wang, and Xiao Xiang Zhu. Spec-
+tralearth: Training hyperspectral foundation models at
+scale.IEEE Journal of Selected Topics in Applied Earth
+Observations and Remote Sensing, 2025. 30
+[13] Christopher F. Brown, Michal R. Kazmierski, Valerie J.
+Pasquarella, William J. Rucklidge, Masha Samsikova,
+Chenhui Zhang, Evan Shelhamer, Estefania Lahera, Olivia
+Wiles, Simon Ilyushchenko, Noel Gorelick, Lihui Lydia
+Zhang, Sophia Alj, Emily Schechter, Sean Askay, Oliver
+Guinan, Rebecca Moore, Alexis Boukouvalas, and Push-
+meet Kohli. Alphaearth foundations: An embedding field
+model for accurate and efficient global mapping from
+sparse label data, 2025. 2, 5, 6, 22, 23, 25, 26, 30
+[14] Keumgang Cha, Junghoon Seo, and Taekyung Lee. A
+billion-scale foundation model for remote sensing images.
+IEEE Journal of Selected Topics in Applied Earth Observa-
+tions and Remote Sensing, page 1–17, 2024. 29
+[15] Keyan Chen, Chenyang Liu, Bowen Chen, Wenyuan Li,
+Zhengxia Zou, and Zhenwei Shi. Dynamicvis: An efficient
+and general visual foundation model for remote sensing im-
+age understanding, 2025. 30
+[16] Clay Foundation Team. Clay foundation model: An open
+source ai model and interface for earth.https : / /
+madewithclay.org, 2023. Version 0.0.1, Apache Li-
+cense, code and model weights available on GitHub and
+Hugging Face. 29
+[17] Yezhen Cong, Samar Khanna, Chenlin Meng, Patrick Liu,
+Erik Rozi, Yutong He, Marshall Burke, David B. Lobell,
+and Stefano Ermon. Satmae: pre-training transformers for
+temporal and multi-spectral satellite imagery. InProceed-
+ings of the 36th International Conference on Neural Infor-
+mation Processing Systems, Red Hook, NY , USA, 2022.
+Curran Associates Inc. 2, 15, 29
+[18] David Coomes and Toby Jackson. Airborne LiDAR and
+RGB imagery from Sepilok Reserve and Danum Valley in
+Malaysia in 2020, 2022. 5, 25
+[19] Isaac Corley and Caleb Robinson. Hydro foundation
+model.https : / / github . com / isaaccorley /
+hydro-foundation-model, 2024. 29
+[20] Rangel Daroya, Elijah Cole, Oisin Mac Aodha, Grant Van
+Horn, and Subhransu Maji. Wildsat: Learning satellite im-
+age representations from wildlife observations, 2024. 30
+[21] Wenhui Diao, Haichen Yu, Kaiyue Kang, Tong Ling, Di
+Liu, Yingchao Feng, Hanbo Bi, Libo Ren, Xuexue Li,
+Yongqiang Mao, and Xian Sun. Ringmo-aerial: An aerial
+remote sensing foundation model with affine transforma-
+tion contrastive learning, 2025. 30
+[22] Philipe Dias, Aristeidis Tsaris, Jordan Bowman, Ab-
+hishek Potnis, Jacob Arndt, H. Lexie Yang, and Dal-
+ton Lunga. Oreole-fm: successes and challenges toward
+billion-parameter foundation models for high-resolution
+satellite imagery. InProceedings of the 32nd ACM Interna-
+tional Conference on Advances in Geographic Information
+Systems, page 597–600. ACM, 2024. 30
+[23] Zhe Dong, Yanfeng Gu, and Tianzhu Liu. Generative
+convnet foundation model with sparse modeling and low-
+frequency reconstruction for remote sensing image inter-
+pretation.IEEE Transactions on Geoscience and Remote
+Sensing, 62:1–16, 2024. 29
+[24] Alexey Dosovitskiy. An image is worth 16x16 words:
+Transformers for image recognition at scale.arXiv preprint
+arXiv:2010.11929, 2020. 5, 6
+
+=== PAGE BREAK ===
+
+[25] Chuc Man Duc and Hiromichi Fukui. Satmamba: Devel-
+opment of foundation models for remote sensing imagery
+using state space models, 2025. 30
+[26] Iris Dumeur, Silvia Valero, and Jordi Inglada. Self-
+supervised spatio-temporal representation learning of satel-
+lite image time series.IEEE Journal of Selected Topics in
+Applied Earth Observations and Remote Sensing, 17:4350–
+4367, 2024. 29
+[27] European Space Agency. Sentinel-1 data. Copernicus Data
+Space Ecosystem, 2014–present. 3
+[28] European Space Agency. Sentinel-2 data. Copernicus Data
+Space Ecosystem, 2015–present. 3
+[29] Yingchao Feng, Peijin Wang, Wenhui Diao, Qibin He,
+Huiyang Hu, Hanbo Bi, Xian Sun, and Kun Fu. A self-
+supervised cross-modal remote sensing foundation model
+with multi-domain representation and cross-domain fusion.
+InIGARSS 2023 - 2023 IEEE International Geoscience and
+Remote Sensing Symposium, pages 2239–2242, 2023. 29
+[30] Fabian J ¨org Fischer, Toby Jackson, Gr ´egoire Vincent, and
+Tommaso Jucker. Robust characterisation of forest struc-
+ture from airborne laser scanning—A systematic assess-
+ment and sample workflow for ecologists.Methods in Ecol-
+ogy and Evolution, 15(10):1873–1888, 2024. 25
+[31] Anthony Fuller, Koreen Millard, and James Green. Croma:
+Remote sensing representations with contrastive radar-
+optical masked autoencoders.Advances in Neural Infor-
+mation Processing Systems, 36:5506–5538, 2023. 2, 5, 6,
+29
+[32] Quentin Garrido, Randall Balestriero, Laurent Najman, and
+Yann Lecun. Rankme: Assessing the downstream perfor-
+mance of pretrained self-supervised representations by their
+rank. InInternational conference on machine learning,
+pages 10929–10974. PMLR, 2023. 20
+[33] Xin Guo, Jiangwei Lao, Bo Dang, Yingying Zhang, Lei
+Yu, Lixiang Ru, Liheng Zhong, Ziyuan Huang, Kang Wu,
+Dingxiang Hu, Huimei He, Jian Wang, Jingdong Chen,
+Ming Yang, Yongjun Zhang, and Yansheng Li. Skysense:
+A multi-modal remote sensing foundation model towards
+universal interpretation for earth observation imagery. In
+2024 IEEE/CVF Conference on Computer Vision and Pat-
+tern Recognition (CVPR), pages 27662–27673, 2024. 2, 5,
+6, 30
+[34] Boran Han, Shuai Zhang, Xingjian Shi, and Markus Reich-
+stein. Bridging remote sensors with multisensor geospa-
+tial foundation models. In2024 IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), pages
+27852–27862, 2024. 2, 30
+[35] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr
+Doll´ar, and Ross Girshick. Masked autoencoders are scal-
+able vision learners. InProceedings of the IEEE/CVF con-
+ference on computer vision and pattern recognition, pages
+16000–16009, 2022. 15
+[36] Danfeng Hong, Bing Zhang, Xuyang Li, Yuxuan Li,
+Chenyu Li, Jing Yao, Naoto Yokoya, Hao Li, Pedram
+Ghamisi, Xiuping Jia, Antonio Plaza, Paolo Gamba,
+Jon Atli Benediktsson, and Jocelyn Chanussot. Spectralgpt:
+Spectral remote sensing foundation model.IEEE Transac-
+tions on Pattern Analysis and Machine Intelligence, 46(8):
+5227–5244, 2024. 5, 6, 26, 30
+[37] Huiyang Hu, Peijin Wang, Hanbo Bi, Boyuan Tong,
+Zhaozhi Wang, Wenhui Diao, Hao Chang, Yingchao Feng,
+Ziqi Zhang, Yaowei Wang, Qixiang Ye, Kun Fu, and Xian
+Sun. Rs-vheat: Heat conduction guided efficient remote
+sensing foundation model, 2025. 30
+[38] Ziyue Huang, Mingming Zhang, Yuan Gong, Qingjie Liu,
+and Yunhong Wang. Generic knowledge boosted pretrain-
+ing for remote sensing images.IEEE Transactions on Geo-
+science and Remote Sensing, 62:1–13, 2024. 29
+[39] Markus Immitzer, Martin Neuwirth, Sebastian B ¨ock, Har-
+ald Brenner, Francesco Vuolo, and Clement Atzberger. Op-
+timal input features for tree species classification in central
+europe based on multi-temporal sentinel-2 data.Remote
+Sensing, 11(22):2599, 2019. 5
+[40] Jeremy Irvin, Lucas Tao, Joanne Zhou, Yuntao Ma,
+Langston Nashold, Benjamin Liu, and Andrew Y . Ng. Usat:
+A unified self-supervised encoder for multi-sensor satellite
+imagery, 2023. 29
+[41] Pallavi Jain, Bianca Schoen-Phelan, and Robert Ross.
+Self-supervised learning for invariant representations from
+multi-spectral and sar images.IEEE Journal of Selected
+Topics in Applied Earth Observations and Remote Sensing,
+15:7797–7808, 2022. 29
+[42] Yuru Jia, Valerio Marsocci, Ziyang Gong, Xue Yang,
+Maarten Vergauwen, and Andrea Nascetti. Can generative
+geospatial diffusion models excel as discriminative geospa-
+tial foundation models?, 2025. 30
+[43] Wentao Jiang, Jing Zhang, Di Wang, Qiming Zhang, Zeng-
+mao Wang, and Bo Du. Lemevit: Efficient vision trans-
+former with learnable meta tokens for remote sensing im-
+age interpretation, 2024. 30
+[44] Konstantin Klemmer, Esther Rolf, Caleb Robinson, Lester
+Mackey, and Marc Rußwurm. Satclip: Global, general-
+purpose location embeddings with satellite imagery.Pro-
+ceedings of the AAAI Conference on Artificial Intelligence,
+39(4):4347–4355, 2025. 15
+[45] Jingtao Li, Yingyi Liu, Xinyu Wang, Yunning Peng, Chen
+Sun, Shaoyu Wang, Zhendong Sun, Tian Ke, Xiao Jiang,
+Tangwei Lu, Anran Zhao, and Yanfei Zhong. Hyperfree:
+A channel-adaptive and tuning-free foundation model for
+hyperspectral remote sensing imagery. InProceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2025. 30
+[46] Wenyuan Li, Keyan Chen, Hao Chen, and Zhenwei Shi.
+Geographical knowledge-driven representation learning for
+remote sensing images.IEEE Transactions on Geoscience
+and Remote Sensing, 60:1–16, 2022. 29
+[47] Wenyuan Li, Keyan Chen, and Zhenwei Shi. Geographi-
+cal supervision correction for remote sensing representation
+learning.IEEE Transactions on Geoscience and Remote
+Sensing, 60:1–20, 2022. 29
+[48] Weijie Li, Wei Yang, Tianpeng Liu, Yuenan Hou, Yuxuan
+Li, Zhen Liu, Yongxiang Liu, and Li Liu. Predicting gra-
+dient is better: Exploring self-supervised learning for sar
+atr with a joint-embedding predictive architecture.ISPRS
+
+=== PAGE BREAK ===
+
+Journal of Photogrammetry and Remote Sensing, 218:326–
+338, 2024. 30
+[49] Xuyang Li, Danfeng Hong, and Jocelyn Chanussot. S2mae:
+A spatial-spectral pretraining foundation model for spectral
+remote sensing data. InProceedings of the IEEE/CVF Con-
+ference on Computer Vision and Pattern Recognition, pages
+24088–24097, 2024. 2, 30
+[50] Xuyang Li, Chenyu Li, Pedram Ghamisi, and Danfeng
+Hong. Fleximo: A flexible remote sensing foundation
+model, 2025. 30
+[51] Xuyang Li, Chenyu Li, Gemine Vivone, and Danfeng
+Hong. Seamo: A season-aware multimodal foundation
+model for remote sensing, 2025. 30
+[52] Zhihao Li, Biao Hou, Siteng Ma, Zitong Wu, Xianpeng
+Guo, Bo Ren, and Licheng Jiao. Masked angle-aware au-
+toencoder for remote sensing images. InEuropean Confer-
+ence on Computer Vision, pages 260–278. Springer, 2025.
+30
+[53] Madeline C. Lisaius, Andrew Blake, Srinivasan Keshav,
+and Clement Atzberger. Using barlow twins to create repre-
+sentations from cloud-corrupted remote sensing time series.
+IEEE Journal of Selected Topics in Applied Earth Observa-
+tions and Remote Sensing, 17:13162–13168, 2024. 1
+[54] Fan Liu, Delong Chen, Zhangqingyun Guan, Xiaocong
+Zhou, Jiale Zhu, Qiaolin Ye, Liyong Fu, and Jun Zhou.
+Remoteclip: A vision language foundation model for re-
+mote sensing.IEEE Transactions on Geoscience and Re-
+mote Sensing, 62:1–16, 2024. 5, 6, 15
+[55] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae
+Lee. Visual instruction tuning.Advances in neural infor-
+mation processing systems, 36:34892–34916, 2023. 15
+[56] Kaixuan Lu, Ruiqian Zhang, Xiao Huang, Yuxing Xie, Xi-
+aogang Ning, Hanchao Zhang, Mengke Yuan, Pan Zhang,
+Tao Wang, and Tongkui Liao. Pattern integration and en-
+hancement vision transformer for self-supervised learning
+in remote sensing.IEEE Transactions on Geoscience and
+Remote Sensing, 2025. 30
+[57] Junwei Luo, Zhen Pang, Yongjun Zhang, Tingzhu Wang,
+Linlin Wang, Bo Dang, Jiangwei Lao, Jian Wang, Jing-
+dong Chen, Yihua Tan, et al. Skysensegpt: A fine-
+grained instruction tuning dataset and model for remote
+sensing vision-language understanding.arXiv preprint
+arXiv:2406.10100, 2024. 2, 15
+[58] Anil Madhavapeddy, Frank Feng, Robin Young, Janne
+M¨ayr¨a, Sadiq Jaffer, Olli Niemitalo, Srinivasan Keshav, and
+David Allsopp. ucam-eo/geotessera 0.7.5, 2026. 2, 3
+[59] Utkarsh Mall, Bharath Hariharan, and Kavita Bala.
+Change-aware sampling and contrastive learning for satel-
+lite images. InProceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), pages
+5261–5270, 2023. 29
+[60] Valerio Marsocci, Yuru Jia, Georges Le Bellier, David
+Kerekes, Liang Zeng, Sebastian Hafner, Sebastian Gerard,
+Eric Brune, Ritu Yadav, Ali Shibli, Heng Fang, Yifang
+Ban, Maarten Vergauwen, Nicolas Audebert, and Andrea
+Nascetti. Pangaea: A global and inclusive benchmark for
+geospatial foundation models, 2025. 26
+[61] Oscar Ma ˜nas, Alexandre Lacoste, Xavier Gir ´o-i Nieto,
+David Vazquez, and Pau Rodr ´ıguez. Seasonal contrast:
+Unsupervised pre-training from uncurated remote sensing
+data. In2021 IEEE/CVF International Conference on Com-
+puter Vision (ICCV), pages 9394–9403, 2021. 2, 29
+[62] Leland McInnes, John Healy, and James Melville. Umap:
+Uniform manifold approximation and projection for dimen-
+sion reduction.arXiv preprint arXiv:1802.03426, 2018. 23
+[63] Mat ´ıas Mendieta, Boran Han, Xingjian Shi, Yi Zhu, and
+Chen Chen. Towards geospatial foundation models via con-
+tinual pretraining. In2023 IEEE/CVF International Con-
+ference on Computer Vision (ICCV), pages 16760–16770,
+2023. 2, 29
+[64] Dilxat Muhtar, Xueliang Zhang, Pengfeng Xiao, Zhenshi
+Li, and Feng Gu. Cmid: A unified self-supervised learning
+framework for remote sensing image understanding.IEEE
+Transactions on Geoscience and Remote Sensing, 61:1–17,
+2023. 29
+[65] Andrea Nascetti, Ritu Yadav, Kirill Brodt, Qixun Qu,
+Hongwei Fan, Yuri Shendryk, Isha Shah, and Christine
+Chung. Biomassters: A benchmark dataset for forest
+biomass estimation using multi-modal satellite time-series.
+InThirty-seventh Conference on Neural Information Pro-
+cessing Systems Datasets and Benchmarks Track, 2023. 5,
+26
+[66] Vishal Nedungadi, Ankit Kariryaa, Stefan Oehmcke,
+Serge J. Belongie, Christian Igel, and Nico Lang. Mmearth:
+Exploring multi-modal pretext tasks for geospatial repre-
+sentation learning. InComputer Vision - ECCV 2024 - 18th
+European Conference, Milan, Italy, September 29-October
+4, 2024, Proceedings, Part LXIV, pages 164–182. Springer,
+2024. 15, 30
+[67] Mubashir Noman, Muzammal Naseer, Hisham Cholakkal,
+Rao Muhammad Anwar, Salman Khan, and Fahad Shahbaz
+Khan. Rethinking Transformers Pre-training for Multi-
+Spectral Satellite Imagery . In2024 IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition (CVPR),
+pages 27811–27819, Los Alamitos, CA, USA, 2024. IEEE
+Computer Society. 2, 15, 30
+[68] Camille Piponiot, Kristina J. Anderson-Teixeira, Stuart J.
+Davies, David Allen, Norman A. Bourg, David F. R. P.
+Burslem, Dairon C´ardenas, Chia-Hao Chang-Yang, George
+Chuyong, Susan Cordell, Handanakere Shivaramaiah Dat-
+taraja, ´Alvaro Duque, Sisira Ediriweera, Corneille Ewango,
+Zacky Ezedin, Jonah Filip, Christian P. Giardina, Robert
+Howe, Chang-Fu Hsieh, Stephen P. Hubbell, Faith M.
+Inman-Narahari, Akira Itoh, David Jan ´ık, David Kenfack,
+Kamil Kr´al, James A. Lutz, Jean-Remy Makana, Sean M.
+McMahon, William McShea, Xiangcheng Mi, Mohizah
+Bt. Mohamad, V ojtˇech Novotn ´y, Michael J. O’Brien, Re-
+becca Ostertag, Geoffrey Parker, Rolando P ´erez, Haibao
+Ren, Glen Reynolds, Mohamad Danial Md Sabri, Lawren
+Sack, Ankur Shringi, Sheng-Hsin Su, Raman Sukumar,
+I-Fang Sun, Hebbalalu S. Suresh, Duncan W. Thomas,
+Jill Thompson, Maria Uriarte, John Vandermeer, Yunquan
+Wang, Ian M. Ware, George D. Weiblen, Timothy J. S.
+Whitfeld, Amy Wolf, Tze Leong Yao, Mingjian Yu, Zuo-
+qiang Yuan, Jess K. Zimmerman, Daniel Zuleta, and He-
+
+=== PAGE BREAK ===
+
+lene C. Muller-Landau. Distribution of biomass dynamics
+in relation to tree size in forests across the world.New Phy-
+tologist, 234(5):1664–1677, 2022. 25
+[69] Jonathan Prexl and Michael Schmitt. Multi-modal multi-
+objective contrastive learning for sentinel-1/2 imagery. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR) Workshops, pages
+2136–2144, 2023. 29
+[70] Jonathan Prexl and Michael Schmitt. Senpa-mae: Sen-
+sor parameter aware masked autoencoder for multi-satellite
+self-supervised pretraining, 2024. 30
+[71] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya
+Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry,
+Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learn-
+ing transferable visual models from natural language super-
+vision. InInternational conference on machine learning,
+pages 8748–8763. PmLR, 2021. 15
+[72] Praveen Ravirathinam, Ankush Khandelwal, Rahul Ghosh,
+and Vipin Kumar. A causally informed pretraining ap-
+proach for multimodal foundation models: Applications in
+remote sensing.arXiv preprint arXiv:2407.19660, 2024. 30
+[73] Colorado J Reed, Ritwik Gupta, Shufan Li, Sarah Brock-
+man, Christopher Funk, Brian Clipp, Kurt Keutzer, Sal-
+vatore Candido, Matt Uyttendaele, and Trevor Darrell.
+Scale-MAE: A Scale-Aware Masked Autoencoder for Mul-
+tiscale Geospatial Representation Learning . In2023
+IEEE/CVF International Conference on Computer Vision
+(ICCV), pages 4065–4076, Los Alamitos, CA, USA, 2023.
+IEEE Computer Society. 2, 5, 6, 15, 29
+[74] Esther Rolf, Jonathan Proctor, Tamma Carleton, Ian Bol-
+liger, Vaishaal Shankar, Miyabi Ishihara, Benjamin Recht,
+and Solomon Hsiang. A generalizable and accessible ap-
+proach to machine learning with global satellite imagery.
+Nature communications, 12(1):4392, 2021. 2, 29
+[75] Olaf Ronneberger, Philipp Fischer, and Thomas Brox. U-
+Net: Convolutional Networks for Biomedical Image Seg-
+mentation, 2015. 5, 6, 23, 25, 26
+[76] Vivien Sainte Fare Garnot and Loic Landrieu. Lightweight
+temporal self-attention for classifying satellite images time
+series. InLecture Notes in Computer Science, pages 171–
+181, 2020. 26
+[77] Linus Scheibenreif, Jo ¨elle Hanna, Michael Mommert, and
+Damian Borth. Self-supervised vision transformers for
+land-cover segmentation and classification. InProceed-
+ings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition (CVPR) Workshops, pages 1422–1431,
+2022. 29
+[78] Johannes Schmude, Sujit Roy, Will Trojak, Johannes
+Jakubik, Daniel Salles Civitarese, Shraddha Singh, Ju-
+lian Kuehnert, Kumar Ankur, Aman Gupta, Christopher E
+Phillips, Romeo Kienzler, Daniela Szwarcman, Vishal
+Gaur, Rajat Shinde, Rohit Lal, Arlindo Da Silva, Jorge
+Luis Guevara Diaz, Anne Jones, Simon Pfreundschuh, Amy
+Lin, Aditi Sheshadri, Udaysankar Nair, Valentine Anan-
+tharaj, Hendrik Hamann, Campbell Watson, Manil Maskey,
+Tsengdar J Lee, Juan Bernabe Moreno, and Rahul Ra-
+machandran. Prithvi wxc: Foundation model for weather
+and climate, 2024. 2, 5, 6, 29
+[79] Alexander Shenkin, Chris J. Chandler, Doreen S. Boyd,
+Toby Jackson, Mathias Disney, Noreen Majalap, Reuben
+Nilus, Giles Foody, Jamiluddin bin Jami, Glen Reynolds,
+Phil Wilkes, Mark E. J. Cutler, Geertje M. F. van der Heij-
+den, David F. R. P. Burslem, David A. Coomes, Lisa Patrick
+Bentley, and Yadvinder Malhi. The World’s Tallest Tropi-
+cal Tree in Three Dimensions.Front. For. Glob. Change, 2,
+2019. 25
+[80] Michael J. Smith, Luke Fleming, and James E. Geach.
+Earthpt: a time series foundation model for earth observa-
+tion, 2024. 29
+[81] Caleb S. Spradlin, Jordan A. Caraballo-Vega, Jian Li,
+Mark L. Carroll, Jie Gong, and Paul M. Montesano.
+Satvision-toa: A geospatial foundation model for coarse-
+resolution all-sky remote sensing imagery, 2024. 30
+[82] Vladan Stojnic and Vladimir Risojevic. Self-supervised
+learning of remote sensing scene representations using con-
+trastive multiview coding. InProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition
+(CVPR) Workshops, pages 1182–1191, 2021. 29
+[83] Xian Sun, Peijin Wang, Wanxuan Lu, Zicong Zhu, Xiao-
+nan Lu, Qibin He, Junxi Li, Xuee Rong, Zhujun Yang, Hao
+Chang, Qinglin He, Guang Yang, Ruiping Wang, Jiwen Lu,
+and Kun Fu. Ringmo: A remote sensing foundation model
+with masked image modeling.IEEE Transactions on Geo-
+science and Remote Sensing, 61:1–22, 2023. 2, 29
+[84] Daniela Szwarcman, Sujit Roy, Paolo Fraccaro,
+Porsteinn Eli Gislason, Benedikt Blumenstiel, Rinki
+Ghosal, Pedro Henrique de Oliveira, Joao Lucas de
+Sousa Almeida, Rocco Sedona, Yanghui Kang, Srija
+Chakraborty, Sizhe Wang, Carlos Gomes, Ankur Kumar,
+Myscon Truong, Denys Godwin, Hyunho Lee, Chia-Yu
+Hsu, Ata Akbari Asanjan, Besart Mujeci, Disha Shidham,
+Trevor Keenan, Paulo Arevalo, Wenwen Li, Hamed
+Alemohammad, Pontus Olofsson, Christopher Hain,
+Robert Kennedy, Bianca Zadrozny, David Bell, Gabriele
+Cavallaro, Campbell Watson, Manil Maskey, Rahul Ra-
+machandran, and Juan Bernabe Moreno. Prithvi-eo-2.0:
+A versatile multi-temporal foundation model for earth
+observation applications, 2025. 2, 23, 30
+[85] Jieyi Tan, Chengwei Zhang, Bo Dang, and Yansheng Li.
+Towards privacy-preserved pre-training of remote sensing
+foundation models with federated mutual-guidance learn-
+ing.arXiv preprint arXiv:2503.11051, 2025. 30
+[86] Maofeng Tang, Andrei Cozma, Konstantinos Georgiou, and
+Hairong Qi. Cross-scale mae: a tale of multi-scale exploita-
+tion in remote sensing. InProceedings of the 37th Interna-
+tional Conference on Neural Information Processing Sys-
+tems, Red Hook, NY , USA, 2023. Curran Associates Inc.
+2, 29
+[87] Chao Tao, Ji Qi, Guo Zhang, Qing Zhu, Weipeng Lu,
+and Haifeng Li. Tov: The original vision model for opti-
+cal remote sensing image understanding via self-supervised
+learning.IEEE Journal of Selected Topics in Applied Earth
+Observations and Remote Sensing, 16:4916–4930, 2023.
+29
+[88] Jiayuan Tian, Jie Lei, Jiaqing Zhang, Weiying Xie, and
+Yunsong Li. Swimdiff: Scene-wide matching contrastive
+
+=== PAGE BREAK ===
+
+learning with diffusion constraint for remote sensing image,
+2024. 29
+[89] Jamie Tolan, Hung-I Yang, Benjamin Nosarzewski, Guil-
+laume Couairon, Huy V . V o, John Brandt, Justine Spore,
+Sayantan Majumdar, Daniel Haziza, Janaki Vamaraju, Theo
+Moutakanni, Piotr Bojanowski, Tracy Johns, Brian White,
+Tobias Tiecke, and Camille Couprie. Very high resolu-
+tion canopy height maps from RGB imagery using self-
+supervised vision transformer and convolutional decoder
+trained on aerial lidar.Remote Sensing of Environment, 300:
+113888, 2024. 25
+[90] Gabriel Tseng, Ivan Zvonkov, Catherine Lilian Nakalembe,
+and Hannah Kerner. Cropharvest: A global dataset for crop-
+type classification. InThirty-fifth Conference on Neural
+Information Processing Systems Datasets and Benchmarks
+Track (Round 2), 2021. 19
+[91] Gabriel Tseng, Ruben Cartuyvels, Ivan Zvonkov, Mirali
+Purohit, David Rolnick, and Hannah Kerner. Lightweight,
+Pre-trained Transformers for Remote Sensing Timeseries,
+2024. arXiv:2304.14065 [cs]. 2, 5, 6, 15, 23, 25, 29
+[92] Gabriel Tseng, Anthony Fuller, Marlena Reil, Henry Her-
+zog, Patrick Beukema, Favyen Bastani, James R. Green,
+Evan Shelhamer, Hannah Kerner, and David Rolnick.
+Galileo: Learning global & local features of many remote
+sensing modalities, 2025. 5, 6, 15, 30
+[93] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob
+Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser,
+and Illia Polosukhin. Attention is all you need. InProceed-
+ings of the 31st International Conference on Neural Infor-
+mation Processing Systems, page 6000–6010, Red Hook,
+NY , USA, 2017. Curran Associates Inc. 15
+[94] Leonard Waldmann, Ando Shah, Yi Wang, Nils Lehmann,
+Adam J. Stewart, Zhitong Xiong, Xiao Xiang Zhu, Ste-
+fan Bauer, and John Chuang. Panopticon: Advancing any-
+sensor foundation models for earth observation, 2025. 30
+[95] Di Wang, Jing Zhang, Bo Du, Gui-Song Xia, and Dacheng
+Tao. An empirical study of remote sensing pretraining.
+IEEE Transactions on Geoscience and Remote Sensing, 61:
+1–20, 2023. 29
+[96] Di Wang, Qiming Zhang, Yufei Xu, Jing Zhang, Bo Du,
+Dacheng Tao, and Liangpei Zhang. Advancing plain vision
+transformer toward remote sensing foundation model.IEEE
+Transactions on Geoscience and Remote Sensing, 61:1–15,
+2023. 29
+[97] Di Wang, Jing Zhang, Minqiang Xu, Lin Liu, Dongsheng
+Wang, Erzhong Gao, Chengxi Han, Haonan Guo, Bo Du,
+Dacheng Tao, and Liangpei Zhang. Mtp: Advancing re-
+mote sensing foundation model via multi-task pretraining,
+2024. 30
+[98] Di Wang, Meiqi Hu, Yao Jin, Yuchun Miao, Jiaqi Yang,
+Yichu Xu, Xiaolei Qin, Jiaqi Ma, Lingyu Sun, Chenxing
+Li, Chuan Fu, Hongruixuan Chen, Chengxi Han, Naoto
+Yokoya, Jing Zhang, Minqiang Xu, Lin Liu, Lefei Zhang,
+Chen Wu, Bo Du, Dacheng Tao, and Liangpei Zhang. Hy-
+persigma: Hyperspectral intelligence comprehension foun-
+dation model, 2025. 30
+[99] Fengxiang Wang, Hongzhen Wang, Di Wang, Zonghao
+Guo, Zhenyu Zhong, Long Lan, Wenjing Yang, and Jing
+Zhang. Harnessing massive satellite imagery with efficient
+masked image modeling, 2025. 30
+[100] Fengxiang Wang, Hongzhen Wang, Yulin Wang, Di Wang,
+Mingshuo Chen, Haiyan Zhao, Yangang Sun, Shuo Wang,
+Long Lan, Wenjing Yang, and Jing Zhang. Roma: Scal-
+ing up mamba-based foundation models for remote sensing,
+2025. 30
+[101] Yi Wang, Conrad M Albrecht, and Xiao Xiang Zhu. Self-
+supervised vision transformers for joint sar-optical repre-
+sentation learning, 2022. 2, 29
+[102] Yi Wang, Hugo Hern´andez Hern´andez, Conrad M Albrecht,
+and Xiao Xiang Zhu. Feature guided masked autoencoder
+for self-supervised learning in remote sensing, 2023. 29
+[103] Yuelei Wang, Ting Zhang, Liangjin Zhao, Lin Hu, Zhechao
+Wang, Ziqing Niu, Peirui Cheng, Kaiqiang Chen, Xuan
+Zeng, Zhirui Wang, Hongqi Wang, and Xian Sun. Ringmo-
+lite: A remote sensing multi-task lightweight network with
+cnn-transformer hybrid framework, 2023. 2, 29
+[104] Yi Wang, Conrad M Albrecht, Nassim Ait Ali Braham,
+Chenying Liu, Zhitong Xiong, and Xiao Xiang Zhu. De-
+coupling common and unique representations for multi-
+modal self-supervised learning, 2024. 29
+[105] Yi Wang, Conrad M. Albrecht, and Xiao Xiang Zhu.
+Multilabel-guided soft contrastive learning for efficient
+earth observation pretraining.IEEE Transactions on Geo-
+science and Remote Sensing, 62:1–16, 2024. 30
+[106] Yi Wang, Zhitong Xiong, Chenying Liu, Adam J. Stew-
+art, Thomas Dujardin, Nikolaos Ioannis Bountos, Angelos
+Zavras, Franziska Gerken, Ioannis Papoutsis, Laura Leal-
+Taix´e, and Xiao Xiang Zhu. Towards a unified copernicus
+foundation model for earth vision, 2025. 30
+[107] Zhechao Wang, Peirui Cheng, Pengju Tian, Yuchao Wang,
+Mingxin Chen, Shujing Duan, Zhirui Wang, Xinming Li,
+and Xian Sun. Rs-dfm: A remote sensing distributed foun-
+dation model for diverse downstream tasks, 2024. 30
+[108] Xinye Wanyan, Sachith Seneviratne, Shuchang Shen, and
+Michael Kirley. Extending global-local view alignment
+for self-supervised learning with remote sensing imagery,
+2024. 2, 29
+[109] Kang Wu, Yingying Zhang, Lixiang Ru, Bo Dang, Jiang-
+wei Lao, Lei Yu, Junwei Luo, Zifan Zhu, Yue Sun, Jia-
+hao Zhang, et al. A semantic-enhanced multi-modal re-
+mote sensing foundation model for earth observation.Na-
+ture Machine Intelligence, pages 1–15, 2025. 2, 30
+[110] Aoran Xiao, Weihao Xuan, Junjue Wang, Jiaxing Huang,
+Dacheng Tao, Shijian Lu, and Naoto Yokoya. Foundation
+models for remote sensing and earth observation: A survey.
+IEEE Geoscience and Remote Sensing Magazine, 2025. 1
+[111] Tete Xiao, Yingcheng Liu, Bolei Zhou, Yuning Jiang, and
+Jian Sun. Unified perceptual parsing for scene understand-
+ing. InProceedings of the European conference on com-
+puter vision (ECCV), pages 418–434, 2018. 26
+[112] Zhitong Xiong, Yi Wang, Fahong Zhang, Adam J. Stew-
+art, Jo ¨elle Hanna, Damian Borth, Ioannis Papoutsis,
+Bertrand Le Saux, Gustau Camps-Valls, and Xiao Xiang
+Zhu. Neural plasticity-inspired multimodal foundation
+model for earth observation, 2024. 5, 6, 30
+
+=== PAGE BREAK ===
+
+[113] Zhitong Xiong, Yi Wang, Fahong Zhang, and Xiao Xiang
+Zhu. One for all: Toward unified foundation models for
+earth vision, 2024. 29
+[114] Hao Xu, Yuanbin Man, Mingyang Yang, Jichao Wu, Qi
+Zhang, and Jing Wang. Analytical insight of earth: A cloud-
+platform of intelligent computing for geospatial big data,
+2023. 29
+[115] Fanglong Yao, Wanxuan Lu, Heming Yang, Liangyu Xu,
+Chenglong Liu, Leiyi Hu, Hongfeng Yu, Nayu Liu, Chubo
+Deng, Deke Tang, Changshuo Chen, Jiaqi Yu, Xian Sun,
+and Kun Fu. Ringmo-sense: Remote sensing founda-
+tion model for spatiotemporal prediction via spatiotemporal
+evolution disentangling.IEEE Transactions on Geoscience
+and Remote Sensing, 61:1–21, 2023. 2, 29
+[116] Jure Zbontar, Li Jing, Ishan Misra, Yann LeCun, and
+St´ephane Deny. Barlow twins: Self-supervised learning via
+redundancy reduction.ArXiv, abs/2103.03230, 2021. 1, 4,
+16, 20
+[117] Linglin Zeng, Brian D Wardlow, Daxiang Xiang, Shun Hu,
+and Deren Li. A review of vegetation phenological metrics
+extraction using time-series, multispectral satellite data.Re-
+mote Sensing of Environment, 237:111511, 2020. 1
+[118] Lixian Zhang, Yi Zhao, Runmin Dong, Jinxiao Zhang,
+Shuai Yuan, Shilei Cao, Mengxuan Chen, Juepeng Zheng,
+Weijia Li, Wei Liu, Wayne Zhang, Litong Feng, and Hao-
+huan Fu. A 2-mae: A spatial-temporal-spectral unified re-
+mote sensing pre-training method based on anchor-aware
+masked autoencoder, 2024. 30
+[119] Mingming Zhang, Qingjie Liu, and Yunhong Wang.
+Ctxmim: Context-enhanced masked image modeling for re-
+mote sensing image understanding, 2024. 29
+[120] Tong Zhang, Peng Gao, Hao Dong, Yin Zhuang, Guanqun
+Wang, Wei Zhang, and He Chen. Consecutive pre-training:
+A knowledge transfer learning strategy with relevant unla-
+beled data for remote sensing domain.Remote Sensing, 14
+(22), 2022. 29
+[121] Wei Zhang, Miaoxin Cai, Tong Zhang, Yin Zhuang, and
+Xuerui Mao. Earthgpt: A universal multi-modal large lan-
+guage model for multi-sensor image comprehension in re-
+mote sensing domain.IEEE Transactions on Geoscience
+and Remote Sensing, 2024. 15
+[122] Yingying Zhang, Lixiang Ru, Kang Wu, Lei Yu, Lei Liang,
+Yansheng Li, and Jingdong Chen. Skysense v2: A unified
+foundation model for multi-modal remote sensing.arXiv
+preprint arXiv:2507.13812, 2025. 2
+[123] Zilun Zhang, Tiancheng Zhao, Yulong Guo, and Jianwei
+Yin. Rs5m and georsclip: A large scale vision-language
+dataset and a large vision-language model for remote sens-
+ing.IEEE Transactions on Geoscience and Remote Sens-
+ing, 2024. 15
+[124] Qi Zhu, Jiangwei Lao, Deyi Ji, Junwei Luo, Kang Wu,
+Yingying Zhang, Lixiang Ru, Jian Wang, Jingdong Chen,
+Ming Yang, et al. Skysense-o: Towards open-world remote
+sensing interpretation with vision-centric visual-language
+modeling. InProceedings of the Computer Vision and Pat-
+tern Recognition Conference, pages 14733–14744, 2025. 2
+
+=== PAGE BREAK ===
+
+A. Supplementary Material
+In this supplementary material, we provide additional de-
+tails on downstream tasks, model architecture, and training
+procedures that were omitted from the main paper due to
+space constraints.
+A.1. Taxonomy of Remote Sensing Foundation
+Models
+The current landscape of RSFMs, as illustrated in Figure 8,
+is vibrant and rapidly expanding, primarily along two av-
+enues: Visual Foundation Models (VFMs) and Visual Lan-
+guage Models (VLMs). While these models have pushed
+the boundaries of what is possible in terms of performance,
+they have largely overlooked the critical dimension of us-
+ability, creating a significant bottleneck for the broader sci-
+entific community.
+VFMs are engineered to interpret a diverse array of vi-
+sual remote sensing data. Early and influential models like
+SatMAE [17] and its successors have successfully adapted
+the masked autoencoder (MAE) [35] paradigm for temporal
+MSI and RGB imagery, demonstrating strong capabilities
+in learning spatial patterns. For instance, Scale-MAE [73]
+introduced a scale-aware pre-training strategy to handle
+multi-scale geospatial data, while SatMAE++ [67] explored
+multi-scale reconstructions to better capture scale variabil-
+ity in RS images. To address the need for multi-modal fu-
+sion, models like MMEarth [66] and the recently proposed
+Galileo [92] have emerged, integrating an extensive range
+of inputs including MSI, SAR, and DEM through sophisti-
+cated fusion frameworks. Concurrently, models focused on
+temporal analysis have also been developed. Presto [91],
+for instance, is a pixel-level Transformer pre-trained on a
+global time-series dataset, showing excellent performance
+in tasks requiring temporal understanding.
+However, a unifying weakness across almost all these
+VFMs is their profound usability challenge. They are re-
+leased as massive models, placing the onus of data acqui-
+sition, complex preprocessing, and computationally inten-
+sive fine-tuning squarely on the end-user. This approach re-
+quires users to possess significant GPU resources and deep
+technical expertise, creating a high barrier to entry. While
+Google’s AlphaEarth makes a notable exception by provid-
+ing pre-generated representation maps, it is not fully open-
+source.
+VLMs for remote sensing aim to bridge the gap between
+visual data and natural language, partially addressing cross-
+domain integration. Models like SatCLIP [44], Remote-
+Clip [54], and GeoRSCLIP [123] have adapted contrastive
+learning (e.g., CLIP [71]) to align satellite images with tex-
+tual descriptions, enabling powerful zero-shot classification
+and text-based image retrieval. More advanced models like
+EarthGPT [121] and SkySenseGPT [57] build upon frame-
+works like LLaV A [55] to facilitate conversational inter-
+action and multi-sensor (e.g., SAR, infrared) image com-
+prehension. While these models open up exciting new av-
+enues for human-computer interaction with geospatial data,
+they inherit the same fundamental usability limitations as
+VFMs. They are typically released as large models requir-
+ing expert handling and significant computational power,
+and none provide large-scale, pre-generated products that
+would lower the barrier to entry for non-specialist users.
+In summary, the field has made tremendous strides in
+improving theperformanceof RSFMs. Yet, this progress
+has been largely confined to a model-centric paradigm, in-
+advertently creating a high barrier to entry that contradicts
+the goal of democratizing science. The critical gap, there-
+fore, is not a lack of powerful models, but a lack of a user-
+centric framework that delivers their power in an accessible
+and ready-to-use format.
+A.2. Model Details
+Dual-Encoder ArchitectureGiven the distinct nature
+of Sentinel-1 SAR and Sentinel-2 MSI data, TESSERA
+employs two separate, parallel transformer-based encoder
+branches.
+•Sentinel-2 MSI Encoder: This branch processes a time
+series of 10 spectral bands (excluding the 60 m bands
+used for the detection of water vapour and clouds) from
+Sentinel-2. We used blue (B2), green (B3), red (B4), red
+edges 1–3 (B5, B6, B7), near-infrared (B8, B8A), and
+shortwave infrared (B11, B12).
+•Sentinel-1 SAR Encoder: This branch processes a time
+series of 2 polarizations from Sentinel-1 (VV and VH).
+Each encoder begins by linearly embedding the input fea-
+tures (spectral bands or polarizations) for each time step. To
+preserve sequence order and incorporate temporal context,
+learnable positional encodings based on the Day-of-Year
+(DOY) of each observation are added to these embeddings.
+The core of each encoder consists of a stack of 4 standard
+Transformer blocks [93], featuring multi-head self-attention
+and feed-forward layers to learn temporal patterns within
+the data streams.
+To derive a single vector summarizing the entire time se-
+ries for each modality, an attention-pooling layer weighs
+the importance of different time steps before aggregation.
+The resulting modality-specific embeddings (one from the
+S1 encoder, one from the S2 encoder) are then fused using
+a multi-layer perceptron.
+Projector NetworkThe fused embedding from the dual-
+encoder stage is subsequently fed into a large projector
+network. This projector is a six-layer MLP. Its architec-
+ture comprises an input layer mapping the fused embed-
+dings to 16,384 dimensions, followed by four hidden lay-
+ers of 16,384 dimensions each, and a final linear output
+layer. Each of the first five layers is a fully-connected linear
+
+=== PAGE BREAK ===
+
+Figure 8. Taxonomy of RSFMs. All RSFMs are categorized into two primary classes: visual foundation models and visual language
+models, which are further subdivided according to different methodologies. The final column of the Sankey diagram illustrates the data
+modalities used by each foundation model. Dashed rectangles indicate areas with minimal or virtually no existing research. The checker-
+board pattern denotes that, in addition to providing model parameters, these foundation models also offer globally generated, analysis-ready
+representation products derived from the model itself.
+layer followed by Batch Normalization and a ReLU non-
+linear activation function, making the network deep and
+highly non-linear. This significant expansion in dimension-
+ality is crucial, as suggested by the original Barlow Twins
+work [116], to enable effective redundancy reduction during
+the self-supervised loss computation. The final output of
+the projector is then used in the loss calculation. For down-
+stream tasks, we used the 128-dimensional output from the
+fusion MLP (before the projector) as the final pixel embed-
+ding. The TESSERA encoder (up to the fusion MLP) has
+approximately 46 million parameters, while the projector
+accounts for the majority of the model’s∼1.4 billion pa-
+rameters.
+Table 4.Architectural parameters of the TESSERA v1.0
+model.
+Component Parameters Percentage of Total
+Encoder (Feature Extractor) 45,697,026 3.29%
+Sentinel-1 Encoder 22,846,465 1.64%
+Sentinel-2 Encoder 22,850,561 1.64%
+Fusion MLP 131,200<0.01%
+Projector (for Training only) 1,344,700,421 96.71%
+Total Parameters 1,390,528,647 100.00%
+Self-Supervised TrainingThe TESSERA model is
+trained using a modified Barlow Twins objective func-
+tion [116]. For this objective, two distorted views, de-
+noted asY A andY B, are generated for each input d-pixel.
+In TESSERA, these views are created by independently
+running the temporal sampling and preprocessing pipeline
+twice for the Sentinel-1 and Sentinel-2 data associated with
+a given d-pixel. This process involves:
+1. For each view, independent sampling of a fixed num-
+ber of valid observation dates from the annual Sentinel-2
+time series (10 spectral bands).
+2. For each view, independent sampling of a fixed num-
+ber of valid observation dates from the annual Sentinel-1
+time series (2 polarizations).
+These views represent different, valid, but inherently in-
+complete glimpses of the pixel’s true temporal-spectral evo-
+lution, akin to observing the same location through intermit-
+tent cloud cover or from different satellite passes at different
+times. The model learns by reconciling these partial views.
+The inherent differences between the Sentinel-1 SAR and
+Sentinel-2 MSI modalities further provide diverse perspec-
+tives on the same underlying physical processes. Thus, our
+augmentations are fundamentally about sampling from the
+available, inherently incomplete information streams, rather
+than artificially distorting a complete input.
+
+=== PAGE BREAK ===
+
+A.3. Pre-training Details
+The TESSERA model was pre-trained using approximately
+800 million d-pixels drawn from 3,012 globally distributed
+Military Grid Reference System (MGRS) tiles chosen from
+the years 2017-2024. d-pixels were generated by spatially
+downsampling Sentinel-1 and Sentinel-2 data by a factor of
+400. This was achieved by systematically taking every 20th
+pixel along the horizontal and vertical axes. Each d-pixel
+contained the annual time series for 10 spectral bands of
+Sentinel-2 data and the annual time series of VV and VH
+polarizations for Sentinel-1 data.
+For each pixel location, after removing invalid observa-
+tions (e.g., due to cloud cover for Sentinel-2), we performed
+sparse temporal sampling. This involves randomly select-
+ing a fixed number of 40 valid observation dates from the
+year’s data. The sequence length for the Transformer en-
+coders was fixed at 40 timesteps for both modalities. If there
+are fewer than 40 cloud-free dates, replacement sampling is
+performed. This strategy standardizes the input sequence
+length and serves as a key data augmentation mechanism,
+building invariance to data gaps and teaching the model that
+the underlying signal persists regardless of the specific dates
+observed. Finally, these values were standardized using
+global statistics to stabilize training. The temporal context
+of each sampled observation was encoded by transforming
+its normalized Day-of-Year (DOY) into sine and cosine fea-
+tures, which were then concatenated with the corresponding
+spectral or backscatter measurements.
+As we were in a compute-limited rather than data-limited
+pre-training regime, we trained for a single epoch, which
+corresponded to approximately 6200 GPU hours on 16
+AMD MI300X GPUs (192GB memory each). We used Py-
+Torch with Fully Sharded Data Parallel (FSDP) and Auto-
+matic Mixed Precision (AMP) enabled. AdamW optimizer
+was used with a base learning rate of 0.002 and weight de-
+cay of1×10 −6. The learning rate schedule consisted of a
+linear warmup during the initial 10% of steps, followed im-
+mediately by a cosine decay for the remainder of training.
+The global batch size was 32,768. Key training dynamics,
+including loss curves, learning rate schedule, and evolution
+of downstream performance during pre-training, are visual-
+ized in Supplementary Figure 10.
+A crucial aspect of our training methodology is a data
+shuffling strategy, essential for learning globally represen-
+tative features from a representative sample of a vast and
+geographically diverse dataset. Given that d-pixels within
+an individual MGRS tile exhibit high spatial autocorrela-
+tion, a naive sequential or locally-shuffled data loading pro-
+cess would expose the model to strong geographic biases
+in each batch. To overcome this, we developed a custom
+data processing pipeline to implement a truly global shuffle
+across all≈800 million training samples, which constituted
+more than 2 TB of initial d-pixel data. This pipeline is con-
+ceptually illustrated in Figure 11 a.
+The impact of this approach on training stability is em-
+pirically demonstrated in Figure 11 b. Compared to a
+conventional localized shuffling strategy, which results in
+a highly volatile loss curve (top plot), our global shuffling
+strategy yields a markedly smoother and more stable con-
+vergence (bottom plot). This enhanced stability is funda-
+mental for robust convergence and for preventing the model
+from overfitting to regional characteristics.
+Operationally, the process begins with the aggregation
+of d-pixels from all MGRS tiles into a single, comprehen-
+sive pool. A global shuffling operation is performed on this
+pool, a critical step to break the spatial contiguity of data
+from individual tiles and ensure each training batch con-
+tains a diverse mix of geographical and environmental con-
+texts. Following this global shuffle, the data augmentation
+required by the Barlow Twins framework is applied.
+To manage the significant I/O demands of shuffling and
+augmenting such a large volume of data, we developed a
+custom high-performance pipeline that handles the reading
+of raw d-pixel data, executes the global shuffle, and pre-
+pares the data for augmentation. The resulting pairs of aug-
+mented d-pixels are then serialized into a compact, pickle-
+like file format. These files are organized into manageable
+chunks and loaded by PyTorchDataLoaderworkers, which
+stream the data and assemble the final training batches. This
+end-to-end pipeline ensures that each batch presented to
+the model is a well-shuffled, globally diverse representa-
+tion of Earth’s surface characteristics, which is fundamen-
+tal for training a robust pixel-wise foundation model like
+TESSERA.
+A.4. Global Embedding Map Generation
+A primary output of the TESSERA project is the generation
+of annual global embedding maps with 10 meter resolution
+for the years 2017-2024. To generate these maps, the pre-
+trained and frozen TESSERA dual encoder (excluding the
+projector) is used. For each 10 meter pixel on the globe and
+for each year:
+1. The full Sentinel-1 and Sentinel-2 time series data at
+10 meter resolution are acquired and pre-processed to
+form d-pixels. Unlike pre-training, no spatial downsam-
+pling is performed at this stage.
+2. A fixed number of 40 timesteps is sampled from the
+valid observations within the year for both Sentinel-1
+and Sentinel-2 data, along with their DOY positional en-
+codings.
+3. These sampled time series are fed into their respective
+frozen TESSERA encoders.
+4. The outputs from the S1 and S2 encoders are fused by
+the MLP, producing a 128-dimensional embedding vec-
+tor for that pixel for that year.
+This process is repeated for all land pixels globally to create
+
+=== PAGE BREAK ===
+
+Figure 9.TESSERA is trained on globally-distributed training data.TESSERA was trained on over 3000 MGRS tiles distributed
+globally from 2017 to 2024. The colour of each hexagon in the map corresponds to the average number of valid observation days for
+Sentinel-1 (S1) and Sentinel-2 (S2), as defined by the bivariate colour legend. This visualization highlights the density of combined S1
+and S2 observations available for training across different regions, ensuring the model learns from a diverse range of geographical and
+environmental conditions.
+Figure 10.Training dynamics curves show that TESSERA rapidly reaches its asymptotes. a, Training loss curves, showing the
+main Barlow Twins loss, the mixup regularization loss, and the total loss.b, The learning rate schedule, consisting of a linear warmup
+phase followed by a cosine decay.c, RankMe score calculated on the high-dimensional (16,384-D) output of the projector, which quickly
+saturates, indicating the model is effectively utilizing the large feature space for redundancy reduction.d, RankMe score of the final
+128-D fused representation, showing that the embeddings used for downstream tasks become progressively richer and less redundant.e,
+f, Downstream performance on the Austrian crop classification validation set, tracked by accuracy and F1 score respectively during pre-
+training, showing a steady improvement that correlates with the training progress.
+
+=== PAGE BREAK ===
+
+Figure 11.Data shuffling greatly improves training stability.
+a, Schematic of the data shuffling and loading process. D-pixels
+(coloured squares) from thousands of MGRS tiles are first ag-
+gregated into a global pool. A custom Rust binary performs a
+global shuffle on this multi-terabyte dataset before applying aug-
+mentations. The processed data is then organized into chunks and
+streamed by data workers to form well-shuffled, globally diverse
+training batches.b, Comparison of training loss curves. The top
+plot shows the volatile loss progression typical of a localized shuf-
+fling strategy, which is susceptible to geographic bias. The bottom
+plot shows the significantly smoother and more stable loss curve
+achieved with our global shuffling pipeline, demonstrating more
+effective and robust model convergence.
+an annual embeddings map of shape (H, W, 128), where H
+and W are the dimensions of the global 10 meter grid.
+A.5. Spatial Context: Pixel-wise vs. Patch-based
+Approaches
+In this section, we elaborate on the rationale behind
+TESSERA’s pixel-wise design compared to traditional
+patch-based architectures. By maintaining pixel-wise inde-
+pendence, TESSERA avoids embedding fixed spatial priors,
+which preserves the integrity of raw spectral signatures and
+ensures downstream performance is driven by fundamental
+signal characteristics rather than pre-determined structural
+assumptions.
+Introducing spatial context via fixed patches (Spatial
+variant) introduces significant vulnerabilities, particularly
+in regions with high cloud frequency such as Borneo. As
+the quantitative comparisons demonstrate (Figure 12a), in-
+troducing patch-based spatial priors can negatively impact
+the robustness of the representations. Furthermore, filtering
+for strictly clear spatial patches results in an exponential de-
+crease in data availability, leading to severe embedding arti-
+facts. This vulnerability is clearly visible in the embedding
+visualizations of the Borneo region (Figure 12b), where im-
+posing a spatial patch requirement drastically reduces valid
+data and creates massive spatial voids. By extracting fea-
+tures at the pixel level, TESSERA allows researchers to in-
+corporate domain-specific spatial constraintspost hocwith-
+out compromising the foundational embeddings.
+Figure 12.Spatial Context Ablation.(a) Quantitative compar-
+ison detailing performance differences when introducing patch-
+based spatial priors. (b) Visualization of the generated embeddings
+in the Borneo region.
+A.6. Geographic Generalization
+To demonstrate TESSERA’s ability to generalize to di-
+verse phenological regions and smallholder agricultural set-
+tings, we evaluate our model on the CropHarvest Togo
+dataset [90] and the Ethiopia Crop classification dataset
+[10]. Despite using only a continuous DoY sinusoidal en-
+coding as a weak temporal prior, TESSERA correctly han-
+dles local seasonality driven primarily by spectral trends.
+Table 5 compares TESSERA against other baseline
+foundation models. TESSERA significantly outperforms
+CROMA and AlphaEarth on both benchmarks, demonstrat-
+ing superior generalization in challenging zero-shot and
+low-data transfer scenarios characteristic of Sub-Saharan
+Africa.
+
+=== PAGE BREAK ===
+
+Table 5.Downstream Performance on Sub-Saharan African
+Benchmarks.Evaluation using F1 scores (%) for the Togo
+(CropHarvest) and Accuary (%) for the Ethiopia Crop dataset.
+TESSERA demonstrates superior adaptability to local seasonali-
+ties compared to existing models.
+Model Togo (F1 %) Ethiopia (Acc %)
+CROMA 79.15 /
+AlphaEarth /∼41
+TESSERA (Ours) 83.01 44.92
+A.7. Scaling with data and network size
+To identify an optimal and efficient architecture for
+TESSERA, and to understand the scaling properties of our
+model, we conducted a series of experiments using the Aus-
+trian crop classification task as the downstream task. Our
+investigation focused on two main areas: the impact of the
+projector network’s dimensions and the overall model scal-
+ing laws concerning performance versus computational cost
+(Figure 7).
+Our experiments revealed that the performance of the
+final embeddings on the chosen downstream task of crop
+classification in Austria was relatively insensitive to the
+size of the Transformer encoders. We found that using
+4 transformer layers, each with 4 attention heads, pro-
+vided a strong baseline without incurring excessive compu-
+tational overhead during inference. This makes the feature-
+extracting part of the model computationally efficient.
+In contrast, the architecture of the projector network
+proved to be critical for effective self-supervised learning.
+As detailed in Section A.2, the full projector is a six-layer
+MLP, consisting of an input and an output layer for accom-
+modating dimensional changes, and four core hidden lay-
+ers. Our parameter sweep focused on this computationally
+intensive hidden block. We varied the number of these hid-
+den layers (referred to as ’depth’ in Figure 7 a) and their
+width (number of neurons per layer), with results shown
+in Figure 7 a. As discussed by Zbontar et al. [116], deeper
+and wider projectors consistently improved performance, as
+measured by the validation F1 score in the downstream task.
+The highest validation score was achieved with the largest
+configuration tested (8 hidden layers, 32,768 neurons wide).
+However, this configuration led to an out-of-memory error
+with our standard global batch size; therefore, we halved the
+batch size to 16,384 to enable stable training for this specific
+setup, indicated by the dagger symbol (†) in the figure. For
+the final TESSERA v1.0 model, we selected the configura-
+tion with four hidden layers and a width of 16,384, marked
+with a star (*), as it provided a strong balance between high
+performance and computational efficiency.
+Furthermore, we analysed the relationship between
+model performance, the number of trainable parameters,
+and the total training computation (FLOPs), as shown in
+Figure 7 b. The results demonstrate a clear scaling trend:
+model performance improves predictably with increases
+in model size and computational budget. This confirms
+that TESSERA’s performance can be further enhanced with
+greater computational resources, following established scal-
+ing laws for large neural networks. The final TESSERA
+v1.0 model is marked with a star (*) on this curve, high-
+lighting its position as a model that balances state-of-the-art
+performance with cost-effective training requirements.
+A.7.1. Ablation study details
+To validate the contribution of each key component within
+the TESSERA framework, we performed an ablation study.
+We systematically removed or disabled individual compo-
+nents from our full model (the baseline) and evaluated the
+impact on the 100x downsampled Austrian crop classifica-
+tion dataset.
+Performance was evaluated using two metrics: the stan-
+dard validation overall F1 score, and a measure of the ef-
+fective rank of the learned embeddings, which we refer
+to as the RankMe score [32]. The RankMe score quanti-
+fies the richness of the embeddings by measuring how uni-
+formly the information is distributed across the feature di-
+mensions. Given a batch of embeddings represented by the
+matrixZ∈R N×D , whereNis the batch size andDis
+the embedding dimension, we first compute its singular val-
+uess 1,s 2,...,s D. These are normalized to form a prob-
+ability distributionp i =s i/P
+jsj. The RankMe score is
+the Shannon entropy of this distribution, normalized by the
+maximum possible entropy:
+RRankMe =−PD
+i=1pi log(pi)
+log(D) (1)
+A score closer to 1 indicates that the embeddings are of
+higher effective rank, utilizing the full dimensionality of the
+feature space more effectively to create richer, less redun-
+dant representations.
+Our analysis reveals several key insights into the model’s
+architecture and training strategy. The most critical compo-
+nent turns out to be the global data shuffling pipeline, which
+is designed to break spatial autocorrelation and present
+the model with geographically diverse mini-batches. Re-
+moving mixup regularization also severely degrades re-
+sults. When both are removed, the model’s performance
+collapses, showing that the combination of global shuffling
+and mixup regularization is needed to prevent overfitting
+and to learn generalizable robust representations.
+With removal of Sentinel-1 data, task performance de-
+creases moderately, demonstrating some gain from the fu-
+sion of optical and SAR data yields. However, perfor-
+mance is still relatively good even with only Sentinel-2 data.
+This highlights both TESSERA’s overall robustness and its
+
+=== PAGE BREAK ===
+
+Table 6. Parameter sweep of the number of sampled timesteps (L).
+We evaluate the trade-off between F1-score on the Austrian crop
+classification dataset and inference speed.
+L Inference Speed
+(samples/sec) Encoder Param. Training Samples F1 Score (%)
+15 1509
+∼36.4M 22M
+65.04
+20 1452 66.58
+30 1276 71.43
+40 1068 73.34
+50 724 73.69
+60 497 73.77
+continued efficacy in regions or historical periods where
+Sentinel-1 data are sparse or unavailable, which is not un-
+common in practice.
+Finally, the effect of quantization is particularly note-
+worthy. We employ Quantization-Aware Training (QAT) to
+convert the embeddings from 32-bit floating-point (float32)
+to 8-bit integer (int8) format. Removing this quantization
+step (i.e. using full float32 precision) results in a marginal
+performance improvement. This demonstrates the success
+of our QAT strategy: we achieve a nearly four-fold re-
+duction in the storage and bandwidth requirements for our
+final data products, with a negligible impact on embed-
+ding quality. This underlies our ”Embeddings-as-Data” ap-
+proach, making global-scale high-resolution analysis prac-
+tical: Without this, each year’s embeddings would consume
+1PB, making the hosting of 8 years of embedding costly and
+likely unachievable.
+A.7.2. Justification for the Number of Sampled
+Timesteps (L)
+As detailed in the main paper, TESSERA is trained using
+sparse random temporal sampling to enforce invariance to
+the selection of valid observations. A critical hyperparame-
+ter in this process isL, the number of valid timesteps sam-
+pled. We finalized our choice atL= 40. This decision is
+supported by two primary justifications:
+1.Performance vs. Efficiency Trade-off:We conducted
+a comprehensive parameter sweep on the Austrian crop
+classification dataset to determine the optimal balance
+between model performance and computational cost
+(i.e., inference speed). As demonstrated in Table 6, set-
+tingL= 40achieves the best trade-off. While further
+increasingL(e.g., to 50 or 60) results in only marginal
+or negligible performance gains, it increases the compu-
+tational overhead during inference.
+2.Global Data Representativeness:Our choice is also
+empirically grounded in global-scale data statistics. We
+analyzed the global distribution of valid Sentinel-2 ob-
+servations acquired between 2017 and 2024 and found
+that the global average number of valid observations per
+pixel is approximately 37.6. This confirms thatL= 40
+is not only efficient but also a robust and representative
+value for global-scale modeling, closely aligning with
+the average valid Sentinel-2 data availability worldwide
+Figure 13. A distribution map of the number of valid Sentinel-2
+observations from 2017 to 2024. Valid observations are defined as
+those that are free of clouds, water bodies, and snow.
+(see Figure 13).
+Furthermore, we observed that downstream task perfor-
+mance is largely insensitive to the number of Sentinel-1 ob-
+servations sampled, likely due to the higher temporal den-
+sity and all-weather capabilities of SAR. Therefore, for the
+sake of architectural consistency and to simplify the multi-
+modal training pipeline, we also set the number of sampled
+timesteps for Sentinel-1 toL= 40.
+A.8. Downstream Task Application Methodology
+A.8.1. TESSERA
+A core motivation for self-supervised learning with founda-
+tion models is the creation of task-agnostic feature embed-
+dings that can be effectively transferred to various down-
+stream tasks, particularly in scenarios with limited labelled
+data. Having pre-trained TESSERA on large unlabelled
+datasets, we evaluated the utility of its learned embeddings
+across different remote sensing applications. The evalua-
+tion methodology involves using pre-trained TESSERA en-
+coders as fixed feature extractors.
+1.Download Embeddings for the Region of Interest:
+The GEOTESSERAPython library allows users to down-
+load embeddings for a desired region and year in the
+form of a numpy array.
+2.Prepare labelled Downstream Data: The labelled
+dataset for the target task (e.g., pixel-level crop-type la-
+bels, canopy height measurements, or land use change
+polygons) is prepared.
+3.Design Task-Specific Head: A lightweight, task-
+specific neural network module (the ”head”) is designed.
+
+=== PAGE BREAK ===
+
+This head takes the extracted TESSERA embeddings as
+input.
+• For pixel-wise classification (e.g., crop classification),
+the head is typically a shallow MLP (1-3 layers) end-
+ing in a softmax output layer.
+• For pixel-wise regression (e.g., canopy height regres-
+sion), the head is usually an MLP ending in a single
+linear output neuron.
+• For tasks requiring spatial context from the embed-
+dings (e.g., canopy height mapping over an area, se-
+mantic segmentation), the input to the head can be a
+patch of TESSERA embeddings (e.g.,64×64×128).
+The head might then be a convolutional architecture,
+such as a UNet, that processes these spatial feature
+maps to produce dense predictions.
+4.Train Downstream Head: Only the parameters of this
+newly defined task head are trained using the extracted
+TESSERA embeddings as input features and the cor-
+responding labels. Standard supervised learning tech-
+niques, optimizers (e.g., Adam), and task-appropriate
+loss functions (e.g., Cross-Entropy for classification,
+Mean Squared Error for regression) are used. This train-
+ing typically requires significantly less labelled data and
+computational power compared to training a deep model
+from scratch.
+5.Evaluation: Once the head is trained, inference is per-
+formed on a test set by extracting TESSERA embed-
+dings for the test samples and passing them through the
+trained head. Performance is evaluated using standard
+metrics relevant to the task.
+This workflow allows the use of TESSERA embeddings in
+a range of diverse applications, demonstrating its role as a
+foundational model for geospatial analysis.
+TESSERA users who would like to generate their own
+embeddings can load the frozen weights from the saved
+pre-training checkpoint into the TESSERA dual encoder ar-
+chitecture. For each input sample (e.g., pixel, object, or
+patch) in the region of interest, its corresponding Sentinel-1
+and Sentinel-2 time series data for the relevant year must
+be downloaded and processed using the d-pixel creation
+pipeline. These d-pixels are passed through the frozen en-
+coders and their outputs are fused by the MLP to gener-
+ate the final 128-dimensional TESSERA embedding for that
+sample. To enhance stability, multiple embeddings can be
+created with different random temporal samples and aver-
+aged.
+A.8.2. Presto & AlphaEarth
+For Presto and AlphaEarth, we adopted a methodology con-
+ceptually similar to TESSERA’s, focusing on evaluating
+their publicly available embeddings. For Presto, we used
+the official Google Earth Engine (GEE) scripts provided by
+the authors to generate embeddings for the regions of inter-
+Figure 14. The visualization of embeddings for some downstream
+tasks of TESSERA, AlphaEarth, and Presto
+est. The data preprocessing was executed on GEE, and in-
+ference was subsequently performed on Google Vertex AI,
+loading the officially released pre-trained model weights.
+For AlphaEarth, we directly used the publicly available
+Google AlphaEarth Satellite Embedding V1 dataset [13].
+In both cases, the pre-computed embeddings served as the
+input features. The visualization of embeddings for some
+downstream tasks of TESSERA, AlphaEarth, and Presto
+are shown in Figure 14. We then designed and trained
+lightweight task-specific heads (e.g., MLPs) for each down-
+stream task, following the same principle as described for
+TESSERA.
+A.8.3. Other RSFMs
+To evaluate the performance of other RSFMs, we used
+the standardizedPangaeaevaluation framework. This
+framework provides a consistent protocol for benchmark-
+ing RSFMs across a suite of diverse downstream tasks. We
+evaluated these models on the Austrian Crop (Segmenta-
+tion), PASTIS-R, Biomassters, and Borneo CHM datasets.
+Unlike our embedding-focused approach for TESSERA, the
+Pangaea protocol typically involves training task-specific
+decoders on top of the pre-trained encoder features. For
+classification tasks, a simpleLinearClassifierhead
+was attached and trained. For the regression and segmen-
+tation tasks, heavier decoders such asUperNet+LTAEor
+a baselineUnetwere employed, as specified in the bench-
+mark’s guidelines. The exact downstream task heads used
+for these models are detailed in Table 7.
+A.9. Downstream Task: Austrian Crop Classifica-
+tion
+Dataset and PreprocessingWe used the publicly avail-
+able INVEKOS dataset for Austria, focusing on the 2022
+
+=== PAGE BREAK ===
+
+Table 7.Downstream task head specification.This table lists the
+decoders (heads) used for different tasks across all models. Note
+that for each model listed, the Regression and Segmentation tasks
+use the same head.
+Model Classification Head Regression & Segmentation Head
+CROMA LinearClassifier UperNet+LTAE
+DOFA LinearClassifier UperNet+LTAE
+Prithvi LinearClassifier UperNet+LTAE
+RemoteCLIP LinearClassifier UperNet+LTAE
+SatlasNet LinearClassifier UperNet+LTAE
+Scale-MAE LinearClassifier UperNet+LTAE
+SpectralGPT LinearClassifier UperNet+LTAE
+Galileo LinearClassifier UperNet+LTAE
+Skysense LinearClassifier UperNet+LTAE
+ViT Baseline LinearClassifier UperNet+LTAE
+UNet Baseline LinearClassifier Unet
+Presto LinearClassifier Unet
+AlphaEarth LinearClassifier Unet
+TESSERA LinearClassifier Unet
+growing season [1]. The data set originally contained 154
+crop types, which we grouped into 17 broader classes (for
+example, combining sugar beet and feed beet) based on phe-
+nological similarity and sample availability to ensure robust
+training and evaluation.
+When constructing the pixel-level classification dataset,
+we use fields as the unit for data splitting. Each field is as-
+signed a unique identifier along with its corresponding area.
+We allocate pixels from fields constituting X% of the total
+area to the training set, while the remaining (1-X)% of the
+total field area is divided such that 1/7 is used for validation
+and the rest for testing. For training, validation, and test
+splits, we ensure that all 17 crop types are represented in
+each split.
+For the patch-based dataset designed for segmentation
+tasks, we first divide the region of interest vertically into
+five equal parts. From the topmost section, we extract 1000
+patches of 640m × 640m as the test set. An equal number
+of patches with the same dimensions are cropped from the
+section immediately below for the validation set. From the
+remaining three sections, 3000 patches of the same size are
+sampled to form the training set. All patches maintain a
+spatial resolution of 10 meters.
+Pixel-wise Classification BaselinesTo provide a com-
+prehensive performance comparison, we implemented three
+distinct models for pixel-wise classification:
+•TESSERA + MLP: The primary model, where the frozen
+128-dimensional TESSERA embeddings were used as in-
+put to a simple MLP. The MLP consisted of two hid-
+den layers with 256 and 128 neurons, respectively, using
+ReLU activation functions, followed by a softmax output
+layer for the 17 classes.
+•Presto + MLP: For a direct and fair comparison with a
+leading foundation model, we used the official pre-trained
+Presto model [91] to generate its pixel embeddings. These
+embeddings were then fed into an MLP head identical to
+the one used for TESSERA.
+•AlphaEarth + MLP: To include another key foundation
+model, we used the publicly available Google AphaEarth
+Satellite Embedding V1 dataset [13]. These embeddings
+were similarly fed into an MLP head identical to the one
+used for TESSERA.
+•Random Forest: As a traditional baseline, we trained a
+Random Forest (RF) classifier directly on raw time-series
+data. For each pixel, we used all available Sentinel-1
+(2 polarizations) and Sentinel-2 (10 spectral bands) ob-
+servations throughout the year. The temporal and spec-
+tral/polarization dimensions were flattened and concate-
+nated to form a single 1256-dimensional feature vector.
+The RF model was configured with 100 trees, while all
+other hyperparameters retained their default values as im-
+plemented in theSCIKIT-LEARNlibrary.
+For the experiments shown in the main text’s figure, we
+trained these models on randomly selected subsets of the
+data (from 1% to 30% for panel a; specified samples-per-
+class for panel b), using a fixed validation set for hyperpa-
+rameter tuning and a held-out test set for final evaluation.
+Patch-wise Semantic SegmentationTo assess spatial-
+contextual performance, we conducted a semantic segmen-
+tation experiment. The approach varied based on the foun-
+dation model’s architecture:
+• For the foundation models capable of generating pixel-
+wise embeddings, namelyTESSERA,Presto[91], and
+AlphaEarth[13], a distinct workflow was used. We first
+construct patches from their pixel-level embeddings (e.g.,
+a data cube of sizeH×W×C). These patches were then
+fed into a standardUNetarchitecture [75], which learns to
+model the spatial relationships between the embeddings
+to produce a segmentation map. It is noteworthy that
+while TESSERA and Presto’s base embeddings do not ex-
+plicitly model spatial context, AlphaEarth’s do. However,
+their shared ability to generate pixel-level outputs makes
+them suitable for this UNet-based downstream approach.
+• For other foundation models that are inherently patch-
+based (e.g., Prithvi [84], Satlas [8]), their encoders al-
+ready process image patches. Therefore, for these mod-
+els, we only attach and train aUPerNet decoder headto
+their encoders to generate the final segmentation output.
+We did not freeze the encoders during the fine-tuning.
+Performance was measured using mean Intersection over
+Union (mIoU) and macro F1 scores. A visual compari-
+son for example patches is provided in Supplementary Fig-
+ure 15.
+Embedding Space AnalysisThe 2D visualizations
+shown in Figure 16 were generated by applying the Uni-
+form Manifold Approximation and Projection (UMAP) [62]
+algorithm to the embeddings of every pixel within the
+Austrian study area. UMAP is a non-linear dimension-
+
+=== PAGE BREAK ===
+
+Table 8.Pre-training hyperparameters for the TESSERA v1.0 model.
+Description Symbol Value
+Optimizer & Schedule
+Optimizer - AdamW
+Batch Size (Per-GPU)B local 2,048
+Batch Size (Global)B global 32,768 (16 GPUs×2,048)
+Epochs - 1
+Base Learning Rateη0.002
+Weight Decayλ wd 1×10 −6
+Learning Rate Schedule - Linear warmup (10%) followed by cosine decay
+Gradient Clipping Norm - 2.0
+Loss Function
+Barlow Twins Lambdaλ BT 5×10 −3
+Mixup Lambdaλ mix 1.0
+Architecture & Data
+Sequence LengthL40
+Representation DimensionD repr 128
+Projector Output DimensionD proj 16,384
+Quantization Bits (QAT) - 8
+Figure 15.TESSERA predictions most closely resemble
+the ground truth for patch-based semantic segmentation.
+Each row corresponds to a different patch size (32x32, 64x64,
+128x128). The first column shows the ground truth segmenta-
+tion. For each model (TESSERA, Presto, and AlphaEarth), two
+columns are displayed: a PCA visualization of the input embed-
+dings for the patch (labelled ’Embedding’) and the final predicted
+segmentation map (labelled ’Predicted’).
+ality reduction technique based on Riemannian geometry
+and algebraic topology. It constructs a weighted k-nearest
+neighbour graph in the original high-dimensional space,
+then optimizes a low-dimensional projection to primarily
+preserve local distances and local structure. UMAP, like
+other non-linear techniques such as t-SNE and LargeVis,
+is designed to preserve local relationships within high-
+Figure 16. UMAP visualization of the embedding spaces
+for TESSERA, Presto, and AlphaEarth for 17 crop classes.
+TESSERA’s embeddings exhibit clearer separation and more co-
+herent clustering visually.
+dimensional data; however, it is also able to retain more
+of the global structure, making it particularly effective for
+understanding both fine-scale and broader patterns in the
+embedding space. In this work, the entire embedding map
+(for example, a shape arrayH×W×128, where H and W
+are the height and width of the region) was used as a direct
+input to UMAP for the TESSERA, Presto, and AlphaEarth
+embeddings.
+To quantitatively measure the quality of the clustering in
+the original 128-dimensional space, we calculated the Sil-
+houette score and the Davies-Bouldin Index.
+• TheSilhouette score,s(i), for a single data pointimea-
+sures how similar it is to its own cluster compared to other
+clusters. It is defined as:
+s(i) = b(i)−a(i)
+max(a(i),b(i)) (2)
+wherea(i)is the mean distance betweeniand all other
+points in the same cluster, andb(i)is the mean distance
+fromito all points in the nearest neighbouring cluster.
+
+=== PAGE BREAK ===
+
+Table 9.Ablation on the Austrian Crop dataset: Seasonal Data
+Inclusion.We report theValidation F1score (higher↑is better)
+for the crop classification task. The columns for Spring to Winter
+use✓to indicate inclusion and✗to indicate exclusion. Parenthe-
+ses show change vs. the Full Model.
+Configuration Spring Summer Autumn Winter F1 (↑)
+Full Model (Baseline)✓ ✓ ✓ ✓78.94
+w/o Spring✗ ✓ ✓ ✓78.62 (-0.32)
+w/o Summer✓ ✗ ✓ ✓78.10 (-0.84)
+w/o Autumn✓ ✓ ✗ ✓78.22 (-0.72)
+w/o Winter✓ ✓ ✓ ✗79.83(+0.89)
+The score ranges from -1 to 1, where a high value indi-
+cates that the object is well matched to its own cluster and
+poorly matched to neighboring clusters.
+• TheDavies-Bouldin Index(DBI) evaluates clustering
+quality by computing the ratio of within-cluster scatter
+to between-cluster separation. For a set ofkclusters, it is
+defined as:
+DBI= 1
+k
+kX
+i=1
+max
+j̸=i
+σi +σ j
+d(ci,c j)
+
+(3)
+whereσ i is the average distance of all points in clusterito
+their centroidc i, andd(c i,c j)is the distance between the
+centroids of clustersiandj. Lower DBI values indicate
+better clustering, with a score of 0 representing the ideal
+case where the clusters are compact and well separated.
+Impact of Seasonal WindowsWe analyze the impact of
+using different temporal windows on the model’s perfor-
+mance for the downstream task of crop classification on the
+Austrian dataset. As shown in Table 9, we conduct an ab-
+lation by systematically excluding one of the four meteo-
+rological seasons (Spring, Summer, Autumn, Winter) from
+the input time series. The results reveal that, for this specific
+regional dataset, excluding time steps from the winter sea-
+son improves the classification F1 score from 78.94% (all
+seasons included) to79.83%. This suggests that the dor-
+mant winter period, which is typically characterized by low
+vegetation phenological activity and is prone to cloud cover,
+snow, or reduced solar zenith angle effects, introduces a
+substantial amount of non-discriminative noise. By exclud-
+ing the winter data, the model can focus its attention and
+resources on the most informative growing seasons, which
+allows for the learning of a more concise and effective tem-
+poral representation for crop type identification.
+A.10. Downstream Task: Canopy height estimation
+Study Areas and Ground Truth DatasetsCanopy
+height prediction was evaluated in a 5×6 km area in the
+Danum Valley, Borneo. This region is covered in tropi-
+cal rainforest dominated by species in the Dipterocarpaceae
+family, which hosts some of the tallest trees in the tropics
+[68, 79]. Ground truth data was derived from airborne laser
+scanning (ALS) performed in February 2020 [18]. ALS
+data provides detailed 3D point clouds of vegetation and
+terrain structure, which were processed using theLSPIKE-
+FREEalgorithm [30] to estimate top-of-canopy height at 1 m
+resolution. These canopy height rasters were then down-
+sampled using mean pooling to 10 m to match the resolution
+of the TESSERA representations.
+Modelling methodsTo predict the canopy height from
+the different embeddings, we used a standard U-Net archi-
+tecture [75]. It takes as input a 32×32 pixel patch (cov-
+ering a 320×320 m area) of representations. For 128-
+dimensional embeddings (as in TESSERA and Presto), this
+results in a 32×32×128 data cube. The network outputs a
+single-band 32×32 raster of predicted canopy height val-
+ues. The proposed U-Net contains approximately 30 mil-
+lion parameters and was trained for 200 epochs using a
+batch size of four patches. At the end of each epoch, the
+model was evaluated using validation data and the model
+with the best performance on the validation set was retained
+for the final evaluation. In practice, training usually con-
+verged within the first 20 epochs, with rare boosts in perfor-
+mance later in training. Model training was done in Python
+using PyTorch.
+To ensure spatial generalization and avoid overfitting lo-
+cal patterns, the reference data were divided into training,
+validation, and test sets that are spatially disjoint. Each
+study region was divided into four spatial folds based on
+cardinal directions (bottom, top, left, right), each fold cov-
+ering 50% of the area. For each fold, the remaining half of
+the region was used for training and validation. To account
+for inherent model randomness, we trained three indepen-
+dent models per fold, resulting in 12 trained models for each
+foundation model. This strategy captures variability due to
+both spatial heterogeneity and training randomness. The fi-
+nal performance of the model was evaluated on the test data
+held using the following metrics: coefficient of determina-
+tion (R²), root mean square error (RMSE), and mean bias.
+BaselinesTESSERA, Presto [91], and AlphaEarth [13]
+embeddings were compared by training identical models
+using each representation as input, with all other settings
+held constant. Each model was trained for 200 epochs on
+the same data split, and the version achieving the best vali-
+dation performance was selected for final evaluation on the
+held-out test set.
+To benchmark performance against classical remote
+sensing approaches applied at the global scale, we com-
+pared the predictions against a global canopy height prod-
+uct: Tolan et al. [2024][89] (Meta). These maps were
+downloaded at 10 m resolution from Google Earth Engine
+and compared directly to the canopy height derived from
+
+=== PAGE BREAK ===
+
+ALS. Although there are some temporal mismatches be-
+tween ALS acquisition (2020) and global products, we as-
+sume relative stability of canopy height in the short term in
+this region, which is reasonable given that the area was not
+logged or burned.
+Finally, we trained the U-Net model using Sentinel-2 in-
+put as a baseline. This approach retained the same model
+architecture, patch size, and evaluation setup, but replaced
+embeddings with cloud-free annual median composites of
+Sentinel-2 imagery. Cloud masking and compositing were
+performed in GEE, resulting in 12 channel input images,
+with one channel for each Sentinel-2 spectral band. Al-
+though different Sentinel-2 bands have different spatial res-
+olutions, all were resampled to 10 m to match the FM
+pipelines.
+A.11. Downstream Task: Above-ground biomass
+estimation
+DatasetFor the AGB regression task, we used the ground
+truth data from the BioMassters dataset [65]. This dataset
+covers nearly 11,500 forest patches in Finland, with each
+patch representing a 2,560×2,560 m area at 10 meter pixel
+resolution. Above-Ground Biomass (AGB) values were de-
+termined using open forest airborne LiDAR data and an ex-
+tensive network of field plots as reference measurements
+by the Finnish Forest Centre. Patch coordinates and col-
+lection years–provided by the authors of Ref. [65] upon
+request–were used to retrieve satellite imagery to generate
+TESSERA and Google AlphaEarth Satellite Embeddings
+(AlphaEarth) [13].
+UNet model architectureTo obtain AGB estimates, we
+trained a convolutional neural network based on the UNet
+architecture [75], using TESSERA or AlphaEarth embed-
+dings [13] as input. The model received 256×256×128 and
+256×256×64 input patches for TESSERA and AlphaEarth,
+respectively, where the dimension denotes the number of
+channels.
+The network followed a standard UNet structure with
+two encoder and decoder stages. The encoder comprised
+two convolutional blocks with 256 and 512 channels, each
+consisting of two 3×3 convolutions followed by batch nor-
+malization, ReLU activation, and 2×2 max pooling. A
+1024-channel bottleneck block was used prior to upsam-
+pling. The decoder mirrored the encoder, using transposed
+convolutions for upsampling and skip connections from
+the encoder, followed by double-convolution blocks. A fi-
+nal 1×1 convolution produced the single-channel regression
+output. The model had approximately 30 million trainable
+parameters. The loss function was defined as the root mean
+squared error (RMSE) averaged over individual patches.
+Following the evaluation protocol in Ref. [65], RMSE
+was computed on a test set of 2773 patches and reported
+as the average RMSE per patch. For limited label testing,
+a subset of labels was randomly chosen from the remain-
+ing data and randomly divided into training and validation
+sets (80:20). The UNet model was trained on the embed-
+dings for 80 epochs, with the model achieving the lowest
+loss on the validation set selected as the final model. Fig-
+ure 5 shows the average RMSE calculated over five random
+splits, with bars indicating the minimum–maximum range
+when it exceeds the size of the dot. Training was performed
+with Adam Optimizer (learning rate = 1e-4, batch size = 4).
+Task-specific training on the entire dataset (80% training /
+20% validation) using a single NVIDIA H200 GPU and 8
+CPU cores took approximately 5 hours for TESSERA em-
+beddings and 4 hours for the AlphaEarth embeddings.
+BaselinesIn addition to AlphaEarth, we compared the
+performance of TESSERA to two other baselines: the win-
+ner of the BioMassters competition [65] and the Spec-
+tralGPT foundation model [36] combined with a UPer-
+Net [111].
+For SpectralGPT, we used the implementation provided
+in Ref. [60], with the BioMassters satellite data as input, a
+lightweight spatial-temporal encoder L-TAE [76] for tem-
+poral aggregation, and a UPerNet as the regression head.
+This setup was found in [60] to outperform other tested
+foundation models on the BioMassters dataset. To ensure
+consistency in the limited label setting, we replaced the de-
+fault sampling strategy with the same random splits used
+to evaluate TESSERA and normalized the inputs with their
+mean and standard deviation. Although we initially experi-
+mented with using per patch RMSE as the loss function to
+align with our evaluation metric, we ultimately reverted to
+the MSE loss [60] because it resulted in slightly better per-
+formance. Obtaining the results for the full dataset using a
+single NVIDIA H200 GPU took approximately 18 hours.
+For evaluating the supervised baseline, we downloaded
+the pre-trained weights of the BioMassters winning model
+and ran inference on the test set, applying a post-processing
+step to clip predictions to a non-negative range. Although
+we attempted to retrain the model from scratch using two
+H200 GPUs and a different CUDA version than in the
+original setup, this configuration led to inferior perfor-
+mance compared to the original pre-trained model. Accord-
+ing to the BioMassters codebase, the original model was
+trained on two A100 40GB GPUs over the course of eight
+days, highlighting the greater time efficiency of TESSERA,
+which required only five hours.
+A.12. Interactive Habitat Mapping Tool
+Here we demonstrate our interactive classification tool,
+a web-based utility designed for rapid human-in-the-loop
+habitat mapping using pre-computed model embeddings, as
+seen in Figure 18. The tool allows a user to first define a
+
+=== PAGE BREAK ===
+
+Figure 17.Comparison of canopy height estimation performance across four models.Predicted canopy height (y-axis) is compared
+against airborne LiDAR reference measurements (x-axis) in Danum Valley, Borneo. The figure shows scatter-density plots for four model
+variants trained using different input representations:TESSERA,Presto,AlphaEarth, and theDINOv2 Global CHMproduct. All mod-
+els were evaluated using the same LiDAR reference dataset for consistency. TESSERA achieves the highest coefficient of determination
+and lowest RMSE, demonstrating superior performance in structurally complex tropical canopies. In contrast, the DINOv2 Global CHM
+product exhibits strong underestimation, large negative bias, and a near-zero or negative correlation, reflecting substantial saturation at
+lower canopy heights. A 1:1 reference line (blue) is included in each subplot for comparison.
+Figure 18.We provide an interactive tool to allow non-
+specialist users to map TESSERA embeddings to user-defined
+classes.We show a PCA-derived false colour map overlaid on an
+RGB aerial image of South Cambridge.
+region of interest, for which it fetches and mosaics the rel-
+evant high-dimensional embedding tiles. To aid visual in-
+terpretation, it performs Principal Component Analysis on
+the embeddings and displays the first three components as a
+false-colour RGB image overlay on a satellite basemap.
+The core of the tool is the interactive labelling workflow.
+A user can define custom habitat classes and provide train-
+ing data by clicking on the map to place labelled points.
+These points and their corresponding 128-dimensional em-
+bedding vectors are used to train a k-Nearest Neighbors
+(kNN) classifier. The trained model then predicts a class for
+every pixel in the region of interest, producing a map layer
+that overlays a coregistered aerial view. This process allows
+for iterative refinement, where a user can add more points
+to correct misclassifications and retrain the model for im-
+mediate feedback, demonstrating an accessible method for
+quickly creating habitat maps without requiring deep ma-
+chine learning expertise. We also provide a batch process-
+ing tool for larger regions of interest. The tools and their
+open source code are freely available in the github reposi-
+tory.
+A.13. Pseudo Code
+This section provides the pseudocode for mixup regulariza-
+tion and global shuffling.
+
+=== PAGE BREAK ===
+
+Algorithm 1Mixup Consistency Regularization for Multi-
+modal Barlow Twins
+1:def MixupBT(s2 aug1, s2 aug2, s1 aug1, s1 aug2,
+model, barlow lambda, lambd mix):
+2:# s2 * and s1 * are batches of augmented
+inputs
+3:# model returns projection z and
+representation repr
+4:# standard Barlow Twins branch
+5:z1, repr1 = model(s2 aug1, s1 aug1)
+6:z2, repr2 = model(s2 aug2, s1 aug2)
+7:loss bt, bar bt, off bt = BarlowTwins(z1, z2)
+8:# mixup branch
+9:B = s2 aug1.shape[0]
+10:idx = randperm(B)
+11:alpha = Beta(beta alpha, beta beta).sample()
+12:# mix S2 and S1 views
+13:y m s2 = alpha * s2 aug1 + (1 - alpha) *
+s2 aug2[idx]
+14:y m s1 = alpha * s1 aug1 + (1 - alpha) *
+s1 aug2[idx]
+15:z m, repr m = model(y m s2, y m s1)
+16:# cross-correlation of mixed and original
+views
+17:cc m a = Corr(z m, z1)
+18:cc m b = Corr(z m, z2)
+19:cc 11 = Corr(z1, z1)
+20:cc 2idx1 = Corr(z2[idx], z1)
+21:cc 12 = Corr(z1, z2)
+22:cc 2idx2 = Corr(z2[idx], z2)
+23:# mixup targets and consistency loss
+24:cc m a gt = alpha * cc 11 + (1 - alpha) *
+cc 2idx1
+25:cc m b gt = alpha * cc 12 + (1 - alpha) *
+cc 2idx2
+26:diff a = (cc m a - cc m a gt).pow(2).sum()
+27:diff b = (cc m b - cc m b gt).pow(2).sum()
+28:loss mix = lambd mix * barlow lambda * (diff a
++ diff b)
+29:# final SSL loss with mixup consistency
+30:loss = loss bt + loss mix
+31:return loss
+Algorithm 2Global Shuffling and Multimodal Data Con-
+struction
+1:def GlobalShuffling(tile roots, batch size, T):
+2:# tile roots: list of paths to MGRS tile
+directories
+3:# batch size: number of tiles to process in
+memory simultaneously
+4:# T: number of time steps for sparse
+sampling
+5:tiles = shuffle(tile roots) # Randomize tile
+processing order
+6:num batches = len(tiles) // batch size
+7:for b in range(num batches):
+8:current tiles = tiles[b *batch size :
+(b+1)*batch size]
+9:pixel buffer aug1 = []
+10:pixel buffer aug2 = []
+11:# Parallel processing of tiles to extract
+valid pixels
+12:parfor tile in current tiles:
+13:s2, s1, masks = load data(tile)
+14:valid locs = filter valid pixels(masks,
+s1, s2)
+15:if len(valid locs) == 0: continue
+16:# Sparse random temporal sampling per
+pixel
+17:for (y, x) in valid locs:
+18:idx = get valid time indices(masks,
+y, x)
+19:v1 = Sample(s2, s1, idx, T) # View 1
+20:v2 = Sample(s2, s1, idx, T) # View 2
+21:pixel buffer aug1.append(v1)
+22:pixel buffer aug2.append(v2)
+23:# Aggregate pixels from spatially
+disjoint tiles
+24:stack aug1 = Stack(pixel buffer aug1) #
+Shape: (N total, T, C)
+25:stack aug2 = Stack(pixel buffer aug2)
+26:# Global Shuffling: Decorrelate spatial
+neighborhoods
+27:N total = stack aug1.shape[0]
+28:perm idx = randperm(N total)
+29:shuffled aug1 = stack aug1[perm idx]
+30:shuffled aug2 = stack aug2[perm idx]
+31:# Save as chunks for pre-training
+dataloader
+32:save chunks(shuffled aug1, shuffled aug2,
+out dir)
+
+=== PAGE BREAK ===
+
+Table 10.TESSERA provides unprecedented ease of use, scale, and accuracy.Unlike other remote sensing foundation models,
+TESSERA provides analysis-ready and gap-free outputs (R), is open (O), and provides global (G) annual (A) coverage at 10 m resolution
+(10 m). It uses spectral-temporal features (ST) at pixel level (P), is invariant to clouds (CI), provides a compressed representation (CR),
+is oriented to land features (LO), and includes both multispectral and radar information (MS). Codes:Y= Yes,N= No, ? = Unknown,P=
+Potentially true, .. = N/A.
+Foundation ModelR O G A 10 m ST P CI CR LO MS
+TESSERA (2025)Y Y Y Y Y Y Y Y Y Y Y
+GeoKR (2021) [46]N?N N Y N Y N N Y N
+CVPRW (2021) [82]N..N N Y N N N..Y N
+GASSL (2021) [6]N..N N Y N Y N..Y N
+SeCo (2021) [61]N N N N Y N N N?Y N
+MOSAIKS (2021) [74]N Y Y N N N N N Y Y?
+DINO-MM (2022) [101]N..N N Y N N N..Y Y
+SatMAE (2022) [17]N..N N Y Y N P..P N
+RS-BYOL (2022) [41]N.. ..N Y N Y Y..N Y
+GeCo (2022) [47]N.. ..N..N N N..P N
+RingMo (2022) [83]N.. ..N Y N N N?Y N
+RVSA (2022) [96]N.. ..N..N N N..Y N
+RSP (2022) [95]N.. ..N P N N P Y Y N
+MATTER (2022) [2]N.. ..N Y Y N N Y Y N
+CSPT (2022) [120]N.. ..N?N N N Y Y N
+CVPRW (2022) [77]N.. ..N Y N N N Y Y Y
+BFM (2023) [14]N.. ..N?N N N?Y N
+TOV (2023) [87] ? ..N N Y N?N?Y N
+CMID (2023) [64]N..N N Y N N N?Y N
+RingMo-Sense (2023) [115]N..N N Y Y N N?Y Y
+lal-SimCLR (2023) [69]N..N N Y N N N Y Y Y
+CACo (2023) [59]N..N N Y Y N N Y Y N
+SatLas (2023) [8]N..Y N Y Y N N Y Y N
+GFM (2023) [63]N..N N Y N N N N Y N
+Scale-MAE (2023) [73]N..N N Y N N N N Y N
+DINO-MC (2023) [108]N..N N Y N N N N Y N
+CROMA (2023) [31]N..N N Y N N N N Y Y
+Cross-Scale MAE (2023) [86]N..N N Y N N N N Y N
+DeCUR (2023) [104]N..N N Y N N Y N Y Y
+Presto (2023) [91]N..Y Y Y Y Y Y Y Y Y
+CtxMIM (2023) [119]N..N N Y N N N N Y N
+FG-MAE (2023) [102]N..N N Y N N N N Y N
+Prithvi (2023) [78]N..N N N Y N Y Y Y N
+RingMo-Lite (2023) [103]N..N N Y N N N N Y N
+IGARSS (2023) [29]N..N N Y N N N N Y N
+EarthPTi (2023) [80]N..N N Y Y Y Y Y Y N
+USat (2023) [40]N..N N Y N N N N Y N
+AIEarth (2023) [114]P?Y N Y N N N N Y N
+Clay (2023) [16]N..Y N Y N N N N Y N
+Hydro (2023) [19]N..N N Y N N N N N N
+U-Barn (2023) [26]N..N Y Y Y N Y N Y N
+GeRSP (2023) [38]N..N N Y N N N N Y N
+SwiMDiff (2023) [88]N..N N Y N N N N Y N
+OFA-Net (2023) [113]N..Y N Y N N N N Y Y
+SML-FR (2023) [23]P P Y N Y N N N N N N
+Continued on next page
+
+=== PAGE BREAK ===
+
+Foundation ModelR O G A 10 m ST P CI CR LO MS
+Spectral-GP (2024) [36]N N Y N Y N N N N Y N
+S2MAE (2024) [49]N N Y N Y N N N N Y N
+SatMAE++ (2024) [67]N N Y N Y N N N N Y N
+msGFM (2024) [34]N N N N Y N N N N Y N
+SkySense (2024) [33]N N N N Y Y N N N Y Y
+MTP (2024) [97]N..Y N Y N Y N N Y N
+DOFA (2024) [112]N..Y N Y N N N Y Y Y
+MMEarth (2024) [66]N..Y N Y N N N Y Y Y
+LeMeViT (2024) [43]N..N N?N N N Y N N
+SoftCon (2024) [105]N..Y N Y N Y N N Y N
+RS-DFM (2024) [107]N..N N Y N Y N N Y N
+A2MAE (2024) [118]N..Y N Y N N N Y Y N
+HyperSIGM (2024) [98]N..Y N Y Y Y N Y Y N
+SelectiveMAE (2024) [99]N..Y N Y N N N Y Y N
+OmniSat (2024) [4]N..N Y Y Y N?Y Y Y
+MM-VSE (2024) [72]N..Y Y Y Y N?Y Y Y
+MA3E (2024) [52]N..N N Y N N N Y Y N
+SpectralEarth (2024) [12]N..Y Y N?Y N Y Y N
+SenPa-MAE (2024) [70]N..Y Y Y Y Y N Y Y N
+RingMo-Ae (2024) [21]N..N N Y N Y N Y Y N
+SAR-JEPA (2024) [48]N..N N Y N N Y N N N
+PIS (2024) [3]N?Y Y Y.. .. .. .. .. ..
+OReole-FM (2024) [22]N..Y N Y N Y N Y Y N
+PIEVIT (2024) [56]N..Y N Y N Y N Y Y N
+SatVisionTOA (2024) [81]N..Y Y N Y Y N Y Y N
+RS-vHeat (2024) [37]N.. ? ? ? ?Y?Y?Y
+Prithvi-EO-2.0 (2024) [84]N..Y Y N Y N Y Y Y N
+AnySat (2024) [5]N..Y N Y N Y N Y Y Y
+WildSAT (2024) [20]N N N N N N N N Y Y N
+SeaMo (2024) [51]N N N N Y N N N Y Y N
+FoMo (2025) [11]Y Y Y N Y N Y N Y Y Y
+SatMamba (2025) [25]Y Y N N N N N N N Y N
+Galileo (2025) [92]P P Y?Y N? ?Y Y Y
+SatDiFuser (2025)[42]N N N N Y N N N N Y N
+RoMA (2025) [100]N N N N Y N N N N Y N
+Panopticon (2025) [94]N Y N N Y Y N N Y Y Y
+FedSense (2025) [85]N N N N N N N N N Y N
+Copernicus-FM (2025) [106]N..Y N Y Y N N Y Y Y
+HyperFree (2025) [45]N..N N Y N N N Y Y N
+DynamicVis (2025) [15]N..N N Y N N N N Y Y
+FlexiMo (2025) [50]N..N N Y N N N N Y Y
+Google Satellite (2025)[13]Y N Y Y Y Y N Y Y Y Y
+SkySense++ (2025) [109]N Y Y P P Y N P Y Y Y
+RingMoE (2025) [9]N..N N Y Y N N Y Y Y

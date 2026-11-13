@@ -1,0 +1,749 @@
+Anomaly detection in satellite imagery through temporal
+inpainting
+Bertrand Rouet-Leduc 1, Claudia Hulbert 2
+1Disaster Prevention Research Institute, Kyoto University, Kyoto 611-0011, Japan
+2Geolabe, Los Alamos, New Mexico 87544, USA
+Abstract
+Detecting surface changes from satellite imagery is crit-
+ical for rapid disaster response and environmental mon-
+itoring, yet remains challenging due to the complex in-
+terplay between atmospheric noise, seasonal variations,
+and sensor artifacts. Here we show that deep learn-
+ing can leverage the temporal redundancy of satellite
+time series to detect anomalies at unprecedented sen-
+sitivity, by learning to predict what the surfaceshould
+look like in the absence of change. We train an inpaint-
+ing model built upon the SATLAS foundation model to
+reconstruct the last frame of a Sentinel-2 time series
+from preceding acquisitions, using globally distributed
+training data spanning diverse climate zones and land
+cover types. When applied to regions affected by sud-
+den surface changes, the discrepancy between predic-
+tion and observation reveals anomalies that traditional
+change detection methods miss. We validate our ap-
+proach on earthquake-triggered surface ruptures from
+the 2023 Turkey–Syria earthquake sequence, demon-
+strating detection of a rift feature in Tepehan with
+higher sensitivity and specificity than temporal median
+or Reed–Xiaoli anomaly detectors. Our method reaches
+detection thresholds approximately three times lower
+than baseline approaches, providing a path towards au-
+tomated, global-scale monitoring of surface changes from
+freely available multi-spectral satellite data.
+1 Introduction
+The systematic detection of sudden surface changes, from
+natural disasters such as landslides and earthquakes to
+anthropogenic modifications including construction and
+deforestation, is fundamental to disaster response, envi-
+ronmental monitoring, and infrastructure management
+[1, 2]. Satellite remote sensing provides global coverage
+with high temporal resolution, yet extracting meaningful
+change signals from the data remains challenging. Atmo-
+spheric variability, illumination differences, seasonal veg-
+etation changes, and sensor noise can all produce appar-
+ent surface changes that exceed the amplitude of actual
+ground modifications [3, 4].
+Current approaches to change detection from satellite
+imagery fall into two broad categories [5]. Pixel-wise
+methods compare spectral signatures between acquisi-
+tions, flagging significant deviations as potential changes
+[2, 6]. While computationally efficient, these methods
+struggle with the heterogeneous noise floor across differ-
+ent surface types and atmospheric conditions. Object-
+based methods segment images into meaningful regions
+before comparison, improving robustness but introduc-
+ing sensitivity to segmentation parameters [7]. Neither
+approach explicitly leverages the temporal coherence of
+surface reflectance in the absence of actual change.
+Deep learning has recently emerged as a powerful tool
+for Earth observation tasks, from land cover classifica-
+tion to semantic segmentation [8, 9, 10]. Of particu-
+lar relevance are foundation models, large neural net-
+works pre-trained on vast amounts of unlabeled satellite
+data, which learn general representations transferable to
+downstream tasks with minimal fine-tuning [11, 12]. The
+SATLAS model, trained on over 290 million Sentinel-
+2 images, provides such a foundation for multi-spectral
+analysis [11]. Vision transformers, particularly the Swin
+Transformer architecture [13], have demonstrated state-
+of-the-art performance on remote sensing segmentation
+tasks [14, 15]. However, the direct application of these
+models to anomaly detection remains unexplored.
+Image inpainting, the task of reconstructing missing
+or corrupted regions of an image, has seen dramatic
+advances through deep learning [16, 17, 18]. Encoder-
+decoder architectures learn to predict pixel values from
+surrounding context, capturing both local texture and
+global semantic structure [19]. When trained on tempo-
+ral sequences, such models can learn the expected evolu-
+tion of image features over time. This temporal predic-
+tion capability suggests a natural application to change
+detection: regions where the surface has changed will not
+be well-predicted from historical context.
+Here we introduce a fundamentally different approach
+to change detection, combining insights from temporal
+prediction and image inpainting. Rather than comparing
+acquisitions directly, we train a neural network to predict
+what a satellite imageshouldlook like based on preceding
+observations. The model learns the typical temporal evo-
+lution of surface reflectance, capturing seasonal patterns,
+view-angle dependencies, and the persistence of surface
+1
+arXiv:2512.23986v1  [cs.CV]  30 Dec 2025
+
+=== PAGE BREAK ===
+
+features. When confronted with an actual change, the
+model’s prediction diverges from observation, and this
+reconstruction error serves as an anomaly score. By
+framing change detection as a prediction problem, we
+implicitly learn to separate transient noise from persis-
+tent changes.
+We train our model using Sentinel-2 data from globally
+distributed regions, encompassing diverse climate zones
+from semi-arid terrain to humid vegetated landscapes,
+as well as varied land cover types including agricultural
+fields, urban areas, and natural ecosystems. The training
+data spans one year and encompasses seasonal variations
+in vegetation and illumination. Critically, we mask out
+portions of the target frame during training, forcing the
+model to learn meaningful temporal relationships rather
+than simply copying the input. After training, we ap-
+ply the model to regions affected by documented surface
+changes, demonstrating its ability to detect anomalies
+invisible to traditional methods.
+2 Results
+2.1 Learning temporal predictions from
+Sentinel-2 time series
+Our approach leverages the temporal redundancy inher-
+ent in satellite time series to detect deviations from ex-
+pected surface conditions. We build upon the SATLAS
+foundation model, a Swin Transformer pre-trained on
+multi-spectral Sentinel-2 imagery [11, 13], and extend it
+with a custom decoder architecture for temporal predic-
+tion (Fig. 1). The model takes as input a sequence of
+four Sentinel-2 acquisitions spanning approximately one
+month, along with the last frame partially masked, and
+outputs a prediction for the RGB+NIR bands of that
+final frame.
+During training, we randomly mask between 5% and
+40% of the target frame using rectangular and freeform
+geometries, following established practices in image in-
+painting [18, 19]. The model must reconstruct these
+masked regions using information from both the earlier
+frames and the unmasked portions of the target. This
+self-supervised task forces the network to learn meaning-
+ful temporal relationships, if a pixel’s reflectance can be
+predicted from its temporal neighbors, its actual value is
+unlikely to represent an anomaly.
+We assembled a geographically diverse training dataset
+to ensure the model generalizes across different envi-
+ronments. The dataset includes Sentinel-2 time cubes
+from multiple continents, spanning climate zones from
+arid (Saharan margins, Arabian Peninsula) to temper-
+ate (Western Europe, Eastern United States) to tropi-
+cal (Southeast Asia, Central Africa). Land cover types
+include agricultural regions, urban areas, semi-arid ter-
+rain, forests, and coastal zones. This diversity is critical
+for learning robust temporal relationships that are not
+specific to particular surface types or atmospheric con-
+ditions. In total, the training set comprises over 10,000
+unique locations with approximately 50,000 valid time
+cubes, each spanning 256×256 pixels at 10 m resolution
+(approximately 2.56 km×2.56 km). Cloud cover was
+filtered to below 10%, and acquisitions with incomplete
+spatial coverage were removed.
+The model was trained for 500 epochs using a hybrid
+loss combining L1 reconstruction error, multi-scale struc-
+tural similarity [20], and high-frequency detail preserva-
+tion through Laplacian filtering. We employed a two-
+stage training strategy: an initial warmup phase where
+only the decoder head was trained while the backbone
+remained frozen, followed by full fine-tuning with differ-
+ential learning rates (backbone: 5×10 −5, head: 10 −4).
+This approach, inspired by transfer learning best prac-
+tices [21], prevents catastrophic forgetting of the pre-
+trained representations while allowing adaptation to the
+temporal prediction task.
+The final model achieves a validation L1 error of 0.0063
+(normalized reflectance units) on held-out data from re-
+gions not included in training, corresponding to approxi-
+mately 51 digital numbers in raw Sentinel-2 values. This
+performance indicates that the model has learned robust
+temporal relationships that generalize beyond the train-
+ing set.
+2.2 Anomaly detection performance on
+synthetic perturbations
+We systematically evaluate our method’s ability to de-
+tect anomalies by injecting synthetic perturbations into
+validation images and comparing detection performance
+against two established baselines: the temporal median
+predictor and the Reed–Xiaoli (RX) anomaly detector
+[22] (Fig. 2).
+For each test sample, we inject a localized anomaly
+within the masked region, covering approximately 20%
+of the evaluation area. Anomaly types include brightness
+changes (simulating new construction or clearings), dark-
+ening (shadows, burn scars), texture modifications (sur-
+face disturbance), spectral shifts (material changes), and
+vegetation anomalies (NDVI perturbations). Anomaly
+intensity is varied from near-zero to 25% of the local dy-
+namic range, enabling characterization of detection sen-
+sitivity across a range of signal strengths.
+Our temporal inpainting method achieves a mean area
+under the receiver operating characteristic curve (ROC-
+AUC) of 0.949±0.104, substantially outperforming the
+RX detector (0.904±0.120) and temporal median base-
+line (0.803±0.228). The improvement is even more pro-
+nounced in precision-recall metrics, which better reflect
+performance under class imbalance: our method achieves
+a mean average precision (PR-AUC) of 0.854±0.233,
+compared to 0.711±0.238 for RX and 0.626±0.304 for
+temporal median. The best F1 scores follow a similar
+2
+
+=== PAGE BREAK ===
+
+a
+b
+c
+Model Architecture
+t-3
+t-2
+t-1
+t (masked)
+Input Sequence
+Prediction
+Observation
+Prediction
+Temporal
+Inpainting
+Mo del
+↓ Compare prediction with observation
+−
+=
+SATLAS Backbone
+Swin-v2 Transformer
+(pretrained)
+FPN Decoder
+Feature Pyramid Network
+(progressive upsampling)
+Residual
+Phase 1: Warmup
+5 epochs Backbone
+frozen LR: 10−3
+Loss Function
+Random Masking
+Anomaly
+detected
+Phase 2: Fine-tune
+495 epochs Full model
+Di ﬀ erential LR
+Input Tensor
+t - 3
+t - 2
+t - 1
+t
+→ 9
+m a s k
+37
+params (frozen
+fine-tuned)
+→
+4 x 9+1=37ch
+37
+OUTPUT HEAD
+RGB+NIR
+[B,
+,H,W]
+Time series
+2 7 M
+6 2 M  p a r a m s  ( t r a i n e d  f r o m  s c r a t c h )
+skip
+[B,
+4,H,W]
+→
+4 frames in
+1 frame out
+Training Strategy
+Rectangle
+5–40% coverage
+Freeform
+Figure 1:Architecture of the temporal inpainting model for anomaly detection. a, Overview of the
+approach. A sequence of Sentinel-2 acquisitions (framest−3 tot−1) along with a partially masked target
+frame (t) are fed to the model, which predicts the complete target. The discrepancy between prediction and
+observation reveals anomalies.b, Model architecture. The input adapter transforms the multi-temporal, multi-
+spectral input to match the SATLAS backbone’s expected nine channels. The Swin Transformer backbone extracts
+hierarchical features at five scales. The FPN decoder progressively upsamples and fuses features to produce the final
+prediction.c, Training strategy. Random masks are applied to the target frame during training, forcing the model
+to learn temporal relationships. The loss combines L1 reconstruction, structural similarity, and high-frequency
+detail preservation.
+pattern: 0.849±0.184 (ours), 0.735±0.182 (RX), and
+0.664±0.237 (temporal median).
+Performance varies by anomaly type, with bright-
+ness anomalies being most readily detected (ROC-AUC
+0.990±0.020) and texture anomalies proving most chal-
+lenging (0.922±0.101). Notably, our method maintains
+consistent performance across all anomaly types, whereas
+baseline methods show greater variability.
+The detection advantage of our approach is most pro-
+nounced at low anomaly intensities. At intensities be-
+low 5% of the dynamic range, where anomalies are vi-
+sually imperceptible, our method maintains ROC-AUC
+above 0.85 while baseline methods approach chance per-
+formance (ROC-AUC≈0.5). This sensitivity gain arises
+from the model’s ability to leverage both spatial context
+and temporal consistency when predicting expected re-
+flectance, enabling detection of subtle deviations that fall
+within the noise floor of simpler methods.
+2.3 Application to the 2023 Tepehan sur-
+face rupture
+We apply our method to detect surface deformation
+caused by the February 6, 2023 Kahramanmara¸ s earth-
+quake sequence in Turkey. TheM w 7.8 mainshock trig-
+gered widespread surface rupture along the East Anato-
+lian Fault, including a distinctive rift feature near the
+town of Tepehan (36.161◦N, 36.222◦E) where a large fis-
+sure opened through olive groves (Fig. 3).
+We constructed time series spanning August 2022
+to March 2023, with the target frame taken from the
+first clear acquisition after the earthquake (February 12,
+2023). For each acquisition, we computed anomaly scores
+using our inpainting model, the temporal median base-
+line, and the RX detector [22].
+The normalized anomaly time series reveals a clear sig-
+nal coincident with the earthquake date. Our inpainting
+model produces a peak normalized score of 0.89 on Febru-
+ary 12, compared to pre-earthquake values below 0.15.
+The temporal median method shows weaker detection
+3
+
+=== PAGE BREAK ===
+
+0.0 0.2 0.4 0.6 0.8 1.0
+False Positive Rate
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0True Positive Rate
+(a) ROC Curves
+Inpainting (Ours) (0.95)
+RX Detector (0.90)
+T emporal Median (0.80)
+Random (0.50)
+0.0 0.2 0.4 0.6 0.8 1.0
+Recall
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Precision
+(b) Precision-Recall Curves
+Inpainting (Ours) (0.85)
+RX Detector (0.71)
+T emporal Median (0.63)
+Random (0.20)
+ROC-AUC PR-AUC Best F1
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Score
+(c) Performance Summary
+Inpainting (Ours)
+RX Detector
+T emporal Median
+0.00 0.05 0.10 0.15 0.20 0.25
+Anomaly Intensity
+0.5
+0.6
+0.7
+0.8
+0.9
+1.0ROC-AUC
+(d) Detection vs. Anomaly Strength
+Random
+Inpainting (Ours)
+RX Detector
+T emporal Median
+Ground Truth
+dark
+I=0.22
+With Anomaly
+ Difference (×5)
+ Inpaint Error
+ Anomaly Mask
+dark
+I=0.15
+(e)
+Figure 2:Anomaly detection performance on synthetic perturbations. a, Receiver operating characteristic
+(ROC) curves comparing detection methods. Our temporal inpainting approach (green) achieves ROC-AUC of
+0.949±0.104, outperforming the RX detector (red, 0.904±0.120) and temporal median baseline (blue, 0.803±0.228).
+Shaded regions indicate±1 standard deviation across test samples.b, Precision-recall curves. Our method achieves
+PR-AUC of 0.854±0.233 compared to 0.711±0.238 (RX) and 0.626±0.304 (temporal median). The dashed line
+indicates random classifier performance given the 20% anomaly area fraction.c, Summary of detection metrics
+across methods. Error bars show standard deviation.d, Detection performance as a function of anomaly intensity.
+Our method maintains high ROC-AUC even at low intensities where baseline methods approach chance performance,
+demonstrating superior sensitivity to subtle changes.e, Visual examples of anomaly detection. Columns show
+ground truth, image with injected anomaly, amplified difference (×5), inpainting reconstruction error, and ground
+truth anomaly mask. Cyan contours indicate the inpainting mask boundary.
+(peak score 0.71) with higher pre-earthquake variability
+(scores up to 0.42), while RX detection shows minimal
+response to the event (peak score 0.58, pre-earthquake
+values up to 0.51).
+Spatial analysis of the February 12 residual map local-
+izes the anomaly to a linear feature consistent with the
+mapped surface rupture [24, 23]. The inpainting residual
+shows a coherent signal along the rupture trace, while
+baseline methods produce diffuse anomalies dominated
+by agricultural field boundaries and illumination differ-
+ences.
+3 Discussion
+Our results demonstrate that temporal prediction
+through inpainting provides a principled framework for
+anomaly detection in satellite imagery. By learning what
+surfacesshouldlook like in the absence of change, the
+model implicitly captures the complex factors, atmo-
+spheric conditions, illumination geometry, seasonal vege-
+tation cycles, that confound traditional change detection
+methods [3, 4].
+The improvement over baseline methods is substantial,
+particularly for small anomalies. This sensitivity gain
+arises from the model’s ability to leverage spatial con-
+text when making predictions. A pixel’s expected value
+depends not only on its own temporal history but also
+on neighboring pixels, which provide information about
+4
+
+=== PAGE BREAK ===
+
+Geographic
+Context
+36.161°N
+36.222°E
+East Anatolian
+Fault
+(a) Study Area
+2022-10 2022-11 2022-12 2023-01 2023-02 2023-03
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Normalized Anomaly Score
+(b) Anomaly Score Time Series
+Inpainting (Ours)
+RX Detector
+T emporal Median
+Earthquake (2023-02-06)
+(c) Pre-earthquake: 2023-01-25
+ Post-earthquake: 2023-02-14
+Stable
+2023-01-20
+Previous (t-1)
+ T arget (t)
+0.017
+Residual
+ Valid Area
+Anomaly
+2023-02-14
+0.066
+(d) Stable vs. Anomalous Comparison
+Figure 3:Detection of the 2023 T epehan surface rupture. a, Geographic context. The study area is located
+near the East Anatolian Fault, which ruptured during the February 6, 2023 earthquake sequence.b, Normalized
+anomaly score time series for three detection methods. The vertical line indicates the earthquake date. Our method
+(green) shows the clearest detection with the lowest pre-event background.c, Pre-earthquake and post-earthquake
+Sentinel-2 images. The surface rupture appears as a dark linear feature through the olive groves.d, Comparison
+of stable (pre-event) and anomalous (post-event) conditions. Columns show: row label with date, previous frame
+(t−1), target frame (t), model residual with anomaly score, and evaluation mask showing valid (green) and excluded
+(red) regions.
+current atmospheric conditions and sensor state. This
+contextual reasoning is difficult to encode in traditional
+algorithms.
+Several aspects of our approach warrant further inves-
+tigation. First, the use of geographically diverse training
+data spanning multiple continents and climate zones im-
+proves generalization, but systematic evaluation across
+the full range of Earth’s surface types remains an impor-
+tant direction for future work. Initial tests on Turkish
+and Moroccan data, which were not included in training,
+suggest that the SATLAS foundation provides sufficient
+robustness for cross-regional transfer [11, 21].
+Second, our current implementation processes fixed-
+length sequences of four frames. Extending to variable-
+length inputs would enable exploitation of longer tempo-
+ral baselines where available, potentially improving de-
+tection of subtle, gradual changes.
+Third, the threshold for declaring an anomaly remains
+empirical. A principled approach would model the distri-
+bution of reconstruction errors under the null hypothesis
+of no change, enabling specification of detection thresh-
+olds in terms of false positive rate.
+Finally, we note that our method detects anomalies rel-
+ative to recent history. Changes that persist across the
+entire input sequence, such as slow subsidence or grad-
+ual deforestation, will not produce reconstruction errors.
+Complementary methods targeting different timescales
+are needed for comprehensive monitoring.
+Despite these limitations, our results suggest that
+foundation model-based inpainting provides a powerful
+new tool for satellite-based change detection. The ap-
+proach is computationally efficient (inference requires ap-
+5
+
+=== PAGE BREAK ===
+
+proximately 50 ms per image on consumer GPU hard-
+ware), requires no labeled training data beyond the
+satellite imagery itself, and produces interpretable resid-
+ual maps that localize detected anomalies. As founda-
+tion models for Earth observation continue to improve
+[25, 26], we anticipate corresponding gains in anomaly
+detection sensitivity.
+4 Methods
+4.1 Data acquisition and preprocessing
+Sentinel-2 L2A data were acquired through the CUBO
+Python library, which provides a convenient interface to
+the Planetary Computer STAC catalog. Training data
+were assembled from a globally distributed set of lo-
+cations spanning diverse climate zones and land cover
+types. Regions included semi-arid terrain (Permian
+Basin, Arabian Peninsula, Saharan margins), temperate
+agricultural and urban areas (Western Europe, Eastern
+United States), tropical forests (Southeast Asia, Central
+Africa), and coastal zones across multiple continents. For
+each region, we generated a grid of sample points at 5 km
+spacing, then downloaded time series covering a full cal-
+endar year. Each acquisition comprises bands B02, B03,
+B04 (visible), B05, B06, B07 (red edge), B08 (NIR), B11,
+B12 (SWIR), plus the Scene Classification Layer for qual-
+ity masking.
+Raw reflectance values were scaled by dividing by 8160
+(the approximate maximum for Sentinel-2 L2A data) and
+clipping to [0, 1]. Acquisitions with more than 10% cloud
+cover (as reported in metadata) were excluded. Time
+series were further filtered to remove frames with any
+missing or zero-valued pixels within the 256×256 pixel
+window. The final training set comprises over 10,000
+unique locations with approximately 50,000 valid time
+cubes.
+For the Turkey case study, we acquired data centered
+on (36.161 ◦N, 36.222 ◦E) spanning August 1, 2022 to
+March 1, 2023 with identical preprocessing.
+4.2 Model architecture
+Our model extends the SATLAS Sentinel-2 Swin Trans-
+former (SwinT SI MS variant) with a custom decoder for
+temporal prediction. The backbone processes nine in-
+put channels (all Sentinel-2 bands except SCL) through
+a hierarchical Swin Transformer architecture, producing
+feature maps at five scales (1/4, 1/8, 1/16, 1/32, 1/64 of
+input resolution) with 128 channels each.
+The input adapter transforms the 37-channel input
+(four frames×nine bands, plus one-channel mask) to
+the nine channels expected by the backbone through a
+1×1 convolution. Weights are initialized such that only
+the last frame passes through initially, with temporal in-
+tegration learned during training.
+The decoder follows a Feature Pyramid Network
+(FPN) architecture with progressive upsampling. Each
+level receives the corresponding backbone feature
+through a 1×1 lateral connection, fused with the up-
+sampled output from the previous level through concate-
+nation followed by 3×3 convolution. Upsampling uses
+pixel shuffle (2×factor) with GELU activation. The fi-
+nal output is a four-channel prediction (RGB+NIR) at
+input resolution.
+Total parameter count is approximately 89 million, of
+which 27 million are in the pre-trained backbone and 62
+million in the decoder.
+4.3 Training procedure
+Training proceeds in two phases. During warmup (5
+epochs), backbone parameters are frozen and only the
+decoder is trained with learning rate 10 −3. During fine-
+tuning (495 epochs), all parameters are trained with dif-
+ferential learning rates: 5×10 −5 for backbone, 10 −4 for
+decoder. We use AdamW optimizer with weight decay
+10−2 and gradient clipping at norm 1.0.
+The loss function combines three terms:
+L=L L1 +λ SSIMLMS-SSIM +λ HFLHF (1)
+whereL L1 is masked L1 reconstruction error,L MS-SSIM
+is multi-scale structural similarity loss on RGB chan-
+nels, andL HF is L1 error on Laplacian-filtered outputs.
+Weightsλ SSIM andλ HF are ramped from 0 to 0.15 and
+0.5, respectively, over the first 100 epochs of fine-tuning.
+Training uses mixed-precision (FP16) and exponential
+moving average of weights (decay 0.995). Batch size is 4
+with 1000 steps per epoch, sampling 1% of available files
+each epoch to ensure diversity.
+4.4 Synthetic anomaly evaluation
+For systematic evaluation, we inject synthetic anomalies
+into validation images not seen during training. Each
+anomaly is localized within a circular region covering
+approximately 20% of the evaluation mask area. Five
+anomaly types are tested: (1) brightness increase (ad-
+ditive), (2) darkening (subtractive), (3) texture mod-
+ification (spatially-correlated noise), (4) spectral shift
+(channel-dependent perturbation), and (5) vegetation
+change (NIR boost with visible reduction). Anomaly in-
+tensity is sampled uniformly from 0.3% to 25% of the
+local dynamic range.
+Detection performance is evaluated using ROC-AUC,
+precision-recall AUC (PR-AUC), and best F1 score.
+Metrics are computed within the inpainting mask region
+only, ensuring fair comparison across methods. Results
+are aggregated over 150 test samples with balanced rep-
+resentation across anomaly types and intensities.
+6
+
+=== PAGE BREAK ===
+
+4.5 Anomaly detection pipeline
+For anomaly detection, we construct the input sequence
+from the four most recent cloud-free acquisitions preced-
+ing the target date. The target frame is masked with a
+circular region of radius 50 pixels (500 m) at image cen-
+ter. The model predicts reflectance within this region,
+and anomaly score is computed as the 95th percentile of
+per-pixel L1 error within an evaluation mask.
+The evaluation mask excludes: (1) pixels flagged as
+cloud, cloud shadow, water, or snow/ice by SCL; (2) pix-
+els in topographic shadow (hillshade<0.5); (3) pixels
+in projected cloud shadow based on solar geometry and
+cloud height estimation.
+Topographic shadow is computed from Copernicus
+DEM-30 data resampled to the Sentinel-2 grid. Solar az-
+imuth and elevation are computed from acquisition time
+and location using the pysolar library. Cloud shadow
+projection assumes cloud heights between 500 m and
+3000 m, projecting the cloud mask along the solar vector.
+4.6 Baseline methods
+The temporal median predictor computes the pixel-wise
+median of the three preceding frames and uses this as
+the prediction for the target frame. Anomaly score is the
+95th percentile of per-pixel absolute difference within the
+evaluation mask.
+The RX detector computes local Mahalanobis distance
+for each pixel in the target frame. The local mean and
+covariance are estimated from all valid pixels within the
+evaluation mask. Anomaly score is the 95th percentile
+of Mahalanobis distance.
+All methods use identical evaluation masks for fair
+comparison.
+4.7 Code and data availability
+Training and inference code are implemented in PyTorch.
+Sentinel-2 data are freely available through the Coperni-
+cus Open Access Hub. The SATLAS pre-trained weights
+are available athttps://github.com/allenai/satlas.
+Acknowledgements
+B.R.L. acknowledges support from the JSPS Hakubi pro-
+gram. B.R.L and C.H. acknowledge support from NASA
+NSPIRES (grant 80NSSC22K1282).
+References
+[1] Asokan, A. & Anitha, J. Change detection tech-
+niques for remote sensing applications: A survey.
+Earth Sci. Inform.12, 143–160 (2019).
+[2] Hussain, M., Chen, D., Cheng, A., Wei, H. & Stan-
+ley, D. Change detection from remotely sensed im-
+ages: From pixel-based to object-based approaches.
+ISPRS J. Photogramm. Remote Sens.80, 91–106
+(2013).
+[3] Doin, M.-P., Lasserre, C., Peltzer, G., Cavali´ e, O. &
+Doubre, C. Corrections of stratified tropospheric de-
+lays in SAR interferometry: validation with Global
+Atmospheric Models.J. Appl. Geophys.69, 35–50
+(2009).
+[4] Jolivet, R., Grandin, R., Lasserre, C., Doin, M.-P.
+& Peltzer, G. Systematic InSAR tropospheric phase
+delay corrections from global meteorological reanal-
+ysis data.Geophys. Res. Lett.38, L17311 (2011).
+[5] Shi, W., Zhang, M., Zhang, R., Chen, S. & Zhan,
+Z. Change detection based on artificial intelligence:
+State-of-the-art and challenges.Remote Sens.12,
+1688 (2020).
+[6] Chen, H. & Shi, Z. A spatial-temporal attention-
+based method and a new dataset for remote sens-
+ing image change detection.Remote Sens.12, 1662
+(2020).
+[7] Chen, G., Hay, G. J., Carvalho, L. M. T. & Wul-
+der, M. A. Object-based change detection.Int. J.
+Remote Sens.33, 4434–4457 (2012).
+[8] Zhu, X. X.et al.Deep learning in remote sensing:
+A comprehensive review and list of resources.IEEE
+Geosci. Remote Sens. Mag.5, 8–36 (2017).
+[9] Yuan, X., Shi, J. & Gu, L. A review of deep learning
+methods for semantic segmentation of remote sens-
+ing imagery.Expert Syst. Appl.169, 114417 (2021).
+[10] Ma, L.et al.Deep learning in remote sensing ap-
+plications: A meta-analysis and review.ISPRS J.
+Photogramm. Remote Sens.152, 166–177 (2019).
+[11] Bastani, F.et al.SatlasPretrain: A large-scale
+dataset for remote sensing image understand-
+ing.Proc. IEEE/CVF Int. Conf. Comput. Vis.,
+16772–16782 (2023).
+[12] Wang, Y.et al.SSL4EO-S12: A large-scale multi-
+modal, multi-temporal dataset for self-supervised
+learning in Earth observation.IEEE Geosci. Remote
+Sens. Mag.11, 98–106 (2023).
+[13] Liu, Z.et al.Swin Transformer: Hierarchical
+vision transformer using shifted windows.Proc.
+IEEE/CVF Int. Conf. Comput. Vis., 10012–10022
+(2021).
+[14] Wang, L.et al.UNetFormer: A UNet-like trans-
+former for efficient semantic segmentation of re-
+mote sensing urban scene imagery.ISPRS J. Pho-
+togramm. Remote Sens.190, 196–214 (2022).
+7
+
+=== PAGE BREAK ===
+
+[15] Scheibenreif, L., Hanna, J., Mommert, M. & Borth,
+D. Self-supervised vision transformers for land-cover
+segmentation and classification.Proc. IEEE/CVF
+Conf. Comput. Vis. Pattern Recognit. Workshops,
+1422–1431 (2022).
+[16] Xiang, H.et al.Deep learning for image inpainting:
+A survey.Pattern Recognit.134, 109046 (2023).
+[17] Elharrouss, O., Almaadeed, N., Al-Maadeed, S. &
+Akbari, Y. Image inpainting: A review.Neural Pro-
+cess. Lett.51, 2007–2028 (2020).
+[18] Yu, J., Lin, Z., Yang, J., Shen, X., Lu, X. & Huang,
+T. S. Free-form image inpainting with gated convo-
+lution.Proc. IEEE/CVF Int. Conf. Comput. Vis.,
+4471–4480 (2019).
+[19] Pathak, D., Kr¨ ahenb¨ uhl, P., Donahue, J., Darrell,
+T. & Efros, A. A. Context encoders: Feature learn-
+ing by inpainting.Proc. IEEE Conf. Comput. Vis.
+Pattern Recognit., 2536–2544 (2016).
+[20] Wang, Z., Bovik, A. C., Sheikh, H. R. & Simoncelli,
+E. P. Image quality assessment: From error visibility
+to structural similarity.IEEE Trans. Image Process.
+13, 600–612 (2004).
+[21] Yosinski, J., Clune, J., Bengio, Y. & Lipson,
+H. How transferable are features in deep neural
+networks?Adv. Neural Inf. Process. Syst.27,
+3320–3328 (2014).
+[22] Reed, I. S. & Yu, X. Adaptive multiple-band CFAR
+detection of an optical pattern with unknown spec-
+tral distribution.IEEE Trans. Acoust. Speech Signal
+Process.38, 1760–1770 (1990).
+[23] Provost, F.et al.High-resolution co-seismic fault
+offsets of the 2023 T¨ urkiye earthquake ruptures us-
+ing satellite imagery.Sci. Rep.14, 6793 (2024).
+[24] Reitman, N. G.et al.Rapid surface rupture map-
+ping from satellite data: The 2023 Kahramanmara¸ s,
+Turkey (T¨ urkiye), earthquake sequence.Seismol.
+Res. Lett.94, 2330–2345 (2023).
+[25] Cong, Y.et al.SatMAE: Pre-training transform-
+ers for temporal and multi-spectral satellite imagery.
+Adv. Neural Inf. Process. Syst.35, 197–211 (2022).
+[26] He, K.et al.Masked autoencoders are scalable vi-
+sion learners.Proc. IEEE/CVF Conf. Comput. Vis.
+Pattern Recognit., 16000–16009 (2022).
+[27] Zhao, H., Gallo, O., Frosio, I. & Kautz, J. Loss func-
+tions for image restoration with neural networks.
+IEEE Trans. Comput. Imaging3, 47–57 (2017).
+8

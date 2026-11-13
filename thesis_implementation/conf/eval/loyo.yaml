@@ -1,0 +1,9 @@
+protocol: loyo
+spatial_folds: 5
+temporal_drift_cutoff_year: 2021
+alert_budgets: [0.05, 0.10]
+bootstrap_reps: 1000
+enforce_stress_validation_gate: true
+min_non_circular_proxies: 2
+min_proxy_spearman_rho: 0.20
+min_top_k_precision: 0.50

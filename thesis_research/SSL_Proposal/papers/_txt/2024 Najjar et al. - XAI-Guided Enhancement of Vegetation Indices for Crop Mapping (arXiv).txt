@@ -1,0 +1,452 @@
+XAI-GUIDED ENHANCEMENT OF VEGETA TION INDICES
+FOR CROP MAPPING
+Hiba Najjar, Francisco Mena∗
+University of Kaiserslautern-Landau
+Kaiserslautern
+Germany
+Marlon Nuske, Andreas Dengel
+German Research Center for Artificial Intelligence
+Kaiserslautern
+Germany
+ABSTRACT
+Vegetation indices allow to efficiently monitor vegetation
+growth and agricultural activities. Previous generations of
+satellites were capturing a limited number of spectral bands,
+and a few expert-designed vegetation indices were sufficient
+to harness their potential. New generations of multi- and hy-
+perspectral satellites can however capture additional bands,
+but are not yet efficiently exploited. In this work, we propose
+an explainable-AI-based method to select and design suitable
+vegetation indices. We first train a deep neural network using
+multispectral satellite data, then extract feature importance to
+identify the most influential bands. We subsequently select
+suitable existing vegetation indices or modify them to incor-
+porate the identified bands and retrain our model. We validate
+our approach on a crop classification task. Our results indicate
+that models trained on individual indices achieve comparable
+results to the baseline model trained on all bands, while the
+combination of two indices surpasses the baseline in certain
+cases.
+1. INTRODUCTION
+In recent years, an increasing number of studies have em-
+ployed Machine Learning (ML) and Deep Learning (DL)
+techniques to harness remote sensing data for multiple ap-
+plications related to the sustainable development goals [1].
+While such models are proficient in processing raw satel-
+lite bands, a common data engineering practice in this field
+involves the utilization of vegetation indices (VIs). Ratios,
+differences, and derivatives between reflectance values from
+different spectral wavelengths can enhance the spectral sig-
+nals associated with vegetation characteristics of interest,
+given that the original measurements of spectral reflectance
+constitute a mixed signal comprising vegetation canopies,
+shadows, soils, and other components present on the land
+surface [2]. While some VIs are commonly used for crop
+∗H.Najjar and F.Mena acknowledge support through a scholarship from
+the University of Kaiserslautern-Landau.
+This work is accepted as a conference paper at IGARSS2024.
+monitoring, the selection of the most suitable vegetation in-
+dex is not always straightforward [2]. Instead, the initial
+step involves identifying the sensitive wavelengths and corre-
+sponding VIs for their optimal utilization.
+An advantage of using DL lies in the model’s inherent
+capability to automatically extract crop-related features and
+discern interactions between raw bands. To extract scientific
+insights encoded in the model, eXplainable AI (XAI) tech-
+niques can uncover the inner workings of the model, facili-
+tating an understanding of how individual satellite bands con-
+tribute to its predictions [3]. Regarding the Sentinel-2 (S2)
+multispectral instruments in particular, they stand out as one
+of the few remote sensors with the capacity to capture red-
+edge (RE) wavelengths between 700 and 800nm. Notably,
+the additional RE bands remain under-explored for their po-
+tential to enhance crop classification through vegetation in-
+dices [4]. Furthermore, short-wave infrared (SWIR) bands,
+typically used for water monitoring, have also received little
+attention in exploring their efficacy to track vegetation cover
+and its phenology [4]. In this paper, we introduce an ap-
+proach that leverages explainability methods to identify rel-
+evant bands and improve the use of VIs. We validate our ap-
+proach on a crop classification task. (The code will be made
+publicly available upon paper acceptance.)
+2. METHODOLOGY
+2.1. Crop Dataset
+In Sub-Suharan Africa, extreme food insecurity and malnu-
+trition are prevalent in multiple countries. In this study, we
+leverage S2 data from Ghana and South Sudan to address
+this task. The corresponding public datasets used contains
+satellite image time series captured between January and De-
+cember 2016 at a 10m resolution, and are labeled with mul-
+tiple land cover classes [5]. For our study, we merge the two
+datasets and retain only the pixels corresponding to crops. We
+focus our work on classes with more than 10,000 labeled pix-
+els: sorghum, maize, rice, groundnut, soybean, and yam. Ta-
+ble 1 presents the data distribution in each country. We par-
+tition 5% of the data for validation, ensuring that pixels orig-
+arXiv:2407.08298v1  [cs.CV]  11 Jul 2024
+
+=== PAGE BREAK ===
+
+inating from the same satellite image patch are exclusively
+utilized for either training or validation but not both.
+Table 1. Pixel count per crop type.
+Crop Total Ghana S-Sudan
+Maize 329,847 322,767 7,080
+Groundnut 101,314 96,371 4,943
+Rice 98,986 93,908 5,078
+Soybean 67,638 67,638 -
+Sorghum 65,185 8,352 56,833
+Yam 22,091 22,091 -
+2.2. Exploiting spectral attributions
+Feature attribution methods are explanation techniques that
+provide interpretations for individual predictions. These
+methods assign sensitivity or contribution scores to each input
+feature, quantifying their relative importance to the model’s
+prediction [6]. In our experiments, we use the Shapley Value
+Sampling (SVS) to estimate feature attributions [7]. SVS is
+grounded in cooperative game theory, which provides a solid
+theoretical foundation, unlike many other methods [6]. Its
+robustness has being quantitatively evaluated in the context
+of a regression task based on time series of satellite data, and
+has shown superior stability against several other techniques
+[8].
+The results of the spectral attribution are used to improve
+the selection of VIs for the crop mapping task. We first in-
+terpret the model trained on the ten satellite bands by esti-
+mating the attributions for a maximum of 10,000 correctly
+classified pixels from each crop. The features are grouped
+over the spectral dimension to compute a single attribution
+value for the time series of each band. The negative attribu-
+tions are suppressed to only consider positive contributions to
+a given class [9]. To standardize the results, we scale the attri-
+butions so that the summation of attributions per pixel equals
+1, before averaging them both globally and per class. Subse-
+quently, we use these importance values to select VIs that ac-
+count for these bands, and adjust existing indices as needed.
+The model is then retrained by replacing the satellite bands
+with individual indices or binary combinations.
+2.3. Experimental setup
+We use ten bands from S2 data for our analysis, namely the
+blue (B02), green (B03), red (B04), three RE bands (B05,
+B06, B07), near-infrared (NIR) (B08), narrow near-infrared
+(n-NIR) (B8A), and two SWIR (B11, B12) bands. An addi-
+tional channel, indicating the cloud coverage of the image, is
+stacked to these bands and used in all our experiments.
+Regarding the modeling, we rely on recurrent neural net-
+works, which have successfully been used to analyze tempo-
+ral satellite data [10, 11, 12, 13]. We opt for the Gated Re-
+current Unit (GRU), introduced in [14], due to its moderate
+Fig. 1 . Global and crop-specific spectral attributions of the
+model trained on the ten satellite bands.
+number of parameters and its proven effectiveness in remote
+sensing applications [12, 15, 16]. The time series of each
+pixel are pre-padded to a fixed sequence length of 228, to ac-
+count for the longest time series in the dataset, before being
+supplied to the model. To handle the unbalanced labels in the
+data, we use a weighted sampler during training. We evalu-
+ate all models using the overall accuracy (OA) and F1 scores.
+The OA is the percentage of correctly classified pixels across
+all classes, while the F1 score is the weighted average of class
+specific F1 scores. We also report the accuracies per class.
+3. RESULTS
+3.1. Spectral attributions
+We train the GRU-based model using the satellite bands and
+present the evaluation results on the validation set in the sec-
+ond column of Table 2. This baseline model achieved a score
+of 67% on both the OA and F1 metrics. In individual classes,
+high accuracies of 84% and 86% were attained for rice and
+sorghum, respectively, while yam exhibited the lowest score
+at 27%. This could be attributed to the relatively small num-
+ber of pixels in this class. Notably, the largest two classes did
+not necessarily exhibit the best performance, suggesting that
+the performance gaps are not solely due to the size of each
+class.
+We interpret the baseline model following the procedure
+described in 2.2, and visualize the corresponding results in
+Figure 1. Starting with the global average attribution line,
+SWIR1 and RE1 rank at the top with around 20% of the to-
+tal importance, followed by the red, SWIR2, n-NIR, and NIR
+bands, in the descendant order of their respective importance.
+The remaining bands exhibit a less significant importance.
+Notably, the relatively small importance of the cloud mask
+across all classes indicates that the model is not biased by this
+
+=== PAGE BREAK ===
+
+Table 2. Experimental results of all trained models. The best score in each experimental group is in bold.
+S2 Single VI Two VIs
+S2 x — — — — — — — — — — — — — —
+NDVI — x — — — — — — x x x — — — —
+nNDVI — — x — — — — — — — — — — x x
+NDRE — — — x — — — — x — — x x x —
+NDRE2 — — — — x — — — — x — — — — —
+NDRE3 — — — — — x — — — — x — — — —
+NDMI — — — — — — x — — — — x — — x
+NDMI2 — — — — — — — x — — — — x — —
+OA 0.67 0.62 0.62 0.61 0.56 0.51 0.65 0.63 0.64 0.62 0.62 0.67 0.70 0.61 0.68
+F1 0.67 0.63 0.62 0.61 0.57 0.52 0.65 0.64 0.65 0.62 0.63 0.67 0.70 0.62 0.69
+Maize 0.65 0.66 0.61 0.65 0.54 0.41 0.62 0.60 0.67 0.60 0.61 0.63 0.70 0.61 0.66
+Groundnut 0.51 0.45 0.51 0.48 0.45 0.44 0.57 0.50 0.49 0.51 0.57 0.69 0.61 0.44 0.61
+Rice 0.84 0.64 0.70 0.62 0.62 0.64 0.73 0.76 0.66 0.74 0.66 0.77 0.83 0.71 0.81
+Soybean 0.48 0.49 0.42 0.34 0.38 0.49 0.41 0.50 0.50 0.37 0.42 0.35 0.38 0.43 0.49
+Sorghum 0.86 0.84 0.84 0.81 0.84 0.83 0.87 0.86 0.85 0.83 0.82 0.85 0.88 0.82 0.87
+Yam 0.27 0.23 0.21 0.23 0.29 0.34 0.38 0.27 0.22 0.30 0.23 0.31 0.32 0.33 0.23
+Table 3. VIs used for crop mapping. R, N, nN, S1, and S2
+are the red, NIR, n-NIR, SWIR1, and SWIR2, respectively.
+VI Formula Reference
+NDVI (N - R)/(N + R) Rouse et al. [19]
+n-NDVI (nN - R)/(nN + R) This paper
+NDRE (N - RE1) / (N + RE1) Gitelson & Merzlyak[20]
+NDRE2 (N - RE2) / (N + RE2) This paper
+NDRE3 (N - RE3) / (N + RE3) This paper
+NDMI (N - S1)/(N + S1) Wilson & Sader [21]
+NDMI2 (N - S2)/(N + S2) This paper
+channel for the identification of any specific crop.
+To analyze the results crop-wise, groundnut and soybean
+highly rely on the first RE band, followed by the red and
+SWIR1 bands. Sorghum has a similar attribution pattern.
+Rice has an additional particular dependence on the SWIR2
+band. Rice and yam identification significantly rely on the
+first SWIR band, followed by RE1. All the remaining bands
+have each less than 10% of the total importance. Maize crop
+classification is sensitive to the first SWIR and RE bands, fol-
+lowed by the red band.
+These results highlight the relevance of RE1 and SWIR1
+bands for crop mapping and complement the findings of ear-
+lier studies. Yi et al. [17] assessed the importance of S2
+bands on the same task and found that RE1 and SWIR1 bands
+are more efficient in identifying crops than other bands in the
+Shiyang River Basin in China. Similarly, Liu et al. [18] found
+that RE and SWIR bands of S2 had irreplaceable effects on
+land cover classification.
+3.2. Enhanced usage of VIs
+In light of the insights gained from the importance of the
+satellite bands for crop mapping, we proceed with a guided
+selection of individual and binary combinations of VIs.
+Given the significance of RE1, we include the normalized
+difference red edge (NDRE) [20] index that uses the NIR and
+RE1 bands. We derive two modified indices, NDRE2 and
+NDRE3, by replacing the first RE channel with the second
+and third, respectively, to verify whether the relative perfor-
+mance of the three indices align with the attribution of their
+respective bands. We also incorporate the normalized differ-
+ence water index (NDMI), which uses the first SWIR band,
+and create a modified version, NDMI2, which uses the second
+SWIR band, influential on rice identification. Additionally,
+we include the widely used normalized difference vegetation
+index (NDVI), and recognizing the comparable importance
+of n-NIR, we introduce a modified index, narrow normalized
+difference vegetation index (n-NDVI), where the NIR band is
+replaced with n-NIR.
+It is important to note that only the red, green, blue, and
+NIR bands have a resolution of 10m, while the remaining
+bands were originally captured either at a 20 or 60m reso-
+lution. Therefore, we ensured that all our proposed indices
+contain at least one of the high-resolution bands. The formula
+of each index is listed in Table 3. We retrain our model using
+individual indices or combinations of two indices as inputs.
+The results are reported in Table 2.
+Among the models trained on a single VI, the top-
+performing model is based on NDMI, achieving an OA score
+of 67%. This model outperformed the baseline in identifying
+three crops: sorghum, groundnut, and yam. The second-
+best model is based on the modified version of the same
+index, NDMI2, which achieved the same class accuracy as
+the baseline in sorghum and yam, and performed better in
+soybean. The third-best model, based on the NDVI, slightly
+outperformed the baseline on maize and soybean crops. The
+n-NDVI The NDRE3-based model achieved the lowest OA
+score, mainly due to its low accuracy in maize and rice crops.
+Among the models trained on two VIs, the combination
+of NDRE and NDMI2 achieved the highest accuracies for
+sorghum, maize, and rice, and outperformed the baseline in
+groundnut and yam crops. This combination also scored an
+OA score of 70%, 3 percentage points ( pp) higher than the
+baseline model. The combination of NDMI and n-NDVI also
+
+=== PAGE BREAK ===
+
+demonstrated comparable performance. In contrast, combin-
+ing NDRE and n-NDVI had the worst overall performance,
+mainly due to its low accuracy in rice crops, despite its higher
+capacity to identify yam compared to the other models. The
+combinations of NDVI+NDRE2 and NDVI+NDRE3 also dis-
+played comparatively low overall performance.
+4. DISCUSSION
+Our overall approach of exchanging the raw satellite bands
+with few VIs exhibits promising results. The best model
+based on a single index exhibited an OA 2 pp lower than
+the baseline model, while using two indices achieved a 3 pp
+higher accuracy in the best case. These results highlight
+the potential of relying solely on one or two VIs for crop
+identification, especially when carefully selected. In gen-
+eral, larger datasets benefit from increased input features, as
+they enable automatic learning of high-level features by the
+model. However, in medium-sized training datasets like ours,
+performance can be enhanced through careful input feature
+selection.
+As shown in Figure 1, SWIR1 appears to be significantly
+important to identify rice and yam crops, accordingly the
+NDMI-based models achieves the best accuracy for yam and
+the second-best score for rice, among the single-index based
+models. Combining NDMI with a second index also achieved
+high accuracies for both crops. We further observe that the
+proposed NDMI2 achieved the best accuracies on rice com-
+pared to the other single-VI based models. Additionally, it
+demonstrated the highest accuracies on sorghum, maize, and
+rice when combined with NDRE, outperforming all VI-based
+models. On the other hand, the proposed NDRE2 and NDRE3
+indices performed poorly on the OA both when used individ-
+ually and when combined with NDVI, in contrast to NDRE,
+which achieved high scores, particularly when combined
+with NDMI or NDMI2. This observation aligns with the
+relative average importance of the three RE bands, as shown
+in Figure 1, suggesting that the first band is more suitable
+for crop identification. Nonetheless, the second and third RE
+bands were of higher importance for soybean and sorghum
+compared to the remaining crops, which is consistent with
+the improvement in crop-specific accuracies achieved by the
+NDRE2 and NDRE3-based models compared to NDRE. In
+contrast, when combined with NDVI, the NDRE performs
+better in both crops.
+While the performance of the VI-based modeling aligns
+with the attribution results conducted on the baseline model,
+there were some behaviors that were not easily interpretable.
+For instance, soybean identification relies significantly on
+the first RE band, and while RE1 and RE3 have marginal
+importance, according to the attribution results. Nonetheless,
+the soybean classification accuracy is the much worse when
+the model is trained with NDRE, compared to the NDRE2
+and NDRE3 models. Similarly, the RE1 exhibits higher
+importance for identifying yam crop compared to the other
+two bands, while the performance of the three corresponding
+single-VI based models had the opposite behavior.
+Overall, one limitation of our XAI-based approach is the
+reliability of the model. Meaningful explanation results and
+relevant scientific insights are conditioned by the scientific
+accuracy of what the model has learned during the training.
+Since our baseline had an OA score of 67%, we believe that
+further improvements in the model’s performance can en-
+hance its robustness, and consequently, the reliability of its
+attribution results.
+In future work, in addition to improving the performance
+of the baseline model, we aim to extend the dataset to cover
+other regions from multiple years, and validate our approach
+on a broader range of crop types.
+5. CONCLUSION
+In this paper, we identified VIs relevant to identify each crop
+type, guided by spectral importance results explaining the
+baseline model. Our findings contribute to the growing body
+of evidence suggesting that the information contained within
+the RE and SWIR bands from S2 is critical for discrimi-
+nating crop types [4]. Based on the explanation results, we
+trained several models on individual and combinations of two
+VIs and demonstrated their ability to outperform the model
+trained on all the bands. Importantly, the performance of
+these models aligned with the spectral importance in crop
+accuracies in most cases. Overall, our results further indicate
+that combining two VIs perform better than using a single in-
+dex, and while some combinations improved the OA over the
+validation set, an examination of individual crop performance
+reveals that an index can be highly efficient in identifying
+certain crops but might struggle with others.
+References
+[1] B. Ferreira, M. Iten, and R. G. Silva, “Monitoring
+sustainable development by means of earth observation
+data and machine learning: A review,” Environmental
+Sciences Europe, vol. 32, no. 1, pp. 1–17, 2020.
+[2] Y . Zeng, D. Hao, A. Huete, B. Dechant, J. Berry, J. M.
+Chen, J. Joiner, C. Frankenberg, B. Bond-Lamberty,
+Y . Ryu, et al., “Optical vegetation indices for moni-
+toring terrestrial ecosystems globally,” Nature Reviews
+Earth & Environment, vol. 3, no. 7, pp. 477–493, 2022.
+[3] G. Ras, N. Xie, M. Van Gerven, and D. Doran, “Ex-
+plainable deep learning: A field guide for the uniniti-
+ated,” Journal of Artificial Intelligence Research , vol.
+73, pp. 329–396, 2022.
+
+=== PAGE BREAK ===
+
+[4] G. Misra, F. Cawkwell, and A. Wingler, “Status of phe-
+nological research using sentinel-2 data: A review,” Re-
+mote Sensing, vol. 12, no. 17, pp. 2760, 2020.
+[5] R. Rustowicz, R. Cheong, L. Wang, S. Ermon,
+M. Burke, and D. Lobell, “Semantic Segmentation
+of Crop Type in Africa: A Novel Dataset and Analy-
+sis of Deep Learning Methods,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern
+Recognition Workshops, 2019, pp. 75–82.
+[6] S. M. Lundberg and S.-I. Lee, “A unified approach to
+interpreting model predictions,” Advances in neural in-
+formation processing systems, vol. 30, 2017.
+[7] E. Strumbelj and I. Kononenko, “An efficient expla-
+nation of individual classifications using game theory,”
+The Journal of Machine Learning Research, vol. 11, pp.
+1–18, 2010.
+[8] H. Najjar, P. Helber, B. Bischke, P. Habelitz, C. Sanchez,
+F. Mena, M. Miranda, D. Pathak, J. Siddamsetty, D. Are-
+nas, M. V ollmer, M. Charfuelan, M. Nuske, and A. Den-
+gel, “Feature Attribution Methods For Multivariate
+Time-Series Explainability In Remote Sensing,” in
+IGARSS 2023 - 2023 IEEE International Geoscience
+and Remote Sensing Symposium, 2023.
+[9] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam,
+D. Parikh, and D. Batra, “Grad-cam: Visual explana-
+tions from deep networks via gradient-based localiza-
+tion,” in Proceedings of the IEEE international confer-
+ence on computer vision, 2017, pp. 618–626.
+[10] X. Jia, A. Khandelwal, G. Nayak, J. Gerber, K. Carl-
+son, P. West, and V . Kumar, “Incremental Dual-memory
+LSTM in Land Cover Prediction,” inProceedings of the
+23rd ACM SIGKDD international conference on knowl-
+edge discovery and data mining, 2017, pp. 867–876.
+[11] A. Sharma, X. Liu, and X. Yang, “Land cover clas-
+sification from multi-temporal, multi-spectral remotely
+sensed imagery using patch-based recurrent neural net-
+works,” Neural Networks, vol. 105, pp. 346–355, 2018.
+[12] V . Sainte Fare Garnot, L. Landrieu, S. Giordano, and
+N. Chehata, “Time-Space Tradeoff in Deep Learn-
+ing Models for Crop Classification on Satellite Multi-
+Spectral Image Time Series,” in IGARSS 2019-2019
+IEEE International Geoscience and Remote Sensing
+Symposium. IEEE, 2019, pp. 6247–6250.
+[13] L. Mou, L. Bruzzone, and X. X. Zhu, “Learn-
+ing Spectral-Spatial-Temporal Features via a Recurrent
+Convolutional Neural Network for Change Detection in
+Multispectral Imagery,” IEEE Transactions on Geo-
+science and Remote Sensing , vol. 57, no. 2, pp. 924–
+935, 2018.
+[14] J. Chung, C. Gulcehre, K. Cho, and Y . Bengio, “Empir-
+ical Evaluation of Gated Recurrent Neural Networks on
+Sequence Modeling,” arXiv preprint arXiv:1412.3555,
+2014.
+[15] R. Interdonato, D. Ienco, R. Gaetano, and K. Ose, “Du-
+PLO: A DUal view Point deep Learning architecture for
+time series classificatiOn,”ISPRS journal of photogram-
+metry and remote sensing, vol. 149, pp. 91–104, 2019.
+[16] L. Mou, P. Ghamisi, and X. X. Zhu, “Deep Recur-
+rent Neural Networks for Hyperspectral Image Classifi-
+cation,” IEEE Transactions on Geoscience and Remote
+Sensing, vol. 55, no. 7, pp. 3639–3655, 2017.
+[17] Z. Yi, L. Jia, and Q. Chen, “Crop classification us-
+ing multi-temporal Sentinel-2 data in the Shiyang River
+Basin of China,” Remote Sensing, vol. 12, no. 24, pp.
+4052, 2020.
+[18] Y . Liu, J. Qian, and H. Yue, “Comprehensive evaluation
+of sentinel-2 red edge and shortwave-infrared bands to
+estimate soil moisture,”IEEE Journal of Selected Topics
+in Applied Earth Observations and Remote Sensing, vol.
+14, pp. 7448–7465, 2021.
+[19] J. W. Rouse, R. H. Haas, J. A. Schell, D. W. Deer-
+ing, et al., “Monitoring vegetation systems in the Great
+Plains with ERTS,” NASA Spec. Publ, vol. 351, no. 1,
+pp. 309, 1974.
+[20] A. Gitelson and M. N Merzlyak, “Quantitative estima-
+tion of chlorophyll-a using reflectance spectra: Experi-
+ments with autumn chestnut and maple leaves,” Journal
+of Photochemistry and Photobiology B: Biology , vol.
+22, no. 3, pp. 247–252, 1994.
+[21] E. H. Wilson and S. A Sader, “Detection of forest har-
+vest type using multiple dates of Landsat TM imagery,”
+Remote Sensing of Environment, vol. 80, no. 3, pp. 385–
+396, 2002.

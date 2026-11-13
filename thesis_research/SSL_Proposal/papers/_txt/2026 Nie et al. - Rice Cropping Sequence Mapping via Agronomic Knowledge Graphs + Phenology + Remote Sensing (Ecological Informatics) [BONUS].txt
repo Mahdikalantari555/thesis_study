@@ -1,0 +1,1059 @@
+Rice cropping sequence mapping in the tropical monsoon zone via 
+agronomic knowledge graphs integrating phenology and remote sensing
+Hongzhang Nie a,b, Yingchen Lin a, Wenfei Luo a, Guilin Liu a,*
+a School of Geography, South China Normal University, Guangzhou, China
+b Faculty of Geographical Science, Beijing Normal University, Beijing, China
+ARTICLE INFO
+Keywords:
+Agronomic knowledge graphs
+Phenology events
+Random forest
+Pixel- and object-based classification
+ABSTRACT
+Rice cropping sequence mapping via multitemporal remote sensing and agronomic techniques provides critical 
+geoinformatics for agroecosystem modeling. The East Asian tropical monsoon region is an important rice- 
+growing area, and the regional food security depends on efficient rice mapping. Frequent cloud cover during 
+the rainy season leads to insufficient available optical remote sensing images that cover the growth stages of rice, 
+which renders remote sensing-derived rice identification difficult. Thus, we proposed a simple and efficient 
+strategy from an agronomic knowledge graph perspective in which specific phenological events of rice and 
+Landsat/Sentinel-2 time series were employed to extract different rice cropping sequences on the Leizhou 
+Peninsula (China). Then, a control group and five experimental groups were established by integrating spectral 
+features via pixel- and object-based random forest (RF) algorithms. The results revealed that five key pheno-
+logical events could be obtained for rice cropping sequence identification in the study area. The overall accuracy 
+of the pixel-based classification results ranged from 83.48 % to 92.49 %, whereas that of the object-based 
+classification results ranged from 84.98 % to 92.80 %. These findings indicate that efficient rice cultivation 
+mapping via optical remote sensing data requires the selection of specific time windows corresponding to 
+phenological events to benefit rice cultivation monitoring and regional agroecosystem sustainability.
+1. Introduction
+Rice is one of the most important food crops in the world, as rice 
+feeds nearly half of the global population, and with population growth, 
+the demand for food is increasing (Kuenzer and Knauer, 2013; Shi et al., 
+2024; Zhao et al., 2021). At present, environmental pollution and the 
+depletion of natural resources are problems associated with crop culti-
+vation (Meng et al., 2023). Mapping rice cultivation areas is important 
+for predicting grain yields (Wu et al., 2021), assessing food security and 
+improving agricultural and ecological policy planning at the regional, 
+national, and global scales (Sah et al., 2023). Remote sensing is an 
+essential technology for monitoring rice cultivation (Kuenzer and Kna-
+uer, 2013) and supports precision farming by guiding field management 
+activities, such as sowing, irrigation and fertilization (Meng et al., 
+2015). Machine learning methods have been widely applied in crop 
+classification (Fu et al., 2023), and common methods, including the 
+support vector machine (SVM) (Yan et al., 2021) and random forest (RF) 
+(Li et al., 2021a) methods, have achieved excellent accuracy in previous 
+studies (de Azevedo et al., 2023; Pelletier et al., 2016). Characterizing 
+the time series variations in agronomic traits and vegetation indices 
+during the growing season is the key to constructing a remote sensing 
+monitoring model (Duarte et al., 2014; Zhao et al., 2022). Common 
+methods for extracting rice characteristics usually entail the use of as 
+many features as possible to increase the classification accuracy or 
+involve the selection of remote sensing features (such as spectral, index 
+and textural features) for establishing and evaluating feature combina-
+tions (Liu et al., 2022). However, useful information occurs in the low- 
+dimensional feature space (Hu et al., 2017). The increase in features may 
+even cause a decline in the classification accuracy with a limited amount 
+of training data (Hughes, 1968). In addition, surface reflectance and 
+vegetation indices from remote sensing data have been used indis-
+criminately for mapping various crops (Ferchichi et al., 2022). However, 
+employing unique phenological features of crops can yield a better 
+feature space than employing common vegetation indices can (Zhang 
+et al., 2020a), and such features have been integrated into remote 
+sensing modeling and classification of tea plantations (Kang et al., 
+2023), grasses (Rojo et al., 2022) and ecosystem dynamics (Caparros- 
+Santiago et al., 2023), with a high overall accuracy (OA) and fine-scale 
+* Corresponding author.
+E-mail addresses: liuguilin@m.scnu.edu.cn, guilinshiwo@163.com (G. Liu). 
+Contents lists available at ScienceDirect
+Ecological Informatics
+journal homepage: www.elsevier.com/locate/ecolinf
+https://doi.org/10.1016/j.ecoinf.2025.103075
+Received 9 May 2024; Received in revised form 9 February 2025; Accepted 13 February 2025  
+Ecological Informatics 87 (2025) 103075 
+Available online 14 February 2025 
+1574-9541/© 2025 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY-NC-ND license ( http://creativecommons.org/licenses/by- 
+nc-nd/4.0/ ). 
+mapping results.
+Crop phenology events and traits can aid in remote sensing for dis-
+tinguishing different crop types and cropping sequences (Blickensd¨orfer 
+et al., 2022; Duarte et al., 2014; Singha and Sarmah, 2019; Wardlow and 
+Egbert, 2008). Cropping sequences describe the arrangements used in 
+crop succession planting for the same cropland parcel, including 
+continuous plantings of the same crop and diverse crop rotations 
+(Leteinturier et al., 2006; Steinmann and Dobers, 2013). The commonly 
+applied phenology parameters derived from remote sensing data include 
+the start of the season (SOS), end of the season (EOS) (de Beurs and 
+Henebry, 2010), maximum normalized difference vegetation index 
+(NDVI) (Reed et al., 1994), green-up stage, maturity, senescence, 
+dormancy (Duarte et al., 2014; Zhang et al., 2003), and time of the 
+maximum recoded during the growth period (Araya et al., 2018). As one 
+of the most widely adopted vegetation indices, the NDVI has been used 
+to obtain crop phenological information (Araya et al., 2018), for which 
+different phenological methods have been proposed in rice cultivation 
+mapping: (1) To introduce phenological features into remote sensing 
+classification, for example, Zhang and Lin (2019) used five phenology 
+parameters based on fitted NDVI curves as feature bands to map rice; 
+furthermore, (2) remote sensing data for key phenological stages have 
+been incorporated for crop classification. For instance, Li et al. (2016)
+noted two key phenological stages of rice, proposed a renormalized 
+version of the NDVI, and employed Landsat Thematic Mapper (TM)/ 
+Enhanced Thematic Mapper Plus (ETM+) images from early August and 
+early October to classify these stages, resulting in an OA value of 98.9 %. 
+Zhang et al. (2020a) applied classification and regression tree (CART), 
+SVM and RF models to conduct classification on the basis of the features 
+of eight-temporal-phase Sentinel-2 images, thereby achieving an OA 
+value of 97.85 %. In recent years, pixel-based classification has become a 
+common method for crop identification (Pluto-Kossakowska, 2021). 
+Notably, Ni et al. (2021) developed a pixel-based phenological feature 
+composite method and inputted the derived features into a classifier to 
+obtain classification results. Considering the salt-and-pepper effect in 
+pixel-based classification, the object-based approach has been more 
+frequently employed for crop identification and has provided greater 
+classification accuracy (Gao and Mas, 2008; Jiao et al., 2022). By inte-
+grating the geometric features of cropland objects from Gaofen (GF)-2 
+high-resolution images and spectral–temporal features from Sentinel-2 
+time series, Chen and Liu (2024) mapped crop types on the basis of 
+phenology knowledge, with an OA value of 99.64 %, thus revealing the 
+potential for crop mapping under spatially heterogeneous cropland 
+conditions.
+Cloud coverage is a major obstacle in capturing adequate optical 
+remote sensing data in the tropical monsoon zone (Laborde et al., 2017). 
+During the rainy season, the frequent occurrence of cloud coverage 
+renders it difficult to obtain sufficient cloud-free images at the rice 
+phenological stages, which poses challenges for effectively using vege-
+tation indices derived from satellite optical images to map rice cropping 
+sequences (Jiang et al., 2021). To solve this problem, high-temporal- 
+resolution and high-spatial-resolution (daily 30-m) data have been 
+generated via spatiotemporal fusion models (such as the spatial and 
+temporal adaptive reflection fusion model (STARFM)) (Gao et al., 2006). 
+The abovementioned methods exhibit limitations; for example, the 
+spatiotemporal model performance is significantly affected by spatio-
+temporal variations in landscapes. Notably, the model prediction accu-
+racy cannot be enhanced, even with a higher computational cost (Chen 
+et al., 2015). However, the rice mapping method is efficient and easy to 
+implement (Mosleh et al., 2015). Thus, a simple and efficient strategy 
+that relies on specific phenological events of rice and corresponding time 
+series remote sensing data can be employed for efficient crop classifi-
+cation, which can benefit yield prediction and agricultural policy- 
+making efforts (Yang et al., 2024; Zhang and Lin, 2019).
+The Leizhou Peninsula of China is an important agricultural area 
+where various cropping sequences are implemented. Notably, rice is 
+grown during the rainy season, and fruits and vegetables are grown 
+during the dry season. In this study, we first established and analyzed an 
+agronomic remote sensing knowledge graph for cropping sequence 
+identification in the tropical monsoon zone and then hypothesized that 
+the early-season rice harvesting period and the late-season rice har-
+vesting period are two key phenological events for identifying cropping 
+sequences. To test this hypothesis, we established a control group and 
+five experimental groups by integrating remote sensing bands and NDVI 
+features and applying pixel- and object-based RF classification algo-
+rithms (Breiman, 2001). Specifically, this study aimed to (1) analyze 
+agronomic remote sensing knowledge graphs for cropping sequence 
+identification and emphasize their importance; (2) construct image 
+feature subsets to evaluate key phenological events for classification; 
+and (3) evaluate the optimization of object-based classification results 
+over pixel-based results in fragmented agricultural areas.
+2. Theoretical framework
+As shown in Fig. 1, we established a theoretical framework for 
+analyzing agronomic remote sensing knowledge graphs, which consti-
+tutes the basis for cropping sequence identification in the tropical 
+monsoon zone. Data from multisource remote sensing satellite images 
+(e.g., Landsat and Sentinel), crop planting information, agronomic 
+practices, and policy information are fundamental for classification 
+mapping. These massive data must be preprocessed, which includes data 
+filtering, image merging after cloud masking, image segmentation and 
+identification of field objects. The process-stage model (Zhang et al., 
+2022) of crop growth is the core of the entire knowledge graph. The 
+process refers to the continuous process of crop growth, including rice 
+sowing, seedling, transplanting, tillering to stem elongation, panicle 
+initiation to heading, filling, maturity and winter planting. The stage 
+may be divided into two categories: (1) phenological events, which are 
+supported by existing agronomic knowledge, farm management patterns 
+and agronomic policies; and (2) remote sensing time windows corre-
+sponding to these events. In this study, an ontology was established 
+comprising concepts (e.g., rice, phenology), attributes (e.g., surface 
+reflection and vegetation indices), and farmland entities (e.g., fields and 
+field edges). Notably, the intrayear variations in vegetation indices 
+reflect the crop growth process. The use of images for different remote 
+sensing time windows (stages) facilitates the extraction of features such 
+as surface reflectance and vegetation indices. Feature mining is per-
+formed on the basis of the key phenological events (stages). Thus, in-
+formation extraction can be achieved via machine learning (e.g., the RF) 
+or deep learning (e.g., convolutional neural networks). In general, the 
+construction of agronomic knowledge graphs focuses on the division of 
+stages, which involves first extracting key phenological events on the 
+basis of agronomic knowledge and then dividing time windows. The 
+accuracy of stage division in agronomic knowledge graphs affects 
+feature space construction and directly impacts the crop classification 
+accuracy. Eventually, remote sensing knowledge graphs of agricultural 
+management policy can be used for managing agricultural natural re-
+sources and optimizing agricultural policies, thus realizing precision 
+agricultural management.
+3. Case study: rice cropping sequence mapping in the tropical 
+monsoon zone of China
+3.1. Study area and data
+We selected an area of 5.82 × 7.14 km2 in the central part of the 
+Leizhou Peninsula in China as the study area (Fig. 2). The average 
+annual temperature ranges from 23 to 24 ◦C, and the annual precipita-
+tion ranges from 1400 to 1700 mm and is affected by the tropical 
+monsoon climate. The study area is suitable for growing rice during the 
+rainy season because of the flat cropland, fertile soil, and sufficient 
+water supply, and it is suitable for growing winter crops, such as 
+greenhouse watermelon, during the dry season (Yang, 2018). 
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+2 
+Fig. 1. Framework of agronomic remote sensing knowledge graph construction for cropping sequence identification. The policy information image was acquired 
+from https://www.gdzjdaily.com.cn/p/2830978.html (accessed on 10 February 2023).
+Fig. 2. Location of the study area: (a) Location of Guangdong Province in China; (b) location of the Leizhou Peninsula in Guangdong Province and the area covered 
+by satellite images; (c) boundary of the study area and distribution of the training and validation points.
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+3 
+Throughout the year, the main cropping sequences are double-cropping 
+rice (DCR), early-season rice–O–winter crop rotation (EOWR), and 
+winter crop–O–late-season rice rotation (WOLR). Notably, O denotes the 
+fallow period between the winter crop and rice rotations. According to 
+interviews with farmers and local news, early-season rice is generally 
+sown in March and harvested from mid-June to late June, whereas late- 
+season rice is generally sown from late July–early August and harvested 
+in November.
+Satellites such as the GF satellites (Chinese high-resolution Earth 
+imaging satellites) provide data with a very high spatial resolution, thus 
+offering a direct solution for crop mapping in smallholder agricultural 
+areas (Zhang et al., 2020b). We obtained the GF-1 product from the 
+Guangdong High-Resolution Earth Observation System Guangdong Data 
+and Application Center (https://www.gdgf.gd.gov.cn/). In particular, 
+the GF-1 satellite was launched on April 26, 2013, and carries two high- 
+resolution 2-m panchromatic and 8-m multispectral cameras (Wu et al., 
+2017). In this study, the obtained GF data provided parcel spatial in-
+formation and were used for segmentation in object-based classification. 
+We used Environment for Visualizing Images (ENVI) software (https: 
+//envi.geoscene.cn/) to implement radiometric and geometric correc-
+tions of the GF-1 high-resolution remote sensing data. We also obtained 
+Landsat-7 and Landsat-8 Level 2 products from the U.S. Geological 
+Survey (USGS, https://earthexplorer.usgs.gov/) and Sentinel-2 L2A 
+products from the European Space Agency (ESA). We then applied the 
+nearest neighbor method (Shang et al., 2022) to resample the Sentinel-2 
+remote sensing data to a 30-m resolution to ensure land cover identifi-
+cation (Jombo and Adelabu, 2023). We also filled any unscanned pixels 
+in the Landsat-7 images according to the method of Li et al. (2021b). In 
+addition, owing to the occurrence of cloud coverage in the Landsat-8 
+images acquired on July 12 and August 13, 2021, they were subjected 
+to cloud masking and fused via the Google Earth Engine (GEE) (Gorelick 
+et al., 2017). Finally, the vectorized boundary of the study area was 
+employed for clipping the abovementioned images to match the study 
+area (Table 1).
+We collected 42 crop samples in the field on February 10 and 11, 
+2023 (Fig. 3). On the basis of the abovementioned crop samples and 
+interviews with farmers, we identified cropping sequences in the cor-
+responding objects in 2021. Moreover, features corresponding to the 
+crop samples, including color, shape, size, and texture, were learned 
+from the Landsat-7/8 and Sentinel-2 images acquired on different dates. 
+The temporal features of the crop samples were also learned from NDVI 
+multitemporal profiles generated from the Landsat-7/8 and Sentinel-2 
+images. To expand the samples, 400 sample points were randomly 
+created in ArcGIS software with a minimum allowable distance of 100 
+m. We interpreted the class of each random point on the basis of learned 
+prior knowledge. A total of 13 samples were excluded because of their 
+locations at both object edges and in mixed pixels. This mixed-pixel 
+problem might cause errors in supervised classification or accuracy 
+assessment. Finally, the remaining 387 sample points were separated 
+into training and validation samples, which accounted for 30 % and 70 
+%, respectively, of the total sample points (Li et al., 2021b). A total of 4 
+DCR test samples, 19 EOWR test samples, 35 WOLR test samples and 5 
+other test samples were added to balance the number of samples of each 
+class (Table 2). Considering the phenology of rice, June and September 
+are possible months for distinguishing between the DCR, EOWR, and 
+WOLR sequences because both early- and late-season rice mature in 
+these months, respectively, which can be easily observed in the field and 
+via satellite. In addition, February and December are possible months for 
+distinguishing between the EOWR and WOLR sequences, since the 
+former is the winter crop planting period for WOLR, whereas the latter is 
+the winter crop planting period for EOWR.
+3.2. Methods
+Fig. 4 shows the technical flow chart of this study. First, the obtained 
+remote sensing images and the sample points were preprocessed on the 
+GEE platform and in ENVI software. The images and corresponding 
+NDVI images were employed as features. The feature space was con-
+structed by combining these images into feature subsets according to the 
+time series and phenological events. Second, several classification pro-
+cesses were conducted via the feature subsets, with pixel-scale classifi-
+cation according to the RF classifier in ENVI software and object-scale 
+classification according to the RF classifier in eCognition software 
+(Trimble Germany GmbH, 2014). Finally, the OA, producer accuracy 
+(PA), user accuracy (UA), and kappa coefficient were assessed via the 
+confusion matrix (Congalton, 1991) in ENVI and eCognition software.
+3.2.1. Experimental design
+Time series remote sensing images can capture cropping sequences 
+that describe the arrangement of crop succession within the same 
+cropland object, including continuous plantings of the same crop and 
+diverse rotations (Leteinturier et al., 2006; Steinmann and Dobers, 
+2013). The three main cropping sequences are DCR, EOWR, and WOLR. 
+The winter crop planting period (I), early-season rice maturation period 
+(II), early-season rice harvesting period (III), late-season rice maturation 
+period (IV), and winter crop planting period (V) are the key phenological 
+events that distinguish these cropping sequences in the study area. 
+Specifically, I is the first winter crop planting period or SOS for early- 
+season rice; II is the early-season rice maturation period or NDVI peak 
+period; III is the EOS for early-season rice harvesting or rice planting; IV 
+is the late-season rice maturation period or NDVI peak period; and V is 
+the second winter crop planting period or EOS for late-season rice. The 
+NDVI peak period can be used to identify the intensity of the peak 
+vegetative stage, which represents the rice maturation period (Liepa 
+et al., 2024).
+On the basis of the abovementioned five key phenological events for 
+identifying cropping sequences, the remote sensing images acquired 
+within the corresponding time windows play a key role in classification. 
+To test the hypothesis that the early-season rice harvesting period (II) 
+and the late-season rice harvesting period (IV) are two key phenological 
+events for identifying cropping sequences, six feature subsets, including 
+the control group (Ctrl) and the five experimental groups (Exps. 1–5), 
+were combined from the obtained surface reflectance and NDVI features 
+in six bands of each time window (Fig. 5 and Table 3). As shown in 
+Fig. 5, the orange dots indicate cloud-free Landsat-8 satellite images; the 
+green dots indicate cloud-masked and fused Landsat-8 images; and the 
+blue dots indicate cloud-free Sentinel-2 satellite images. For specific 
+features, the surface reflectance features in the six bands were derived 
+from Landsat-8 and Sentinel-2 images.
+3.2.2. Cropland object extraction
+To extract cropland objects, the vector of the study area was used to 
+divide the GF-1 image, and eCognition software was employed for 
+Table 1 
+Remote sensing image data. Specifically, GF-1 images were pansharpened from 
+2-m panchromatic images and 8-m multispectral scanning images.
+Remote 
+sensing 
+satellites
+Acquisition 
+date
+Resolution Coordinate 
+system
+Notes
+Landsat-8 01-01-2021 30 m WGS84a
+UTMb zone 
+49 N
+Landsat-7 30-03-2021 30 m Gaps filled
+GF-1 15-05-2021 2 m, 8 m
+Landsat-8 10-06-2021 30 m
+Landsat-7 18-06-2021 30 m Gaps filled
+Landsat-8 12-07-2021 30 m Less cloudy, clouds 
+removed and 
+combined13-08-2021 30 m
+Sentinel-2 29-09-2021 10 m
+Landsat-8 30-09-2021 30 m Less cloudy
+Landsat-8 03-12-2021 30 m
+a WGS84: World Geodetic System 1984.
+b UTM: Universal Transverse Mercator.
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+4 
+multiresolution segmentation. The estimation of scale parameter (ESP) 2 
+tool (Dr˘agut¸ et al., 2014) was used to estimate the optimal segmentation 
+scale, which can be employed to assess the optimal multiresolution 
+segmentation scale, by automatically calculating the local variance (LV) 
+and the rate of change (ROC). The ROC thresholds of the LV indicate the 
+scales at which the image can be segmented in the most appropriate 
+manner relative to the properties of the data at the scene level (Drǎgut¸ 
+et al., 2010). On the basis of the segmentation results, postclassification 
+was then implemented to modify the vector boundaries of the cropland 
+objects via ArcGIS software. The newly obtained results were then im-
+ported into eCognition software for subsequent classification.
+3.2.3. Classification and accuracy assessment
+We employed an RF classification model to obtain a rice cropping 
+sequence map. The RF algorithm is an integrated classifier comprising 
+multiple decision trees whose predictions are generated on the basis of 
+the majority of the classification results between the trees (Rahmati 
+et al., 2022), which has provided superior performance in remote 
+sensing applications (Avci et al., 2023). Notably, pixel-based RF classi-
+fication was implemented in ENVI software via the encapsulated 
+ENMAP-BOX v2.1.1 code (van der Linden et al., 2015), whereas object- 
+based RF classification was implemented in eCognition software. The RF 
+algorithm provides two tuning parameters, namely, the number of trees 
+needed to establish an ensemble, which is denoted as Number of Trees, 
+and the minimum number of samples needed to stop splitting, which is 
+denoted as Min Node Samples (Mahlayeye et al., 2024; van der Linden 
+et al., 2015). In the search process, we employed Number of Trees 
+parameter values between 75 and 105 and Min Node Samples parameter 
+values between 5 and 20 at intervals of 5 to obtain the optimal param-
+eters for classification (Tables S1 and S2, respectively). Moreover, OA, 
+PA, UA, and kappa coefficient values were calculated to evaluate the 
+classification accuracy (Belgiu and Csillik, 2018).
+3.3. Results
+3.3.1. Key phenological events for cropping sequence mapping
+In the process-stage model of the agronomic remote sensing knowl-
+edge graph, the phenology is the main topic and provides basic infor-
+mation. As shown in Fig. 6, in the NDVI profile of the DCR sequence 
+during the rainy season, there were two peaks (II and IV) and one valley 
+(III) between the early-season rice harvest and late-season rice planting. 
+In the NDVI profile of the EOWR sequence during the rainy season, there 
+was only one peak (II) during the first half of the year. In the NDVI 
+profile of the WOLR sequence during the rainy season, there was only 
+one peak (IV) during the second half of the year. Therefore, features of 
+the early-season rice maturation period (II) and the late-season rice 
+maturation period (IV) can be used to distinguish the DCR, EOWR and 
+WOLR sequences.
+The dry season corresponds mainly to the winter crop planting 
+period. The NDVI values of the three cropping sequences were relatively 
+low during the dry season, i.e., approximately 0.2–0.5 (Fig. 6). For the 
+winter cropping period during the first half of the year, the NDVI values 
+of the DCR and EOWR sequences were similar and low, whereas the 
+NDVI value of the WOLR sequence was relatively high. During the sec-
+ond half of the winter cropping period, the NDVI values of the DCR and 
+WOLR sequences were similar and low, whereas the NDVI value of the 
+EOWR sequence was relatively high.
+In summary, the abovementioned five key phenological events 
+constrain the overall trend in the NDVI profiles of the three cropping 
+Fig. 3. Spatial distribution of the crop samples collected during field work on February 10 and 11, 2023: (a) Winter crop planting; (b) soil solarization after tilling; (c) 
+first soil tilling; (d and e) before the first soil tilling; and (f) first soil tilling.
+Table 2 
+Number of samples in the four categories.
+Class Training 
+samples
+Test 
+samples
+Double-cropping rice (DCR) 54 116
+Early-season rice–O–winter crop rotation 
+(EOWR)
+12 60
+Winter crop–O–late-season rice rotation 
+(WOLR)
+6 49
+Others 44 109
+Total 116 334
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+5 
+sequences and are indicative of the distribution of rice cropping types in 
+the study area.
+3.3.2. Cropping sequence mapping results
+As indicated in Table 4, the accuracy of the control and experimental 
+groups was generally excellent. The OA values of the RF model ranged 
+from 83.48 % to 92.49 %, and the corresponding kappa coefficient 
+values ranged from 0.769 to 0.895. The highest OA value was obtained 
+in the control group with the features of the five time window images, 
+whereas the lowest OA value was obtained in Exp. 1 with the features of 
+the two time window images. Two key phenology events (II and IV) were 
+captured in Exp. 1, and these events exhibited considerable accuracy, 
+with the OA and kappa coefficient values of Exp. 1 reaching 83.48 % and 
+0.769, respectively. However, compared with the results of Ctrl, the OA 
+value of Exp. 5 was 1.2 % lower, indicating that the features of III were 
+less important in the classification process.
+In addition, object-based RF classification was implemented. As 
+shown in Fig. 7, for scales of 124, 142, and 180, several peaks in the 
+ROC–LV graph indicated optimal scaling parameters. The segmentation 
+performance was better for segmentation scale, shape index and 
+Fig. 4. Flow chart of this study.
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+6 
+tightness values of 124, 0.9 and 0.1, respectively. Table 5 provides a 
+summary of the accuracy assessment results for object-based RF classi-
+fication. Similar to the pixel-based results, Exp. 1 still reached consid-
+erable accuracy, with an OA value of 84.98 % and a kappa coefficient 
+value of 0.787. In general, the performance of object-based classification 
+was better than that of pixel-based classification, with OA values 
+ranging from 84.98 % to 92.80 % and corresponding kappa coefficients 
+ranging from 0.787 to 0.900. In object-based classification, the OA value 
+of Exp. 4 increased the most, with a gain of 2.4 %, whereas the OA values 
+of Ctrl and Exp. 5 increased the least, with a gain of 0.31 %.
+Fig. 8 shows the pixel- and object-based classification mapping re-
+sults. In the pixel-based classification results, the control group provided 
+the best spatial detail, followed by Exp. 5, with some object edges 
+identified as EOWR pixels. However, in the results of Exps. 2, 3, and 4, 
+some EOWR pixels were classified into the DCR category. With the salt- 
+and-pepper effect occurring in the pixel-based classification results, the 
+object-based classification results exhibited finer spatial detail. This 
+approach can be used to distinguish between objects and their edges 
+more effectively and overcome the salt-and-pepper effect.
+Table 6 provides the areal statistic pixel- and object-based classifi-
+cation results. Among the three cropping sequences, the DCR sequence 
+occupied the largest area, whereas the WOLR sequence occupied the 
+smallest area in the study area. A comparison of the cropping sequence 
+mapping results indicated that the two classification methods also 
+exhibited consistency in terms of the area.
+4. Discussion
+4.1. Advantages of the agronomic remote sensing knowledge graph for 
+crop mapping
+Crop rotations (such as the two rotations considered in our study, 
+namely, the EOWR and WOLR sequences) increase agricultural diversity 
+and significantly affect the organic matter content in farmland, thereby 
+increasing the positive externalities (social, economic and ecological 
+benefits) of rice production, as reported by He et al. (2021) and Zhu et al. 
+Fig. 5. Patterns of the combined control and experimental groups.
+Table 3 
+Definitions of the control and experimental groups.
+Group* Definition**
+Ctrl This group contains the features of I, II, III, IV and V.
+Exp. 1 This group contains the features of II and IV.
+Exp. 2 This group contains the features of I, II and IV.
+Exp. 3 This group contains the features of II, IV and V.
+Exp. 4 This group contains the features of II, III and IV.
+Exp. 5 This group contains the features of I, II, IV and V.
+* Ctrl refers to the control group, and Exp. refers to the experimental group.
+** I, II, III, IV and V refer to the winter crop planting period, early-season rice 
+maturation period, early-season rice harvesting period, late-season rice matu-
+ration period, and winter crop planting period, respectively.
+Fig. 6. NDVI profiles of the DCR, EOWR, and WOLR sequences.
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+7 
+(2022). Our approach combined crop rotation identification with 
+knowledge graphs, which differs from previous studies that integrated 
+different dates (Conrad et al., 2014; Luo et al., 2023; Murakami et al., 
+2001; Zhang et al., 2020a). We emphasized agronomic knowledge of 
+crop sowing and phenological knowledge for crop rotation identification 
+from the mechanism of crop growth and development. Our study en-
+ables regulatory agencies and other farm stakeholders to optimize 
+agroecosystems for sustainable rice production.
+Our theoretical framework is an improvement that refines the 
+existing crop classification perspectives and approaches. In our study of 
+agronomic remote sensing knowledge graphs, we proposed that key 
+phenology events should be prioritized in selecting time windows for 
+classification by integrating agronomic and phenological knowledge. 
+Specifically, knowledge graphs could facilitate the monitoring of 
+different cropping sequences and crop rotations throughout the entire 
+growing season, including the rainy season (divided into first and second 
+halves) and the dry season. Five key phenological events, namely, the 
+winter crop planting period (I), early-season rice maturation period (II), 
+early-season rice harvesting period (III), late-season rice maturation 
+period (IV), and winter crop planting period (V), were subsequently 
+identified in the study area. Image features I and II could distinguish the 
+WOLR sequence from the DCR and EOWR sequences, whereas image 
+features IV and V could distinguish the EOWR sequence from the DCR 
+and WOLR sequences. For example, if data were available for only two 
+time windows, greater accuracy could be achieved with features II and 
+IV, as indicated by the cropping sequence mapping results of Exp. 1. 
+Only the use of remote sensing-derived features covering two time 
+windows (II and IV) could provide high accuracy, with the OA value 
+exceeding 83.48 % (pixel-based) and 84.98 % (object-based).
+Our theoretical framework can produce object-based crop mapping 
+results with better accuracy. In the agronomic remote sensing knowl-
+edge graph framework, the object-based classification approach also 
+assisted in increasing the accuracy (Wang et al., 2022). The OA value of 
+object-based classification also showed a similar trend to that of pixel- 
+based classification in that the OA value increased with increasing 
+amount of remote sensing data covering more key phenology events. 
+Table 4 
+Assessment of the accuracy of the pixel-based classification results.
+Groups Control Exp. 1 Exp. 2 Exp. 3 Exp. 4 Exp. 5
+Double-cropping rice PA (%) 96.55 89.66 92.24 95.69 94.83 96.55
+UA (%) 94.12 83.87 89.17 92.50 88.71 94.12
+Early-season rice–O–winter crop rotation PA (%) 88.14 86.44 83.05 88.14 84.75 91.53
+UA (%) 96.30 86.44 87.50 94.55 87.72 91.53
+Winter crops–O–late-season rice rotation PA (%) 91.84 69.39 79.59 83.67 73.47 85.71
+UA (%) 95.74 91.89 97.50 95.35 94.74 97.67
+Others PA (%) 90.83 81.65 88.07 88.07 83.49 88.07
+UA (%) 88.39 80.18 83.48 84.21 81.25 86.49
+OA (%) 92.49 83.48 87.39 90.09 86.19 91.29
+Kappa 0.895 0.769 0.823 0.861 0.806 0.878
+Fig. 7. Determination of the optimal scaling parameters via the ESP-2 tool.
+Table 5 
+Assessment of the accuracy of the object-based classification results.
+Groups Control Exp. 1 Exp. 2 Exp. 3 Exp. 4 Exp. 5
+Double-cropping rice PA (%) 97.41 95.67 93.10 97.41 94.83 94.83
+UA (%) 90.40 82.22 90.00 88.28 94.83 94.83
+Early-season rice–O–winter crop rotation PA (%) 88.14 81.36 86.44 89.83 88.14 88.14
+UA (%) 91.23 96.00 96.23 91.38 98.11 94.55
+Winter crops–O–late-season rice rotation PA (%) 97.96 57.14 83.67 97.96 61.22 83.67
+UA (%) 96.00 90.32 93.18 96.00 90.90 93.18
+Others PA (%) 88.07 88.07 89.90 85.32 94.50 93.58
+UA (%) 95.05 82.05 84.48 95.88 78.63 86.44
+OA (%) 92.80 84.98 89.49 92.20 88.59 91.60
+Kappa 0.900 0.787 0.853 0.891 0.839 0.882
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+8 
+Similar to the results reported by Gao and Mas (2008), the OA value of 
+the object-based classification results was higher than that of the pixel- 
+based classification results. Hence, object-based classification can sup-
+port accurate object identification and crop mapping.
+Our theoretical framework can be employed for integrating the 
+temporal features of crop growth and the spatial features of objects. 
+Notably, spectral and temporal features derived from dense time series 
+Landsat and Sentinel images can provide temporal dynamics of the 
+spectral information of crops during the growing season to capture the 
+crop growth process accurately. Moreover, spatial features generated 
+from GF images can provide high-spatial-resolution information to 
+accurately delineate the boundaries of cropland objects. Thus, in the 
+agronomic remote sensing knowledge graph framework, we fused spa-
+tial–temporal–spectral features from those two types of remote sensing 
+data to capitalize on their respective strengths. Similarly, Sun et al. 
+(2023) extracted cropland objects from very high-resolution Google 
+images (a spatial resolution of 0.55 m) and then associated them with 
+temporal–spectral features from Sentinel-2A, Landsat-8, and GF-6 im-
+ages to precisely map crop planting structures in the Yellow River Basin 
+of Ningxia, China, thereby achieving an OA value of 80 %. Overall, 
+fusing spatial–temporal–spectral features from multisource remote 
+sensing data is an efficient approach for distinguishing different crop-
+ping sequences.
+In addition, the results showed that some segmented objects which 
+belong to the “Others” class using the object-based classification method 
+were misclassified into the WOLR class, and some objects which belong 
+to the DCR class were misclassified into the “Others” class (Fig. 8). The 
+possible uncertainties could be triggered by three aspects: (1) a strategy 
+of automatically and randomly selecting training and validation samples 
+was used in this study, resulting in fewer training and validation samples 
+being selected for some land use categories, for example, the lack of road 
+Fig. 8. Pixel- and object-based cropping sequence classification results: All groups exhibited consistent classification results, among which the control group 
+demonstrated the best spatial detail, and object-based classification provided finer spatial detail than pixel-based classification did.
+Table 6 
+Areal statistics of the cropping sequence classification results.
+(pixel-based/object-based, in km2).
+Groups Control Exp. 1 Exp. 2 Exp. 3 Exp. 4 Exp. 5
+Double- 
+cropping 
+rice
+15.82 / 
+16.97
+17.16 / 
+17.69
+16.30 / 
+16.55
+15.63 / 
+17.71
+16.79 / 
+15.09
+15.43 / 
+15.41
+Early-season 
+rice–O– 
+winter 
+crop 
+rotation
+5.42 / 
+5.69
+5.95 / 
+4.97
+5.58 / 
+5.16
+5.38 / 
+5.84
+5.47 / 
+4.85
+5.65 / 
+5.31
+Winter 
+crops–O– 
+late- 
+season rice 
+rotation
+2.97 / 
+3.53
+2.85 / 
+2.04
+2.78 / 
+2.83
+2.82 / 
+3.63
+2.78 / 
+2.03
+2.87 / 
+2.91
+Others 17.72 / 
+15.75
+15.98 / 
+17.44
+17.28 / 
+17.60
+18.11 / 
+14.78
+16.91 / 
+20.17
+17.99 / 
+18.31
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+9 
+samples which belongs to the “Others” class using this sample-selection 
+strategy (please see, Fig. 1); (2) when the segmented object is used as the 
+smallest classification unit, the objects of the “Others” class contain 
+different pixels (i.e., urban, road, natural vegetation and water body) 
+and their NDVI values are derived from the mean value of the remote 
+sensing based pixels contained in the corresponding objects data at 
+different key phenological events, resulting in the non-homogeneity and 
+impurity within objects of the “Others” class and then weakening or 
+interference of certain key features; (3) only based on those training and 
+validation samples, the time-series remote sensing generated NDVI 
+features at the different phenological events selected for some experi-
+mental groups also could not cover the key differentiated spectral and 
+temporal features of various categories, resulting in the time-series NDVI 
+not being used as a valid diagnostic indicator to accurately distinguish 
+the “Others” class from rice cropping sequences using the object-based 
+RF classifier. However, in the Control Group, the averaged time-series 
+NDVI of these objects covering sufficient remote sensing data at all 
+key events resolved this problem and captured higher classification ac-
+curacy compared to the result using the pixel-based classification 
+method. The synergies and trade-offs between the accuracy and per-
+formance of machine learning classification based on object-oriented 
+strategies mentioned above also disprove the necessity of our pro-
+posed mapping framework. This framework guides us to incorporate 
+agronomic knowledge graphs integrating phenology and remote sensing 
+into a machine learning approach to guide feature selection and crop-
+ping sequence mapping.
+The simple and reliable theoretical framework proposed in this study 
+focuses on filtering images of key phenological events, which is highly 
+critical for utilizing limited remote sensing images to map historical 
+cropping distributions. The proposed theoretical framework also makes 
+it possible to accurately identify spatial-temporal variations of crops and 
+then identify the high-quality farmland, helping geographers and 
+agronomists to assess the suitability of crop cultivation and guiding the 
+policymaking to maximize eco-efficiency and human well-being.
+4.2. Limitations and future work
+Our study highlights the importance of establishing agronomic 
+remote sensing knowledge graphs for cropping sequence identification. 
+By obtaining information on the spatial and temporal disturbances of 
+agricultural natural resources driven by different management patterns 
+and policies, we constructed and analyzed agronomic remote sensing 
+knowledge graphs, which solved the problem of integrating spatiotem-
+poral disturbance information into accurate management and decision- 
+making processes. However, the dates of key rice phenological events in 
+this study were determined via prior agronomic knowledge. Climate 
+change and agronomic practices have altered rice phenology in recent 
+years (Chen et al., 2021); thus, regional and temporal differences in rice 
+cropping should be considered when adopting the methodology pro-
+posed in this study. In particular, multiyear mapping of rice cropping 
+sequences requires yearly identification of phenological events. In 
+addition, although object-based classification alleviated the salt-and- 
+pepper effect and increased the accuracy, misclassification still 
+occurred at the edges of some objects, thus increasing the uncertainty in 
+the results. This problem could be attributed to the mixed-pixel effect 
+due to the limited spatiotemporal resolution of the images (Chen et al., 
+2018).
+In future research on classification algorithms, images from different 
+types of sensors and ontologies might increase the effectiveness of 
+knowledge graphs. The mining of semantic and contextual information 
+may enhance the ability of knowledge graphs to accurately provide the 
+yearly phenology of rice in different agricultural regions. For the clas-
+sification algorithm, deep learning (Rawat et al., 2021) and other arti-
+ficial intelligence methods should be introduced to identify cropping 
+sequences. Moreover, the integration of synthetic aperture radar (SAR) 
+images and optical images may increase the accuracy of the mapping 
+results. Although NDVI profiles capture the overall temporal features of 
+specific cropping sequences, the land surface water index (LSWI) can 
+capture the unique properties of paddy parcels when paddy rice is 
+transplanted in compound water–soil surface environments, thus 
+increasing the classification accuracy (Jeong et al., 2024; Pan et al., 
+2018). Additionally, incorporating knowledge graphs into land suit-
+ability analysis extends the scope of application, addressing questions 
+such as “where”, “why” and “when” in agroecology (Mugiyo et al., 
+2021) and improving future planning on the basis of crop production 
+guidelines and agroecosystem management.
+5. Conclusions
+The tropical monsoon zone is an important source area for rice, but 
+frequent cloud cover during the rainy season leads to insufficient 
+availability of optical remote sensing images covering the growth stages 
+of rice, which renders remote sensing-derived identification of rice 
+difficult. In this work, on the basis of agronomic remote sensing 
+knowledge graphs, we constructed a control group and five experi-
+mental groups integrating remote sensing bands and NDVI features and 
+applied pixel- and object-based RF algorithms. The results revealed that 
+the five key phenological events are the winter crop planting period, 
+early-season rice maturation period, early-season rice harvesting period, 
+late-season rice maturation period, and winter crop planting period. For 
+both the pixel- and object-based classification results, the OA value 
+increased since the remote sensing data covered more key phenology 
+events. Phenology events, including the early-season rice maturation 
+period and the late-season rice maturation period, were prioritized in 
+cropping sequence mapping. Only with the use of features of images 
+acquired within these two time windows could a high OA value of more 
+than 83.48 % (pixel-based) or 84.98 % (object-based) be obtained. In 
+addition, the object-based classification results exhibited higher OA 
+values and finer spatial details. These findings indicate that geograph-
+ical knowledge graphs coupled with remote sensing features and the rice 
+crop phenology, growth process and state can theoretically be employed 
+to better understand rice mapping. For efficient rice cultivation mapping 
+via optical remote sensing data, specific time windows corresponding to 
+phenological events must be selected. The proposed strategy facilitates 
+the effective monitoring of rice cropping sequences, providing further 
+evidence of planning structures for crop cultivation and thus ensuring 
+regional food security. However, the limitations of this study should be 
+noted. In particular, multiyear mapping of rice cropping sequences in 
+different regions requires adaptation to local conditions. Future work 
+should focus on improving agronomic remote sensing methods for 
+identifying cropping sequences and enhancing agroecosystem manage-
+ment in tropical monsoon zones.
+CRediT authorship contribution statement
+Hongzhang Nie: Writing – review & editing, Writing – original 
+draft, Validation, Software, Methodology, Formal analysis, Data cura-
+tion. Yingchen Lin: Writing – review & editing, Validation, Formal 
+analysis, Data curation. Wenfei Luo: Writing – review & editing, Vali-
+dation. Guilin Liu: Writing – review & editing, Writing – original draft, 
+Validation, Supervision, Project administration, Funding acquisition, 
+Conceptualization.
+Declaration of competing interest
+The authors declared no potential conflicts of interest with respect to 
+the research, authorship, and/or publication of this article.
+Acknowledgments
+This research was supported by Guangdong Basic and Applied Basic 
+Research Foundation (Grant number. 2023A1515010736). We are 
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+10 
+grateful to USGS and ESA for providing Landsat and Sentinel remote 
+sensing images and Guangdong High-resolution Earth Observation 
+System Guangdong Data and Application Center for sharing Gaofen (GF) 
+remote sensing images. We are sincerely grateful to the editors and 
+anonymous reviewers for their careful comments and constructive 
+suggestions. We also thank Bojin Huang, from Guangdong Polytechnic 
+Normal University, for providing local cropping information.
+Appendix A. Supplementary data
+Supplementary data to this article can be found online at https://doi. 
+org/10.1016/j.ecoinf.2025.103075.
+Data availability
+The data generated in the study are available for download from the 
+link (https://drive.google.com/drive/folders/13_vPbKNV_DnUjBKTr 
+WpktlN3Bx85BFzD?usp=sharing).
+References
+Araya, S., Ostendorf, B., Lyle, G., Lewis, M., 2018. CropPhenology: an R package for 
+extracting crop phenology from time series remotely sensed vegetation index 
+imagery. Eco. Inform. 46, 45–56. https://doi.org/10.1016/j.ecoinf.2018.05.006.
+Avci, C., Budak, M., Ya˘gmur, N., Balçik, F., 2023. Comparison between random forest 
+and support vector machine algorithms for LULC classification. Int. J. Engin. Geosci. 
+8 (1), 1–10. https://doi.org/10.26833/ijeg.987605.
+Belgiu, M., Csillik, O., 2018. Sentinel-2 cropland mapping using pixel-based and object- 
+based time-weighted dynamic time warping analysis. Remote Sens. Environ. 204, 
+509–523. https://doi.org/10.1016/j.rse.2017.10.005.
+Blickensd¨orfer, L., Schwieder, M., Pflugmacher, D., Nendel, C., Erasmi, S., Hostert, P., 
+2022. Mapping of crop types and crop sequences with combined time series of 
+Sentinel-1, Sentinel-2 and Landsat 8 data for Germany. Remote Sens. Environ. 269, 
+112831. https://doi.org/10.1016/j.rse.2021.112831.
+Breiman, L., 2001. Random forests. Mach. Learn. 45 (1), 5–32. https://doi.org/10.1023/ 
+A:1010933404324.
+Caparros-Santiago, J.A., Quesada-Ruiz, L.C., Rodriguez-Galiano, V., 2023. Can land 
+surface phenology from Sentinel-2 time-series be used as an indicator of 
+Macaronesian ecosystem dynamics? Eco. Inform. 77, 102239. https://doi.org/ 
+10.1016/j.ecoinf.2023.102239.
+Chen, W., Liu, G., 2024. A novel method for identifying crops in parcels constrained by 
+environmental factors through the integration of a Gaofen-2 high-resolution remote 
+sensing image and Sentinel-2 time series. IEEE J. Sel. Top. Appl. Earth Obs. Remote 
+Sens. 17, 450–463. https://doi.org/10.1109/JSTARS.2023.3329987.
+Chen, B., Huang, B., Xu, B., 2015. Comparison of spatiotemporal fusion models: a review. 
+Remote Sens. 7 (2), 1798–1835. https://doi.org/10.3390/rs70201798.
+Chen, X., Wang, D., Chen, J., Wang, C., Shen, M., 2018. The mixed pixel effect in land 
+surface phenology: a simulation study. Remote Sens. Environ. 211, 338–344. 
+https://doi.org/10.1016/j.rse.2018.04.030.
+Chen, J., Liu, Y., Zhou, W., Zhang, J., Pan, T., 2021. Effects of climate change and crop 
+management on changes in rice phenology in China from 1981 to 2010. J. Sci. Food 
+Agric. 101 (15), 6311–6319. https://doi.org/10.1002/jsfa.11300.
+Congalton, R.G., 1991. A review of assessing the accuracy of classifications of remotely 
+sensed data. Remote Sens. Environ. 37 (1), 35–46. https://doi.org/10.1016/0034- 
+4257(91)90048-B.
+Conrad, C., Dech, S., Dubovyk, O., Fritsch, S., Klein, D., L¨ow, F., Schorcht, G., Zeidler, J., 
+2014. Derivation of temporal windows for accurate crop discrimination in 
+heterogeneous croplands of Uzbekistan using multitemporal RapidEye images. 
+Comput. Electron. Agric. 103, 63–74. https://doi.org/10.1016/j. 
+compag.2014.02.003.
+de Azevedo, R.P., Dallacort, R., Boechat, C.L., Teodoro, P.E., Teodoro, L.P.R., Rossi, F.S., 
+Filho, W.L.F.C., Della-Silva, J.L., Baio, F.H.R., Lima, M., Silva Junior, C.A.D., 2023. 
+Remotely sensed imagery and machine learning for mapping of sesame crop in the 
+Brazilian Midwest. Remote Sens. Applicat.: Soc. Environ. 32, 101018. https://doi. 
+org/10.1016/j.rsase.2023.101018.
+de Beurs, K.M., Henebry, G.M., 2010. Spatio-temporal statistical methods for modelling 
+land surface phenology. In: Hudson, I.L., Keatley, M.R. (Eds.), Phenological 
+Research. Springer, Netherlands, pp. 177–208. https://doi.org/10.1007/978-90- 
+481-3335-2_9.
+Drǎgut¸, L., Tiede, D., Levick, S.R., 2010. ESP: a tool to estimate scale parameter for 
+multiresolution image segmentation of remotely sensed data. Int. J. Geogr. Inf. Sci. 
+24 (6), 859–871. https://doi.org/10.1080/13658810903174803.
+Dr˘agut¸, L., Csillik, O., Eisank, C., Tiede, D., 2014. Automated parameterisation for multi- 
+scale image segmentation on multiple layers. ISPRS J. Photogramm. Remote Sens. 
+88, 119–127. https://doi.org/10.1016/j.isprsjprs.2013.11.018.
+Duarte, L., Teodoro, A.C., Gonçalves, H., 2014. In: Michel, U., Schulz, K. (Eds.), Deriving 
+phenological metrics from NDVI through an open source tool developed in QGIS, 
+p. 924511. https://doi.org/10.1117/12.2066136.
+Ferchichi, A., Abbes, A.B., Barra, V., Farah, I.R., 2022. Forecasting vegetation indices 
+from spatio-temporal remotely sensed data using deep learning-based approaches: a 
+systematic literature review. Eco. Inform. 68, 101552. https://doi.org/10.1016/j. 
+ecoinf.2022.101552.
+Fu, Y., Shen, R., Song, C., Dong, J., Han, W., Ye, T., Yuan, W., 2023. Exploring the effects 
+of training samples on the accuracy of crop mapping with machine learning 
+algorithm. Sci. Remote Sens. 7, 100081. https://doi.org/10.1016/j. 
+srs.2023.100081.
+Gao, Y., Mas, J.F., 2008. A comparison of the performance of pixel-based and object- 
+based classifications over images with various spatial resolutions. Online J. Earth 
+Sci. 2 (1), 27–35.
+Gao, F., Masek, J., Schwaller, M., Hall, F., 2006. On the blending of the Landsat and 
+MODIS surface reflectance: predicting daily Landsat surface reflectance. IEEE Trans. 
+Geosci. Remote Sens. 44 (8), 2207–2218. https://doi.org/10.1109/ 
+TGRS.2006.872081.
+Gorelick, N., Hancher, M., Dixon, M., Ilyushchenko, S., Thau, D., Moore, R., 2017. 
+Google Earth Engine: planetary-scale geospatial analysis for everyone. Remote Sens. 
+Environ. 202, 18–27. https://doi.org/10.1016/j.rse.2017.06.031.
+He, D.-C., Ma, Y.-L., Li, Z.-Z., Zhong, C.-S., Cheng, Z.-B., Zhan, J., 2021. Crop rotation 
+enhances agricultural sustainability: from an empirical evaluation of eco-economic 
+benefits in rice production. Agriculture 11 (2), 91. https://doi.org/10.3390/ 
+agriculture11020091.
+Hu, Q., Wu, W., Song, Q., Lu, M., Chen, D., Yu, Q., Tang, H., 2017. How do temporal and 
+spectral features matter in crop classification in Heilongjiang Province, China? 
+J. Integr. Agric. 16 (2), 324–336. https://doi.org/10.1016/S2095-3119(15)61321-1.
+Hughes, G., 1968. On the mean accuracy of statistical pattern recognizers. IEEE Trans. 
+Inf. Theory 14 (1), 55–63. https://doi.org/10.1109/TIT.1968.1054102.
+Jeong, S., Ko, J., Ban, J., Shin, T., Yeom, J., 2024. Deep learning-enhanced remote 
+sensing-integrated crop modeling for rice yield prediction. Eco. Inform. 84, 102886. 
+https://doi.org/10.1016/j.ecoinf.2024.102886.
+Jiang, R., Sanchez-Azofeifa, A., Laakso, K., Xu, Y., Zhou, Z., Luo, X., Huang, J., Chen, X., 
+Zang, Y., 2021. Cloud cover throughout all the paddy rice fields in Guangdong, 
+China: impacts on Sentinel 2 MSI and Landsat 8 OLI optical observations. Remote 
+Sens. 13 (15), 2961. https://doi.org/10.3390/rs13152961.
+Jiao, S., Hu, D., Shen, Z., Wang, H., Dong, W., Guo, Y., Li, S., Lei, Y., Kou, W., Wang, J., 
+He, H., Fang, Y., 2022. Parcel-level mapping of horticultural crop orchards in 
+complex mountain areas using VHR and time-series images. Remote Sens. 14 (9), 
+2015. https://doi.org/10.3390/rs14092015.
+Jombo, S., Adelabu, S., 2023. Evaluating Landsat-8, Landsat-9 and Sentinel-2 imageries 
+in land use and land cover (LULC) classification in a heterogeneous urban area. 
+GeoJournal 88 (S1), 377–399. https://doi.org/10.1007/s10708-023-10982-8.
+Kang, Y., Chen, Z., Li, L., Zhang, Q., 2023. Construction of multidimensional features to 
+identify tea plantations using multisource remote sensing data: a case study of 
+Hangzhou city, China. Eco. Inform. 77, 102185. https://doi.org/10.1016/j. 
+ecoinf.2023.102185.
+Kuenzer, C., Knauer, K., 2013. Remote sensing of rice crop areas. Int. J. Remote Sens. 34 
+(6), 2101–2139. https://doi.org/10.1080/01431161.2012.738946.
+Laborde, H., Douzal, V., Ruiz Pi˜na, H.A., Morand, S., Cornu, J.-F., 2017. Landsat-8 cloud- 
+free observations in wet tropical areas: a case study in South East Asia. Remote Sens. 
+Lett. 8 (6), 537–546. https://doi.org/10.1080/2150704X.2017.1297543.
+Leteinturier, B., Herman, J.L., Longueville, F.D., Quintin, L., Oger, R., 2006. Adaptation 
+of a crop sequence indicator based on a land parcel management system. Agric. 
+Ecosyst. Environ. 112 (4), 324–334. https://doi.org/10.1016/j.agee.2005.07.011.
+Li, P., Jiang, L., Feng, Z., Sheldon, S., Xiao, X., & others. (2016). Mapping rice cropping 
+systems using Landsat-derived renormalized index of normalized difference 
+vegetation index (RNDVI) in the Poyang Lake Region, China, Front. Earth Sci., 10(2), 
+303–314.
+Li, R., Xu, M., Chen, Z., Gao, B., Cai, J., Shen, F., He, X., Zhuang, Y., Chen, D., 2021a. 
+Phenology-based classification of crop species and rotation types using fused MODIS 
+and Landsat data: the comparison of a random-forest-based model and a decision- 
+rule-based model. Soil Tillage Res. 206, 104838. https://doi.org/10.1016/j. 
+still.2020.104838.
+Li, Q., Liu, G., Chen, W., 2021b. Toward a simple and generic approach for identifying 
+multi-year cotton cropping patterns using Landsat and Sentinel-2 time series. 
+Remote Sens. 13 (24), 5183. https://doi.org/10.3390/rs13245183.
+Liepa, A., Thiel, M., Taubenb¨ock, H., Steffan-Dewenter, I., Abu, I.-O., Singh Dhillon, M., 
+Otte, I., Otim, M.H., Lutaakome, M., Meinhof, D., Martin, E.A., Ullmann, T., 2024. 
+Harmonized NDVI time-series from Landsat and Sentinel-2 reveal phenological 
+patterns of diverse, small-scale cropping systems in East Africa. Remote Sens. 
+Applicat.: Soc. Environ. 35, 101230. https://doi.org/10.1016/j.rsase.2024.101230.
+Liu, Y., Xiao, D., Yang, W., 2022. An algorithm for early rice area mapping from satellite 
+remote sensing data in Southwestern Guangdong in China based on feature 
+optimization and random forest. Eco. Inform. 72, 101853. https://doi.org/10.1016/ 
+j.ecoinf.2022.101853.
+Luo, K., Lu, L., Xie, Y., Chen, F., Yin, F., Li, Q., 2023. Crop type mapping in the central 
+part of the North China Plain using Sentinel-2 time series and machine learning. 
+Comput. Electron. Agric. 205, 107577. https://doi.org/10.1016/j. 
+compag.2022.107577.
+Mahlayeye, M., Darvishzadeh, R., Nelson, A., 2024. Characterising maize and 
+intercropped maize spectral signatures for cropping pattern classification. Int. J. 
+Appl. Earth Obs. Geoinf. 128, 103699. https://doi.org/10.1016/j.jag.2024.103699.
+Meng, J., Xu, J., You, X., 2015. Optimizing soybean harvest date using HJ-1 satellite 
+imagery. Precis. Agric. 16 (2), 164–179. https://doi.org/10.1007/s11119-014-9368- 
+3.
+Meng, Y., Yuan, W., Aktilek, E.U., Zhong, Z., Wang, Y., Gao, R., Su, Z., 2023. Fine 
+hyperspectral classification of rice varieties based on self-attention mechanism. Eco. 
+Inform. 75, 102035. https://doi.org/10.1016/j.ecoinf.2023.102035.
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+11 
+Mosleh, M., Hassan, Q., Chowdhury, E., 2015. Application of remote sensors in mapping 
+rice area and forecasting its production: a review. Sensors 15 (1), 769–791. https:// 
+doi.org/10.3390/s150100769.
+Mugiyo, H., Chimonyo, V.G.P., Sibanda, M., Kunz, R., Masemola, C.R., Modi, A.T., 
+Mabhaudhi, T., 2021. Evaluation of land suitability methods with reference to 
+neglected and underutilised crop species: a scoping review. Land 10 (2), 125. 
+https://doi.org/10.3390/land10020125.
+Murakami, T., Ogawa, S., Ishitsuka, N., Kumagai, K., Saito, G., 2001. Crop discrimination 
+with multitemporal SPOT/HRV data in the Saga Plains, Japan. Int. J. Remote Sens. 
+22 (7), 1335–1348. https://doi.org/10.1080/01431160151144378.
+Ni, R., Tian, J., Li, X., Yin, D., Li, J., Gong, H., Zhang, J., Zhu, L., Wu, D., 2021. An 
+enhanced pixel-based phenological feature for accurate paddy rice mapping with 
+Sentinel-2 imagery in Google Earth Engine. ISPRS J. Photogramm. Remote Sens. 
+178, 282–296. https://doi.org/10.1016/j.isprsjprs.2021.06.018.
+Pan, T., Zhang, C., Kuang, W., De Maeyer, P., Kurban, A., Hamdi, R., Du, G., 2018. Time 
+tracking of different cropping patterns using Landsat images under different 
+agricultural systems during 1990–2050 in Cold China. Remote Sens. 10 (12), 2011. 
+https://doi.org/10.3390/rs10122011.
+Pelletier, C., Valero, S., Inglada, J., Champion, N., Dedieu, G., 2016. Assessing the 
+robustness of random forests to map land cover with high resolution satellite image 
+time series over large areas. Remote Sens. Environ. 187, 156–168. https://doi.org/ 
+10.1016/j.rse.2016.10.010.
+Pluto-Kossakowska, J., 2021. Review on multitemporal classification methods of satellite 
+images for crop and arable land recognition. Agriculture 11 (10), 999. https://doi. 
+org/10.3390/agriculture11100999.
+Rahmati, A., Zoej, M.J.V., Dehkordi, A.T., 2022. Early identification of crop types using 
+Sentinel-2 satellite images and an incremental multi-feature ensemble method (case 
+study: Shahriar, Iran). Adv. Space Res. 70 (4), 907–922. https://doi.org/10.1016/j. 
+asr.2022.05.038.
+Rawat, A., Kumar, A., Upadhyay, P., Kumar, S., 2021. Deep learning-based models for 
+temporal satellite data processing: classification of paddy transplanted fields. Eco. 
+Inform. 61, 101214. https://doi.org/10.1016/j.ecoinf.2021.101214.
+Reed, B.C., Brown, J.F., VanderZee, D., Loveland, T.R., Merchant, J.W., Ohlen, D.O., 
+1994. Measuring phenological variability from satellite imagery. J. Veg. Sci. 5 (5), 
+703–714. https://doi.org/10.2307/3235884.
+Rojo, J., Romero-Morte, J., Lara, B., Quir´os, E., Richardson, A.D., P´erez-Badia, R., 2022. 
+Biological-based and remote sensing techniques to link vegetative and reproductive 
+development and assess pollen emission in Mediterranean grasses. Eco. Inform. 72, 
+101898. https://doi.org/10.1016/j.ecoinf.2022.101898.
+Sah, S., Haldar, D., Chandra, S., Nain, A.S., 2023. Discrimination and monitoring of rice 
+cultural types using dense time series of Sentinel-1 SAR data. Eco. Inform. 76, 
+102136. https://doi.org/10.1016/j.ecoinf.2023.102136.
+Shang, R., Zhu, Z., Zhang, J., Qiu, S., Yang, Z., Li, T., Yang, X., 2022. Near-real-time 
+monitoring of land disturbance with harmonized Landsats 7–8 and Sentinel-2 data. 
+Remote Sens. Environ. 278, 113073. https://doi.org/10.1016/j.rse.2022.113073.
+Shi, S., Zhou, S., Lei, Y., Harrison, M.T., Liu, K., Chen, F., Yin, X., 2024. Burgeoning food 
+demand outpaces sustainable water supply in China. Agric. Water Manag. 301, 
+108936. https://doi.org/10.1016/j.agwat.2024.108936.
+Singha, M., Sarmah, S., 2019. Incorporating crop phenological trajectory and texture for 
+paddy rice detection with time series MODIS, HJ-1A and ALOS PALSAR imagery. 
+Eur. J. Remote Sens. 52 (1), 73–87. https://doi.org/10.1080/ 
+22797254.2018.1556568.
+Steinmann, H.-H., Dobers, E.S., 2013. Spatio-temporal analysis of crop rotations and crop 
+sequence patterns in Northern Germany: potential implications on plant health and 
+crop protection. J. Plant Diseas. Protect. 120 (2), 85–94. https://doi.org/10.1007/ 
+BF03356458.
+Sun, Y., Yao, N., Luo, J., Leng, P., Liu, X., 2023. A spatiotemporal collaborative approach 
+for precise crop planting structure mapping based on multi-source remote-sensing 
+data. Int. J. Remote Sens. 1–17. https://doi.org/10.1080/01431161.2023.2217985.
+Trimble Germany GmbH, 2014. Trimble Documentation eCognition Developer 9.0 User 
+Guide. Trimble Germany GmbH.
+van der Linden, S., Rabe, A., Held, M., Jakimow, B., Leit˜ao, P., Okujeni, A., 
+Schwieder, M., Suess, S., Hostert, P., 2015. The EnMAP-box—A toolbox and 
+application programming interface for EnMAP data processing. Remote Sens. 7 (9), 
+11249–11266. https://doi.org/10.3390/rs70911249.
+Wang, Y., Fang, S., Zhao, L., Huang, X., Jiang, X., 2022. Parcel-based summer maize 
+mapping and phenology estimation combined using Sentinel-2 and time series 
+Sentinel-1 data. Int. J. Appl. Earth Obs. Geoinf. 108, 102720. https://doi.org/ 
+10.1016/j.jag.2022.102720.
+Wardlow, B.D., Egbert, S.L., 2008. Large-area crop mapping using time-series MODIS 
+250 m NDVI data: an assessment for the U.S. Central Great Plains. Remote Sens. 
+Environ. 112 (3), 1096–1116. https://doi.org/10.1016/j.rse.2007.07.019.
+Wu, M., Huang, W., Niu, Z., Wang, Y., Wang, C., Li, W., Hao, P., Yu, B., 2017. Fine crop 
+mapping by combining high spectral and high spatial resolution remote sensing data 
+in complex heterogeneous areas. Comput. Electron. Agric. 139, 1–9. https://doi.org/ 
+10.1016/j.compag.2017.05.003.
+Wu, X., Xiao, X., Steiner, J., Yang, Z., Qin, Y., Wang, J., 2021. Spatiotemporal changes of 
+winter wheat planted and harvested areas, photosynthesis and grain production in 
+the contiguous United States from 2008–2018. Remote Sens. 13 (9), 1735. https:// 
+doi.org/10.3390/rs13091735.
+Yan, S., Yao, X., Zhu, D., Liu, D., Zhang, L., Yu, G., Gao, B., Yang, J., Yun, W., 2021. 
+Large-scale crop mapping from multi-source optical satellite imageries using 
+machine learning with discrete grids. Int. J. Appl. Earth Obs. Geoinf. 103, 102485. 
+https://doi.org/10.1016/j.jag.2021.102485.
+Yang, Y., 2018. Study on the challenges of developing regional branding of Zhangjiang’s 
+agricultural products. Eucalypt Sci. Technol. 35 (1), 44–48. https://doi.org/ 
+10.13987/j.cnki.askj.2018.01.009.
+Yang, M., Guo, B., Wang, J., 2024. A novel and robust method for large-scale single- 
+season rice mapping based on phenology and statistical data. ISPRS J. Photogramm. 
+Remote Sens. 213, 14–32. https://doi.org/10.1016/j.isprsjprs.2024.05.019.
+Zhang, M., Lin, H., 2019. Object-based rice mapping using time-series and phenological 
+data. Adv. Space Res. 63 (1), 190–202. https://doi.org/10.1016/j.asr.2018.09.018.
+Zhang, X., Friedl, M.A., Schaaf, C.B., Strahler, A.H., Hodges, J.C.F., Gao, F., Reed, B.C., 
+Huete, A., 2003. Monitoring vegetation phenology using MODIS. Remote Sens. 
+Environ. 84 (3), 471–475. https://doi.org/10.1016/S0034-4257(02)00135-9.
+Zhang, H., Kang, J., Xu, X., Zhang, L., 2020a. Accessing the temporal and spectral 
+features in crop type mapping using multi-temporal Sentinel-2 imagery: a case study 
+of Yi’an county, Heilongjiang Province, China. Comput. Electron. Agric. 176, 
+105618. https://doi.org/10.1016/j.compag.2020.105618.
+Zhang, P., Hu, S., Li, W., Zhang, C., 2020b. Parcel-level mapping of crops in a 
+smallholder agricultural area: a case of Central China using single-temporal VHSR 
+imagery. Comput. Electron. Agric. 175, 105581. https://doi.org/10.1016/j. 
+compag.2020.105581.
+Zhang, X., Huang, Y., Zhang, C., Ye, P., 2022. Geoscience knowledge graph (GeoKG): 
+development, construction and challenges. Trans. GIS 26 (6), 2480–2494. https:// 
+doi.org/10.1111/tgis.12985.
+Zhao, R., Li, Y., Ma, M., 2021. Mapping paddy rice with satellite remote sensing: a 
+review. Sustainability 13 (2), 503. https://doi.org/10.3390/su13020503.
+Zhao, Y., Meng, Y., Han, S., Feng, H., Yang, G., Li, Z., 2022. Should phenological 
+information be applied to predict agronomic traits across growth stages of winter 
+wheat? Crop J. 10 (5), 1346–1352. https://doi.org/10.1016/j.cj.2022.08.003.
+Zhu, M., She, B., Huang, L., Zhang, D., Xu, H., Yang, X., 2022. Identification of soybean 
+based on Sentinel-1/2 SAR and MSI imagery under a complex planting structure. 
+Eco. Inform. 72, 101825. https://doi.org/10.1016/j.ecoinf.2022.101825.
+H. Nie et al.                                                                                                                                                                                                                                      Ecological Informatics 87 (2025) 103075 
+12 

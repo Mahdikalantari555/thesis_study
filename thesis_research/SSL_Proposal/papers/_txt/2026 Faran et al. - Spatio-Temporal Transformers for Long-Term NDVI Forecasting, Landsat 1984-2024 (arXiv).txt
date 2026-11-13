@@ -1,0 +1,1570 @@
+Spatio-Temporal Transformers for Long-Term NDVI Forecasting
+Ido Faran1, Nathan S. Netanyahu 1,2, and Maxim Shoshany 3
+1Dept. of Computer Science, Bar-Ilan University, Ramat Gan 5290002, Israel
+2Dept. of Computer Science, College of Law and Business, Ramat Gan 5257346 , Israel
+3Faculty of Civil and Environmental Engineering, Technion Israel Institute of Technology, Haifa 3200003,
+Israel
+Keywords:
+Deep Learning, Transformers, Self-Supervised Learning, Remote Sensing
+Abstract:
+Long-term satellite image time series (SITS) analysis in heterogeneous landscapes faces significant
+challenges, particularly in Mediterranean regions where complex spatial patterns, seasonal varia-
+tions, and multi-decade environmental changes interact across different scales. This paper presents
+the Spatio-Temporal Transformer for Long Term Forecasting (STT-LTF ), an extended framework
+that advances beyond purely temporal analysis to integrate spatial context modeling with temporal
+sequence prediction. STT-LTF processes multi-scale spatial patches alongside temporal sequences
+(up to 20 years) through a unified transformer architecture, capturing both local neighborhood re-
+lationships and regional climate influences. The framework employs comprehensive self-supervised
+learning with spatial masking, temporal masking, and horizon sampling strategies, enabling ro-
+bust model training from 40 years of unlabeled Landsat imagery. Unlike autoregressive approaches,
+STT-LTF directly predicts arbitrary future time points without error accumulation, incorporating
+spatial patch embeddings, cyclical temporal encoding, and geographic coordinates to learn com-
+plex dependencies across heterogeneous Mediterranean ecosystems. Experimental evaluation on
+Landsat data (1984-2024) demonstrates that STT-LTF achieves a Mean Absolute Error (MAE) of
+0.0328 and R² of 0.8412 for next-year predictions, outperforming traditional statistical methods,
+CNN-based approaches, LSTM networks, and standard transformers. The framework’s ability to
+handle irregular temporal sampling and variable prediction horizons makes it particularly suitable
+for analysis of heterogeneous landscapes experiencing rapid ecological transitions.
+1 INTRODUCTION
+Forecasting future satellite imagery is a key chal-
+lenge in computer vision and remote sensing (Zhu
+et al., 2017; Kennedy et al., 2018). Time-
+series forecasting aims to reveal temporal pat-
+terns that are often hidden in spatially complex
+landscapes where short-term, medium-term, and
+long-term processes occur and interact simulta-
+neously across different spatial scales (Verbesselt
+et al., 2010a). This task is particularly diﬀicult
+for heterogeneous landscapes because daily, sea-
+sonal, and multi-decade changes overlap, making
+it hard to forecast the next state from past ob-
+servations (Gao et al., 2022). The complexity
+stems from the interplay of ecological, climatic,
+and human-driven factors, each contributing in
+distinct ways to the observed environmental con-
+ditions (Zhang and Yan, 2023).
+Effectively addressing these challenges re-
+quires models capable of extracting and integrat-
+ing both temporal sequences and spatial con-
+texts inherent in environmental data (Liu et al.,
+2023). Traditional approaches often fall short due
+to their limited capacity to capture these multi-
+dimensional interactions, particularly when faced
+with extended temporal horizons and heteroge-
+neous landscapes (Gómez et al., 2016). Recent
+advancements in transformer-based architectures
+(Vaswani et al., 2017) have introduced power-
+ful tools for modeling such complex dependen-
+cies by leveraging attention mechanisms capable
+of learning intricate relationships within and be-
+tween spatial and temporal dimensions.
+Self-supervised machine-learning techniques
+provide a significant advantage for addressing
+these challenges, as they operate without explicit
+labels and assumptions, enabling models to au-
+arXiv:2602.01799v1  [cs.CV]  2 Feb 2026
+
+=== PAGE BREAK ===
+
+tonomously learn intrinsic representations from
+historical data. By training on extensive unla-
+beled satellite-image archives, these approaches
+inherently capture meaningful temporal and spa-
+tial relationships crucial for predicting future en-
+vironmental conditions.
+Earth-observation satellites have become in-
+valuable tools for analyzing dynamic environmen-
+tal processes, collecting data on our planet’s sur-
+face and ecosystems for over half a century. The
+Landsat mission, operational since 1984, captures
+multispectral imagery globally every 16 days at
+a 30[m] spatial resolution. The resulting Satel-
+lite Image Time Series (SITS) adds a temporal
+dimension to Earth-observation data, supporting
+long-term monitoring of vegetation health, land-
+use change, and ecosystem dynamics (Zhu et al.,
+2019). These capabilities are particularly crucial
+in the Mediterranean basin, especially its south-
+eastern region, which has been recognized as a
+climate-change hotspot since the 1980s. This
+region faces increasing frequencies of droughts,
+forest and shrubland fires, agricultural abandon-
+ment, and progressive urbanization - all expected
+to intensify over the next two decades. Long-
+term satellite imagery time series provide essen-
+tial data for understanding and predicting these
+complex environmental transformations.
+In this study, we utilize the Normalized Dif-
+ference Vegetation Index (NDVI), a spectral veg-
+etation index calculated as
+NDVI = Near Infrared Band − Red Band
+Near Infrared Band + Red Band (1)
+which effectively represents photosynthetic ac-
+tivity, vegetation cover, and biomass. In Mediter-
+ranean climates, characterized by a short rainy
+season followed by an extended hot and dry pe-
+riod, NDVI values closely correlate with seasonal
+and annual rainfall variability (see Figure 1 and
+Figure 2). Predicting spatio-temporal NDVI pat-
+terns years and decades into the future is essen-
+tial to understanding how ecosystems respond to
+climatic and anthropogenic pressures; a critical
+concern in these regions is desertification, partic-
+ularly the stability or shift of desert boundaries
+due to climate change (Roitberg and Shoshany,
+2024).
+One of the primary goals of time-series anal-
+ysis in remote sensing is to accurately forecast
+future values based on historical observations.
+These capabilities support image prediction, gap
+filling caused by cloud cover or sensor issues,
+and integration of multiple data sources. How-
+ever, the task faces unique challenges, including
+distinguishing climate-driven trends from natural
+variability, handling seasonality, and overcoming
+data gaps and inconsistencies (Zhu, 2017). Ad-
+dressing these complexities is essential for robust
+environmental monitoring and predictive model-
+ing over extended periods.
+While existing approaches have made signifi-
+cant progress in satellite image time series anal-
+ysis, a critical limitation persists in their ca-
+pacity to fully integrate extended temporal pat-
+terns with spatial dependencies and location-
+specific characteristics. Traditional methods typ-
+ically focus on temporal sequences spanning up
+to one year and often fail to capture the com-
+plex interplay between multiple dimensions over
+longer periods (Chen et al., 2024b; Li et al.,
+2021). This limitation becomes particularly pro-
+nounced in heterogeneous Mediterranean land-
+scapes, where intricate seasonal patterns, anthro-
+pogenic disturbances, climatic variations, and
+location-dependent factors necessitate a compre-
+hensive analytical framework operating across
+multiple spatial and temporal scales (Mehmood
+et al., 2024; Xu et al., 2024).
+To address these challenges, we present an en-
+hanced methodology called the Spatial Tempo-
+ral Transformer for Long-Term Forecasting (STT-
+LTF), a framework that significantly extends
+our previous work (Faran et al., 2025) by in-
+corporating spatial context modeling alongside
+temporal sequence analysis. While our earlier
+approach focused exclusively on temporal pre-
+diction using pixel-wise NDVI time series, this
+extended framework introduces a fundamental
+paradigm shift from purely temporal modeling to
+integrated spatio-temporal representation learn-
+ing (Cong et al., 2022; Noman et al., 2024).
+The enhanced architecture incorporates multi-
+scale spatial patch embeddings that capture lo-
+cal neighborhood relationships and broader land-
+scape patterns, enabling the model to under-
+stand not only when changes occur temporally
+but also how they propagate spatially across
+heterogeneous Mediterranean landscapes (Yang
+et al., 2025). This spatial-temporal integra-
+tion addresses limitations of pixel-independent
+approaches by leveraging spatial correlations to
+improve prediction accuracy, particularly for re-
+gions with sparse temporal observations or irreg-
+ular sampling patterns (Li et al., 2024).
+STT-LTF fuses spatial patch processing with
+temporal transformer architectures. Rather than
+treating pixels independently or separating spa-
+tial and temporal analyses, our framework pro-
+
+=== PAGE BREAK ===
+
+(a) Study area (Google Earth)
+ (b) Rainfall distribution
+(c) NDVI patterns
+Figure 1: Study area characteristics in the southeastern Mediterranean basin.
+cesses N×N pixel patches throughout entire
+temporal sequences, capturing spatial relation-
+ships from single pixels up to 270[m] × 270[m]
+neighborhoods. We achieve this through self-
+supervised learning with extensive masking tech-
+niques, enabling the model to discover complex
+spatio-temporal patterns in unlabeled satellite
+data spanning multiple decades without manual
+annotation.
+A key distinguishing feature of our approach
+is the direct prediction capability for arbitrary
+future time points. While conventional methods
+rely on recursive predictions that accumulate er-
+rors over extended horizons, STT-LTF learns to
+map directly from historical spatio-temporal pat-
+terns to future vegetation states at any specified
+target time. This is achieved through a novel
+temporal embedding strategy that treats the tar-
+get time as an input parameter, allowing the
+model to learn the complex non-linear relation-
+ships between past observations and future con-
+ditions across varying temporal distances. The
+transformer architecture, specifically optimized
+for remote sensing data, employs specialized at-
+tention mechanisms that capture both local veg-
+etation dynamics and regional climate influences,
+providing a more comprehensive understanding of
+ecosystem evolution.
+Our framework addresses several fundamen-
+tal challenges in long-term vegetation monitor-
+ing. First, it handles the inherent multi-scale
+nature of vegetation dynamics, where local dis-
+turbances interact with regional climate patterns
+over different temporal scales. Second, it pro-
+vides a unified approach for analyzing hetero-
+geneous landscapes without requiring separate
+models for different vegetation types or geograph-
+ical regions. Third, it offers computational eﬀi-
+ciency by eliminating the need for iterative pre-
+dictions while maintaining high accuracy across
+extended forecast horizons. These innovations
+make STT-LTF particularly suitable for applica-
+
+=== PAGE BREAK ===
+
+tions requiring reliable long-term vegetation pre-
+dictions, such as climate impact assessment, agri-
+cultural planning, and ecosystem management
+in Mediterranean and similar complex environ-
+ments.
+The main contributions of this work are as fol-
+lows:
+1. Advanced spatio-temporal embedding frame-
+work with direct prediction capability: We
+introduce a versatile embedding architecture
+that seamlessly integrates spatial patches
+(1×1 to 9×9 pixels), temporal sequences (2.5
+to 20 years), and geographical location in-
+formation through continuous representation
+spaces. The framework captures both periodic
+seasonal patterns and long-term directional
+trends, enabling direct prediction at any fu-
+ture time point without recursive error ac-
+cumulation. This unified approach supports
+predictions across arbitrary spatial and tem-
+poral resolutions while maintaining accuracy
+over extended forecast horizons.
+2. Self-supervised learning from unlabeled multi-
+decade data: We present a novel self-
+supervised training method specifically de-
+signed for long-term SITS analysis, capable
+of learning complex vegetation dynamics from
+40 years of unlabeled Landsat imagery with-
+out requiring manual annotations. This ap-
+proach leverages the temporal structure inher-
+ent in satellite data with comprehensive mask-
+ing strategies to create a powerful predictive
+model from incomplete time series.
+3. Transformer architecture for long-term spatio-
+temporal prediction: We design a specialized
+transformer that processes extended temporal
+sequences with spatial context through multi-
+scale attention mechanisms optimized for veg-
+etation dynamics. The architecture features
+adaptive encodings for irregular satellite sam-
+pling patterns and non-autoregressive predic-
+tion heads that directly forecast future vege-
+tation states at arbitrary time horizons, avoid-
+ing the error accumulation inherent in recur-
+sive approaches.
+4. Comprehensive evaluation on Mediterranean
+ecosystems: We conduct systematic exper-
+iments on Landsat NDVI data from het-
+erogeneous Mediterranean landscapes, an-
+alyzing the individual and combined im-
+pacts of spatial resolution, temporal sequence
+length, and forecast horizon on prediction
+accuracy. Our evaluation demonstrates the
+framework’s adaptability across diverse veg-
+etation types and environmental conditions,
+achieving state-of-the-art performance in both
+short-term and long-term predictions.
+The remainder of this paper is organized as
+follows: Section 2 reviews related work cover-
+ing traditional statistical methods, deep learn-
+ing approaches, and self-supervised learning tech-
+niques for time-series analysis. Section 3 presents
+the proposed methodology, detailing the input
+sampling and masking strategy, spatio-temporal
+embedding framework, transformer encoder ar-
+chitecture, and regression decoder. Section 4
+describes the experimental setup and evaluates
+model performance across different spatial resolu-
+tions and temporal horizons using Mediterranean
+Landsat data. Section 5 concludes with a sum-
+mary of findings and future research directions.
+2 RELATED WORK
+2.1 Classical Statistical Approaches in
+Remote Sensing Time Series
+Classical statistical approaches have formed
+the backbone of remote sensing time series
+analysis, employing methods such as Random
+Forests, Cellular Automata Markov Chain mod-
+els, and Autoregressive Integrated Moving A ver-
+age (ARIMA) frameworks (Gómez et al., 2016).
+Seasonal patterns are captured through Seasonal
+ARIMA (SARIMA) and Facebook Prophet mod-
+els (Box et al., 2015; Taylor and Letham, 2018),
+which excel at handling cyclical behaviors in veg-
+etation monitoring applications.
+Recent applications demonstrate the con-
+tinued effectiveness of ARIMA-based methods.
+(Tian et al., 2016) successfully applied ARIMA
+models for drought forecasting using satellite-
+derived Vegetation Temperature Condition In-
+dex data, while (Sharma et al., 2020) achieved
+high accuracy in solar radiation prediction us-
+ing SARIMA models with NASA’s satellite data
+archive. These studies highlight the robustness of
+statistical methods for multi-decade environmen-
+tal datasets.
+Hybrid approaches combining statistical foun-
+dations with machine learning have emerged as
+promising alternatives. SARIMA-Neural Net-
+work combinations leverage seasonal pattern
+recognition while incorporating non-linear learn-
+ing capabilities (Ruiz-Aguilar et al., 2014). Re-
+
+=== PAGE BREAK ===
+
+Figure 2: Time series of NDVI values (1985–2024) for three samples, illustrating seasonal variability and long-
+term trends. Source: (Faran et al., 2025)
+cent comparative studies (Dudek et al., 2024)
+revealed that SARIMA models consistently out-
+performed Support Vector Regression for energy
+forecasting when seasonal patterns were present.
+Notably, (MacKenzie et al., 2023) found that
+SARIMA models outperformed advanced deep
+learning approaches, including Long Short-Term
+Memory networks for wind speed forecasting,
+suggesting that statistical methods retain advan-
+tages in interpretability and computational eﬀi-
+ciency for operational applications.
+However, traditional statistical approaches
+face limitations with complex non-linear relation-
+ships and irregular temporal patterns in het-
+erogeneous landscapes. Missing data handling
+remains challenging, particularly with cloud-
+affected satellite imagery, motivating the develop-
+ment of more sophisticated spatio-temporal mod-
+eling approaches.
+2.2 Deep Learning Architectures in
+Remote Sensing
+The evolution of deep learning architectures has
+fundamentally transformed how researchers ap-
+proach remote sensing time-series analysis. Early
+innovations with Convolutional Neural Networks
+demonstrated the potential for automatic feature
+extraction from satellite imagery, eliminating the
+need for handcrafted features (Zhu et al., 2017).
+Long Short-Term Memory networks subsequently
+proved effective in capturing temporal dependen-
+cies within satellite time-series, particularly for
+applications like crop classification and phenolog-
+ical monitoring where seasonal patterns are cru-
+cial.
+Contemporary deep learning frameworks for
+remote sensing have evolved to address domain-
+specific challenges through specialized architec-
+tural designs. The integration of spatial and
+channel attention mechanisms allows networks to
+focus on relevant spectral bands and spatial re-
+gions, improving discrimination between similar
+land cover types (Cheng et al., 2023). Multi-
+scale feature extraction approaches, inspired by
+the varying ground sampling distances in satellite
+imagery, enable models to simultaneously process
+objects of different sizes within a single frame-
+work.
+Recurrent architectures have been particu-
+larly successful in modeling temporal dynamics
+of Earth observation data. Bidirectional LSTMs
+capture both forward and backward temporal de-
+pendencies, proving valuable for detecting abrupt
+changes and gradual transitions in land cover.
+Gated Recurrent Units (GRUs) offer computa-
+tional eﬀiciency while maintaining temporal mod-
+
+=== PAGE BREAK ===
+
+Figure 3: Self-supervised learning framework for NDVI time-series prediction. The model processes T historical
+satellite observations with spatial patches, each containing NDVI, month, and year and geographic context to
+predict future NDVI values at target time T + ∆ using MAE loss against ground truth NDVI from actual satellite
+observations.
+eling capabilities, making them suitable for pro-
+cessing extensive satellite archives. The combi-
+nation of convolutional and recurrent layers in
+hybrid architectures enables simultaneous extrac-
+tion of spatial features and temporal patterns,
+addressing the inherent spatio-temporal nature
+of remote sensing data (Fu et al., 2024). These
+architectures have shown remarkable success in
+applications ranging from vegetation dynamics
+monitoring to urban growth prediction.
+2.3 Transformer-based Approaches for
+Temporal Modeling
+The adaptation of Transformer architectures to
+remote sensing has catalyzed a paradigm shift
+in processing satellite time-series data. Unlike
+their application in natural language processing,
+Transformers in remote sensing must handle ir-
+regular temporal sampling, missing data due to
+cloud coverage, and multi-modal sensor inputs
+(He et al., 2024). Recent innovations have fo-
+cused on developing specialized attention mech-
+anisms that accommodate these domain-specific
+challenges.
+State-space models represent an emerging di-
+rection for eﬀicient temporal modeling in remote
+sensing. The Mamba architecture and its variants
+have shown promise for processing long sequences
+with linear computational complexity (Bao et al.,
+2025). While primarily explored for change de-
+tection and segmentation tasks, these models of-
+fer potential advantages for time-series analysis
+through their selective state-space mechanisms
+that can adaptively focus on relevant temporal
+features (Chen et al., 2024a).
+Multi-scale temporal attention mechanisms
+have proven essential for capturing phenomena
+occurring at different temporal frequencies. The
+Spatio-Temporal SwinMAE architecture intro-
+duces hierarchical temporal modeling that pro-
+cesses seasonal patterns, inter-annual variations,
+and rapid changes simultaneously (Zhang, 2024).
+This multi-scale approach enables accurate mon-
+itoring of diverse Earth processes, from gradual
+land degradation to sudden natural disasters.
+Recent benchmarking studies reveal that
+lightweight Transformer variants specifically de-
+signed for remote sensing outperform generic ar-
+chitectures (Voelsen et al., 2024). These mod-
+els incorporate domain-specific inductive biases,
+such as temporal position encodings based on
+acquisition dates and sensor-specific normaliza-
+tion schemes, resulting in improved generalization
+across different geographic regions and temporal
+periods.
+2.4 Self-Supervised Learning
+Approaches
+Self-supervised learning has revolutionized re-
+mote sensing by addressing the fundamental chal-
+lenge of acquiring labeled data across vast geo-
+graphical regions. The annotation of satellite im-
+agery demands specialized expertise and substan-
+tial resources, particularly when dealing with di-
+
+=== PAGE BREAK ===
+
+verse ecosystems and temporal variations (Wang
+et al., 2022). Recent developments have demon-
+strated that self-supervised methods can leverage
+the abundant unlabeled satellite data to learn
+meaningful representations without manual an-
+notations.
+Modern self-supervised frameworks for remote
+sensing employ various pretext tasks tailored
+to the unique characteristics of Earth observa-
+tion data. Contrastive learning approaches have
+shown remarkable success by learning invariant
+representations across different augmentations
+and viewing conditions (Berg et al., 2022). The
+SimSiam framework, when pre-trained on high-
+resolution remote sensing datasets, has demon-
+strated superior transfer learning capabilities
+compared to ImageNet pre-trained models, par-
+ticularly for land cover classification tasks (Ghan-
+barzadeh and Soleimani, 2024). This domain-
+specific pre-training captures spectral and spatial
+patterns unique to satellite imagery that general-
+purpose models often miss.
+Several frameworks have been developed to
+handle the temporal aspects of satellite data
+within self-supervised paradigms. The Presto
+model represents progress in handling pixel-
+time-series through lightweight transformer ar-
+chitectures, demonstrating effectiveness for agri-
+cultural monitoring applications (Tseng et al.,
+2023). Temporal contrastive learning methods
+have been adapted to learn season-invariant fea-
+tures, enabling models to distinguish between
+natural phenological cycles and actual land cover
+changes (Yuan and Lin, 2020). Multi-modal self-
+supervised approaches have also emerged, jointly
+learning from optical and radar data to create
+weather-independent representations (Berg et al.,
+2022).
+2.5 Challenges and Gaps in Long-term
+Spatio-Temporal Analysis
+Despite significant advances in deep learning
+and self-supervised approaches, several critical
+challenges remain specific to long-term spatio-
+temporal modeling in remote sensing. Current
+self-supervised methods predominantly focus on
+single-image representations or short temporal
+sequences, typically spanning one year or less
+(Yuan and Lin, 2020). Agricultural applications
+have received disproportionate attention, leaving
+complex heterogeneous landscapes underexplored
+(Rußwurm and Körner, 2018). This temporal
+limitation prevents models from capturing multi-
+decadal environmental processes essential for cli-
+mate monitoring and land use change detection.
+The computational demands of autoregressive
+prediction methods present significant obstacles
+for long-term forecasting. These approaches re-
+quire sequential model activations for each tem-
+poral step, leading to error propagation and ex-
+ponential growth in computational complexity
+(Miller et al., 2024). Each prediction depends
+on previous outputs, causing small errors to com-
+pound over extended horizons. This cascading ef-
+fect becomes particularly problematic when ana-
+lyzing multi-decadal satellite archives where sub-
+tle long-term trends must be distinguished from
+noise and seasonal variations.
+Data heterogeneity poses another fundamen-
+tal challenge for long-term analysis. Satellite mis-
+sions evolve over time, introducing sensor varia-
+tions, orbital changes, and calibration differences
+that complicate multi-decadal studies. Existing
+models often fail to account for these systematic
+changes, resulting in temporal inconsistencies and
+spurious trends (Xiao et al., 2024). The lack of
+standardized preprocessing pipelines for harmo-
+nizing long-term satellite archives further exacer-
+bates this issue.
+Memory constraints represent a significant
+bottleneck for processing extensive temporal se-
+quences. While state-space models offer linear
+complexity, they still require substantial mem-
+ory for maintaining hidden states across long se-
+quences. This limitation forces researchers to
+adopt temporal windowing strategies that may
+miss important long-term dependencies and cycli-
+cal patterns spanning multiple years. The trade-
+off between sequence length and model capac-
+ity remains a fundamental obstacle to capturing
+multi-decadal environmental dynamics.
+The scarcity of labeled data for long-term
+changes presents a critical gap in model develop-
+ment and evaluation. Most benchmark datasets
+focus on short-term changes or single-time obser-
+vations, failing to capture gradual environmen-
+tal processes like desertification, urbanization,
+or climate-induced vegetation shifts (Fu et al.,
+2024). Additionally, the computational cost of
+training models on extensive temporal sequences
+often necessitates trade-offs between temporal
+resolution and sequence length, potentially miss-
+ing critical transitional periods in environmental
+dynamics.
+Addressing these limitations requires funda-
+mental rethinking of self-supervised objectives
+for temporal remote sensing data. Rather than
+
+=== PAGE BREAK ===
+
+adapting computer vision methods designed for
+static images, the field needs approaches that in-
+herently model temporal dynamics, seasonal cy-
+cles, and long-term environmental changes. Di-
+rect temporal pattern learning, as opposed to
+iterative prediction, offers promising directions
+for capturing extended-range dependencies while
+maintaining computational eﬀiciency (Zhu et al.,
+2019). Such methods must also account for the
+unique challenges of Mediterranean and other
+heterogeneous landscapes, where human activi-
+ties, climate variability, and ecological processes
+interact across multiple temporal scales.
+The integration of spatio-temporal transform-
+ers with self-supervised learning presents a par-
+ticularly promising direction for addressing these
+challenges. By processing entire temporal se-
+quences through unified architectures that com-
+bine spatial patches, temporal embeddings, and
+geographic context, models can learn complex de-
+pendencies without the cascading errors of au-
+toregressive approaches. Self-supervised mask-
+ing strategies that operate across both spatial
+and temporal dimensions enable models to learn
+from the inherent structure of satellite time series,
+leveraging the vast amounts of unlabeled data
+available. This approach is especially valuable
+for heterogeneous landscapes where labeled data
+spanning multiple decades is scarce. Direct pre-
+diction frameworks that forecast future values in
+a single forward pass, rather than through iter-
+ative steps, offer computational eﬀiciency while
+maintaining the ability to capture long-range
+temporal dependencies. Such architectures can
+adapt to varying prediction horizons and spatial
+resolutions through flexible embedding schemes,
+making them suitable for diverse remote sensing
+applications from short-term vegetation monitor-
+ing to multi-decadal climate impact assessment.
+3 PROPOSED METHOD
+Our proposed approach formulates time-series
+prediction of satellite NDVI as a self-supervised
+learning problem, designed to exploit both the
+temporal evolution and spatial context of long-
+term satellite observations. As illustrated in Fig-
+ure 3, we feed the model sequences of past satel-
+lite imagery along with spatial patches centered
+around each target pixel, enabling it to learn
+from historical patterns without requiring labeled
+data. The training objective minimizes the differ-
+ence between predicted and observed NDVI val-
+ues, leveraging the rich spatio-temporal structure
+inherent in Landsat time series.
+This methodology predicts the future NDVI
+value of a central pixel by considering both its
+temporal sequence and the surrounding spatial
+environment at each time step. This combination
+allows the model to capture local spatial patterns,
+seasonal cycles, and long-term trends simultane-
+ously. Specifically, for every pixel of interest, we
+extract a sequence of past NDVI patches and en-
+code them together with corresponding temporal
+information—such as year and month—and loca-
+tion coordinates. The model is trained to forecast
+the NDVI value at a future time point by com-
+paring predictions against actual measurements
+and iteratively updating its parameters to reduce
+forecasting errors.
+This spatio-temporal learning strategy en-
+ables the model to refine its predictions over time,
+adjusting its understanding of vegetation dynam-
+ics based on both historical observations and the
+spatial relationships of neighboring pixels. By
+integrating these dimensions, our method effec-
+tively learns complex dependencies that govern
+vegetation growth and response to climatic and
+anthropogenic factors across heterogeneous land-
+scapes.
+Formally, we represent the input as a time-
+series sequence that includes spatial, temporal,
+and geographic information:
+O = {(Xt , Mt ,Yt , lat, lon) | t = 0, . . . ,T } (2)
+where T denotes the length of the historical time
+series, Xt ∈ RN×N represents the NDVI values
+within a spatial patch of size N × N at time t,
+Mt indicates the month corresponding to time t,
+Yt specifies the year at time t, and lat and lon
+refer to the latitude and longitude of the patch’s
+central pixel.
+The prediction target is defined by the fu-
+ture month and year, denoted as MT +∆ and YT +∆,
+which specify the future timestamp for forecast-
+ing. The model’s task is to estimate the NDVI
+value at the central pixel for this future time point
+T + ∆, formulated as:
+ˆxT +∆ = f (O, MT +∆,YT +∆) (3)
+where f is the transformer-based deep learning
+model. Unlike autoregressive models that re-
+quire sequential predictions for each intermedi-
+ate step, our non-autoregressive approach allows
+direct forecasting of the NDVI value for any spec-
+ified future timestamp in a single step. By incor-
+porating the target month and year together with
+the past temporal sequence, spatial patch data,
+
+=== PAGE BREAK ===
+
+and geographic coordinates, the model avoids er-
+ror accumulation over multiple iterations and en-
+ables eﬀicient, flexible prediction across arbitrary
+future horizons.
+The predicted value ˆxT +∆ is compared to the
+true observed value xT +∆ using a loss function
+L( ˆxT +∆, xT +∆). Model parameters are updated
+through iterative backpropagation to minimize
+this loss, thereby enhancing the model’s ability
+to forecast NDVI values accurately across differ-
+ent temporal horizons.
+Figure 4 illustrates the architecture of the
+proposed Transformer-based model for long-term
+NDVI prediction. The figure shows four main
+stages:
+• Input Masking: The input includes spatial
+NDVI patches, geographic coordinates, and
+the target future month and year. Spatial and
+temporal masking, along with horizon sam-
+pling, generate diverse training samples.
+• Embedding Layers: The masked inputs are
+transformed into feature vectors through spa-
+tial, temporal, coordinates, and positional em-
+beddings, capturing patterns in both space
+and time.
+• Transformer Encoding: The combined em-
+beddings are processed through Transformer
+blocks that model complex spatio-temporal
+dependencies.
+• Regressor Decoder: The encoded features are
+pooled and passed through a dense layer to
+predict the NDVI at the target time, with
+predictions optimized using MSE loss against
+ground truth values.
+3.1 Input Masking
+The initial stage of our framework involves com-
+prehensive sampling and masking of satellite im-
+agery time series to create diverse training scenar-
+ios that enhance model robustness and generaliza-
+tion capabilities. Our approach addresses the in-
+herent challenges in remote sensing data, includ-
+ing irregular temporal sampling, varying spatial
+scales, and the need for multi-horizon predictions
+across different forecasting periods.
+For each pixel of interest, we construct a struc-
+tured input sequence as defined in Equation 2,
+which encompasses spatial NDVI patches, tempo-
+ral metadata, and geographic coordinates. This
+multi-faceted representation enables simultane-
+ous utilization of spatial patterns within local
+neighborhoods, temporal dynamics across multi-
+ple timescales, and geographic context that in-
+fluences vegetation behavior patterns (Gao et al.,
+2022).
+To enhance model adaptability and prevent
+overfitting to specific spatiotemporal configura-
+tions, we implement a comprehensive masking
+strategy that introduces structured variability
+during training. This approach draws inspi-
+ration from recent advances in self-supervised
+learning for time series forecasting and addresses
+the unique challenges of Earth observation data
+(Zhou et al., 2021; Yao et al., 2023). The masking
+strategy consists of three complementary opera-
+tions applied stochastically during training.
+Spatial masking addresses the varying spa-
+tial scales encountered in real-world applications
+by randomly selecting a spatial window size n
+where n < N and setting all NDVI values outside
+the central n × n region to zero. This operation
+forces the model to adapt to different spatial con-
+texts and scales, which is particularly important
+given that vegetation patterns exhibit distinct
+spatial correlation structures at different resolu-
+tions (Chen et al., 2022). The spatial masking
+enables the model to learn scale-invariant repre-
+sentations and handle scenarios with limited spa-
+tial context availability.
+Temporal masking tackles the irregular data
+availability common in satellite imagery due to
+cloud cover, sensor malfunctions, or acquisition
+constraints by randomly selecting a prefix length
+T ′ < T and masking all observations and corre-
+sponding temporal tokens that occur before time
+step T ′. This creates training scenarios where
+predictions must be made from truncated histor-
+ical sequences, improving robustness to missing
+observations and enabling effective learning from
+sequences of varying lengths (Verbesselt et al.,
+2010b). The temporal masking strategy prepares
+the model for real-world conditions where com-
+plete temporal coverage is rarely available.
+Future horizon sampling enables direct multi-
+horizon forecasting by uniformly sampling the
+prediction horizon ∆ from the range:
+∆ ∼ Uniform{1, 2, . . . ,Ymax − T } (4)
+where ∆ represents the number of time steps
+beyond the last observed measurement. This ap-
+proach exposes the model to both short-term pre-
+dictions (small ∆) and long-term forecasting sce-
+narios (large ∆) during training, avoiding the er-
+ror accumulation issues inherent in autoregressive
+methods (Lim et al., 2021). The sampling strat-
+
+=== PAGE BREAK ===
+
+Figure 4: Architecture of the proposed STT-LTF model, combining spatial, temporal, and geographic features.
+Input spatio-temporal patches undergo masking strategies before multi-channel embedding (spatial, temporal,
+coordinates, positional), transformer processing, and regression to predict target NDVI values through self-
+supervised learning.
+egy enables flexible prediction capabilities across
+temporal scales without requiring iterative infer-
+ence procedures.
+The integrated application of these three
+masking operations creates a comprehensive data
+augmentation framework that significantly en-
+hances model robustness across diverse spa-
+tiotemporal scales and prediction horizons. By
+simultaneously varying spatial context, tempo-
+ral sequence lengths, and forecasting horizons, we
+establish a training environment that effectively
+prepares the model for the heterogeneous condi-
+tions encountered in operational Earth monitor-
+ing applications (Tseng et al., 2023). This mask-
+ing approach differs fundamentally from tradi-
+tional computer vision techniques by specifically
+addressing the unique challenges of spatiotempo-
+ral Earth observation data, resulting in a unified
+model capable of generalizing across diverse spa-
+tial scales, temporal contexts, and forecasting re-
+quirements.
+3.2 Observation Embedding
+The observation embedding layer transforms the
+input sequence into a high-dimensional feature
+space while preserving the relationships between
+spatial, temporal, and geographic components.
+The input sequence is defined as:
+O = {(Xt , Mt ,Yt , lat, lon) | t = 0, . . . ,T }
+∪ {(MT +∆,YT +∆)} (5)
+The embedding process consists of four main
+components:
+3.2.1 NDVI Spatial Embedding
+NDVI patches {Xt }T
+t=0 where each Xt ∈ RN×N are
+flattened and projected into a higher-dimensional
+vector space via a linear layer. This captures spa-
+tial variability around each target pixel:
+Espatial(Xt ) = Linear(flatten(Xt )) (6)
+where Linear : RN2
+→ Rdembed maps the flat-
+tened spatial patch to the embedding dimension.
+3.2.2 Cyclical Temporal Encoding
+Temporal data ({Mt ,Yt }T
+t=0) requires special han-
+dling to capture both seasonal cycles and long-
+term trends. Monthly information uses cyclical
+encoding to ensure temporal continuity:
+Emonth(Mt ) =
+[
+sin
+( 2πMt
+12
+)
+, cos
+( 2πMt
+12
+)]
+(7)
+Years are normalized relative to the dataset
+bounds and linearly projected:
+
+=== PAGE BREAK ===
+
+Ynorm = Yt −Ystart
+Yend −Ystart
+(8)
+Eyear(Yt ) = Linear(Ynorm) (9)
+The target month (MT +∆) and year (YT +∆) are
+encoded identically and appended to indicate the
+prediction timestamp.
+3.2.3 Location Encoding
+Latitude and longitude coordinates are converted
+to 3D Cartesian coordinates on a unit sphere to
+preserve geographic relationships:
+x = cos(lat) · cos(lon)
+y = cos(lat) · sin(lon)
+z = sin(lat)
+(10)
+The 3D coordinates are then projected into
+the embedding space:
+Elocation(lat, lon) = Linear([x, y, z]) (11)
+3.2.4 Positional Encoding
+Sinusoidal positional encoding preserves the se-
+quential order of observations:
+PE(t) = [sin(2πkt), cos(2πkt)
+| k = 0, . . . ,⌊d/2⌋] (12)
+where d is the embedding dimension and k in-
+dexes different frequency components.
+3.2.5 Final Embedding Concatenation
+For each time step t, the individual embeddings
+are concatenated and projected into the model
+dimension:
+Rt = concat(Espatial(Xt ), Emonth(Mt ),
+Eyear(Yt ), Elocation(lat, lon)) (13)
+Ht = Linear(Rt ) (14)
+Finally, positional encoding is added via
+element-wise summation:
+Ot = Ht + PE(t) (15)
+This formulation captures spatial patterns,
+temporal dynamics, geographic context, and se-
+quential structure necessary for accurate spatio-
+temporal NDVI prediction.
+3.3 Transformer Encoder
+The embedded sequence {Ot }T +1
+t=0 is processed
+through a stack of L transformer encoder blocks,
+each consisting of multi-head self-attention and
+feed-forward components. Following the archi-
+tecture principles of BERT (Devlin et al., 2019),
+each transformer block applies residual connec-
+tions and layer normalization to ensure stable
+training and effective information flow.
+For each transformer layer l, the multi-head
+attention mechanism computes attention weights
+across all time steps simultaneously. Given the
+input representation H(l−1) ∈ R(T +2)×d from the
+previous layer, the attention computation is:
+Attention(Q, K,V ) = softmax
+( QKT
+√dk
+)
+V (16)
+where Q, K, and V are the query, key, and
+value matrices, respectively, computed as:
+Q = H(l−1)WQ
+K = H(l−1)WK
+V = H(l−1)WV
+(17)
+The multi-head mechanism applies h parallel
+attention operations and concatenates their out-
+puts:
+MultiHead(H(l−1)) = concat(head1, . . . ,headh)WO
+where head i = Attention(Qi, Ki,Vi)
+(18)
+Each transformer block applies a position-wise
+feed-forward network followed by residual connec-
+tions and layer normalization:
+FFN(x) = ReLU(xW1 + b1)W2 + b2
+H(l) = LayerNorm(H(l−1) + MultiHead(H(l−1)))
+H(l) = LayerNorm(H(l) + FFN(H(l)))
+(19)
+The stacked architecture enables hierarchical
+feature learning, where early layers capture local
+temporal patterns while deeper layers learn global
+relationships and long-term trends. The final out-
+put H(L) provides rich spatio-temporal represen-
+tations that integrate local variations, long-range
+dependencies, spatial context, and geographic re-
+lationships necessary for accurate NDVI predic-
+tion.
+
+=== PAGE BREAK ===
+
+3.4 Regression Decoder and
+Self-Supervised Training
+The final transformer encoding corresponding to
+the target timestamp is processed through a re-
+gression decoder to produce the NDVI prediction
+for the center pixel. This decoder consists of a
+two-layer fully connected network with ReLU ac-
+tivation and dropout regularization:
+h = ReLU(Linear1(H(L)
+T +∆))
+ˆxT +∆ = Linear2(Dropout(h))
+(20)
+where Linear 1 : Rdmodel → Rdmodel/2 reduces
+the dimensionality, H(L)
+T +∆ represents the trans-
+former encoding at the target time step, and
+Linear2 : Rdmodel/2 → R maps to a single scalar
+NDVI value for the center pixel.
+The model employs self-supervised learning
+by leveraging the temporal structure of satellite
+imagery data. The training objective minimizes
+the discrepancy between predicted and observed
+NDVI values using Mean Absolute Error (MAE)
+loss:
+L( ˆxT +∆, xT +∆) = | ˆxT +∆ − xT +∆| (21)
+Parameter optimization is performed through
+backpropagation using the Adam optimizer. This
+self-supervised approach enables the model to
+learn complex spatio-temporal patterns with-
+out requiring manually labeled data, effectively
+capturing dependencies across spatial neighbor-
+hoods, seasonal cycles, and long-term environ-
+mental trends.
+4 EXPERIMENTAL RESULTS
+4.1 STUDY AREA
+Our research focuses on the southeastern
+Mediterranean basin, located along a gradient
+transitioning from Mediterranean to arid climatic
+conditions (Figure 1). The rainfall varies be-
+tween 450 mm/year to 250 mm/year, resulting in
+a transition from shrublands to phrygana (Bata)
+to bare desert.
+The study region presents unique challenges
+for vegetation monitoring due to its inherent en-
+vironmental heterogeneity. Precipitation pat-
+terns exhibit considerable inter-annual variabil-
+ity, with recurring drought cycles and periodic
+disturbances from wildfires significantly influenc-
+ing landscape dynamics. Human activities fur-
+ther contribute to ecosystem modifications, re-
+sulting in a complex spatial pattern of vegetation,
+exposed soil, and rocky surfaces. These com-
+bined factors create substantial temporal variabil-
+ity in vegetation responses, as demonstrated by
+the seasonal and inter-annual NDVI fluctuations
+observed throughout the study period.
+We evaluated the proposed method using
+multi-mission Landsat imagery spanning four
+decades (1984-2024), incorporating data from
+Landsat Missions 5, 7, 8, and 9. This comprehen-
+sive dataset represents Mediterranean ecosystems
+characterized by pronounced spatial heterogene-
+ity and temporal dynamics, including extended
+dry periods punctuated by intense precipitation
+events as noted in (Faran et al., 2020).
+The spatial extent covers 53.94 × 37.35 km 2,
+represented as a 1798 × 1245 pixel array with 30-
+meter spatial resolution. Source imagery was ac-
+quired through Google Earth Engine’s Level-2
+surface reflectance products. To address cloud
+contamination and seasonal variations, we gen-
+erated bi-annual composite images by calculating
+median NDVI values from cloud-free observations
+(< 20% cloud cover) for two distinct periods:
+October through April, representing the ”Win-
+ter” growing season, and May through Septem-
+ber, representing the ”Summer” dormant season.
+The complete dataset encompasses 2,238,510
+individual pixel time series. For model develop-
+ment and evaluation, we implemented a tempo-
+ral split strategy: observations from 1984-2013
+(spanning 30 years) were allocated for model
+training and validation, while the period from
+2014-2024 served as an independent test set
+for assessing temporal generalization capabilities.
+This approach ensures robust evaluation of long-
+term prediction performance on genuinely unseen
+temporal data.
+4.2 Implementation and Parameters
+Our model employs a multi-dimensional embed-
+ding architecture with three distinct embedding
+layers: a 128-dimensional layer for NDVI spa-
+tial features, an 8-dimensional layer for tempo-
+ral information (year and season), and an 8-
+dimensional layer for geographic coordinates (lat-
+itude and longitude). These embeddings are com-
+bined and projected through a linear layer to a
+unified 256-dimensional space, which serves as
+input to the transformer architecture (Vaswani
+
+=== PAGE BREAK ===
+
+Figure 5: MAE loss against past sequence length for different future prediction horizons ( ∆t) with spatial patch
+size 1. Results show that MAE loss decreases with longer historical sequences and shorter prediction horizons.
+Adopted from (Faran et al., 2025).
+et al., 2017; Tseng et al., 2023).
+The transformer backbone consists of three
+encoding blocks, each equipped with eight atten-
+tion heads to capture diverse spatial and tempo-
+ral dependencies. A dropout rate of 0.2 is applied
+after the embedding layer and each transformer
+block to prevent overfitting (Gao et al., 2022).
+The model was trained for 150 epochs using the
+Adam optimizer with an initial learning rate of
+2 × 10−4.
+For the loss function, we employ Mean Ab-
+solute Error (MAE), as defined in Equation 21,
+which was selected due to its robustness to out-
+liers in satellite time series data (Gómez et al.,
+2016). Model performance is evaluated using
+both MAE and the coeﬀicient of determination
+(R2) to provide comprehensive assessment of pre-
+diction accuracy and variance explanation capa-
+bility.
+4.3 Temporal Evaluation
+We evaluated the proposed model’s prediction ca-
+pabilities using various sequence lengths ( T ) and
+future prediction horizons ( ∆) with the spatial
+patch size ( N) set to 1. This assessment helped
+determine our method’s ability to capture time-
+series patterns and seasonality across different
+temporal scales. The results are presented in Fig-
+ure 5.
+A past observation sequence of 10 years
+yielded the most significant improvement in pre-
+diction accuracy, showing noticeable gains com-
+pared to shorter sequences. Beyond 10 years, fur-
+ther improvements are less pronounced, with 15
+to 20 years achieving the lowest L1 loss. The
+model performs optimally for next-year predic-
+tions, with accuracy gradually declining as the
+prediction horizon extends.
+Analyzing results by land-cover class might
+reveal different patterns, as some classes (e.g.,
+building areas, bare ground) exhibit static NDVI
+values, while others (e.g., grass, shrub) display
+greater temporal variability.
+Figure 6 demonstrates the model’s output us-
+ing a 10-year input sequence applied to sample
+locations. The model successfully captures over-
+all NDVI trends over time, aligning well with ob-
+served patterns in the input sequence. However,
+it struggles to predict unexpected outliers that
+may result from sudden environmental events or
+changes. These deviations highlight the inherent
+challenges of modeling abrupt anomalies within a
+predominantly trend-based framework.
+
+=== PAGE BREAK ===
+
+Spatial/Sequence Sequence 1 Sequence 5 Sequence 10 Sequence 15 Sequence 20
+Patch 1×1 MAE: 0.096 MAE: 0.098 MAE: 0.070 MAE: 0.057 MAE: 0.025
+R2: 0.092 R2: 0.225 R2: 0.535 R2: 0.678 R2: 0.922
+Patch 3×3 MAE: 0.098 MAE: 0.101 MAE: 0.072 MAE: 0.054 MAE: 0.024
+R2: 0.042 R2: 0.179 R2: 0.525 R2: 0.706 R2: 0.926
+Patch 5×5 MAE: 0.098 MAE: 0.102 MAE: 0.073 MAE: 0.051 MAE: 0.025
+R2: 0.048 R2: 0.166 R2: 0.507 R2: 0.723 R2: 0.924
+Patch 7×7 MAE: 0.098 MAE: 0.104 MAE: 0.073 MAE: 0.050 MAE: 0.024
+R2: 0.044 R2: 0.147 R2: 0.515 R2: 0.736 R2: 0.927
+Patch 9×9 MAE: 0.098 MAE: 0.104 MAE: 0.071 MAE: 0.049 MAE: 0.024
+R2: 0.027 R2: 0.143 R2: 0.531 R2: 0.747 R2: 0.925
+Table 1: Mean Absolute Error (MAE) and R² performance across different spatial patch sizes and temporal
+sequence lengths
+4.4 Spatial Evaluation
+We also conducted a comprehensive analysis ex-
+amining how spatial coverage, represented by
+varying patch dimensions, influences model pre-
+diction performance. The experimental setup em-
+ployed sequence lengths of 10 years with single-
+year prediction horizons, as presented in Table 1.
+Our findings demonstrate that expanding the spa-
+tial window beyond 7 × 7 pixels (approximately
+210 m × 210 m) produced marginal improvements
+in prediction accuracy.
+This spatial threshold suggests that the opti-
+mal window size effectively captures the spectral
+characteristics of uniform vegetation communities
+within our study area (Zhang et al., 2024). Be-
+yond this scale, the inclusion of additional pixels
+primarily incorporates adjacent areas with dis-
+tinct land cover characteristics, potentially in-
+troducing spectral heterogeneity that dilutes the
+vegetation signal (Roßberg and Schmitt, 2024;
+Van Leeuwen et al., 2020). This phenomenon
+aligns with established remote sensing principles,
+where mixed pixels containing multiple cover
+types can compromise classification accuracy and
+reduce the strength of vegetation indices (Singh
+et al., 2024).
+The computational eﬀiciency also supports
+this finding, as larger spatial windows require sig-
+nificantly more processing resources while pro-
+viding diminishing returns in predictive accu-
+racy (Verma et al., 2024). This trade-off be-
+tween computational cost and model performance
+suggests that the 7 × 7 pixel configuration repre-
+sents an optimal balance for operational vegeta-
+tion monitoring applications (Cheng et al., 2024).
+In contrast to the limited spatial benefits ob-
+served beyond the optimal window size, tempo-
+ral sequence length demonstrated substantially
+greater influence on model performance. Ex-
+tended temporal sequences consistently improved
+both Mean Absolute Error (MAE) and coeﬀicient
+of determination (R 2) metrics across all spatial
+configurations. This temporal advantage sug-
+gests that historical context provides more valu-
+able predictive information than expanding spa-
+tial coverage, enabling the model to capture long-
+term vegetation trends, seasonal cycles, and inter-
+annual variability patterns more effectively (Chu
+et al., 2021).
+Our results emphasize the importance of bal-
+ancing spatial and temporal dimensions in vegeta-
+tion prediction models. While higher spatial reso-
+lution imagery could potentially reveal finer-scale
+patterns, the current analysis suggests that tem-
+poral depth offers greater predictive value than
+spatial extent at our operational scale (Sharifi,
+2020).
+4.5 Comparison with Other Models
+We evaluated our proposed model against several
+established time-series analysis approaches, in-
+cluding Support Vector Machines (SVM), Fully-
+Connected Neural Networks, 1D Convolutional
+Neural Networks (CNN-1D), Long Short-Term
+Memory (LSTM) networks, and the Temporal
+Fusion Transformer (TFT) (Lim et al., 2021).
+The SVM implementation utilized a Radial
+Basis Function (RBF) kernel, a standard choice
+for time-series regression tasks. The Fully-
+Connected Neural Network comprised three lay-
+ers with 128 hidden neurons each, using ReLU
+activation functions to process the flattened 10-
+sample input sequences. The CNN-1D architec-
+ture employed three convolutional layers with 64
+filters and kernel size 3, maintaining sequence
+length through padding before the final linear
+layer. The LSTM model featured a 3-layer
+
+=== PAGE BREAK ===
+
+stacked design with 64 hidden units per layer to
+capture sequential temporal patterns.
+For the TFT implementation, we adapted the
+architecture to NDVI prediction by configuring it
+with an embedding dimension of 128, four atten-
+tion heads, and three transformer blocks. The
+model incorporated temporal encodings for sea-
+sonal patterns.
+The results presented in Table 2 reveal the
+comparative performance of our STT-LTF model.
+A notable advantage of our approach lies in its ar-
+chitectural design, which accepts target year in-
+formation as direct input, enabling multi-horizon
+predictions without iterative inference. Tradi-
+tional autoregressive methods require sequential
+predictions for long-term forecasting, where each
+predicted value serves as input for subsequent
+predictions. This iterative process leads to error
+accumulation and increased computational over-
+head with each step. In contrast, our direct pre-
+diction capability overcomes these limitations in-
+herent in autoregressive approaches, while achiev-
+ing superior accuracy for long-term NDVI fore-
+casting tasks.
+Model MAE R2
+SVM 0.0456 0.7459
+CNN-1D 0.0391 0.7810
+Fully Connected 0.0383 0.7953
+LSTM 0.0363 0.8088
+Transformer 0.0361 0.8182
+Proposed Model 0.0328 0.8412
+Table 2: Performance comparison of previous meth-
+ods and our STT-LTF model for next-year prediction
+using 10-year input sequences..
+5 CONCLUSION
+This research presented STT-LTF, a self-
+supervised spatio-temporal transformer frame-
+work designed for multi-horizon vegetation fore-
+casting using satellite observations. The pro-
+posed methodology addresses fundamental chal-
+lenges in environmental monitoring by simul-
+taneously processing spatial neighborhoods and
+temporal sequences without requiring labeled
+training data. Through comprehensive mask-
+ing strategies and direct prediction mechanisms,
+our framework learns meaningful representations
+from four decades of Landsat imagery, captur-
+ing both local vegetation patterns and regional
+climate influences across Mediterranean ecosys-
+tems. The experimental evaluation revealed im-
+portant insights into the tradeoff between spatial
+and temporal dimensions in vegetation modeling.
+While expanding spatial context showed dimin-
+ishing returns beyond a certain threshold, tem-
+poral depth consistently enhanced prediction ac-
+curacy across various configurations. The direct
+prediction approach eliminated error accumula-
+tion inherent in autoregressive methods, enabling
+accurate forecasts at arbitrary future timestamps
+through a single forward pass.
+STT-LTF demonstrated superior performance
+compared to various established approaches span-
+ning traditional machine learning methods and
+modern deep learning architectures. The frame-
+work’s ability to process variable-length se-
+quences with missing observations makes it par-
+ticularly suitable for operational Earth monitor-
+ing applications where data availability varies.
+By learning from unlabeled historical archives,
+the approach overcomes the scarcity of annotated
+multi-decade datasets while maintaining predic-
+tion accuracy across heterogeneous landscapes.
+Future research directions include extending
+the framework to incorporate multi-modal satel-
+lite data, integrating climate variables and human
+activity indicators, and developing methods for
+geographic transferability to different ecosystems
+and climatic zones. Additionally, implement-
+ing more eﬀicient computational approaches, such
+as Vision Transformer architectures, would en-
+able processing larger geographic areas and longer
+temporal sequences without excessive memory
+requirements, making the framework practical
+for large-scale environmental monitoring systems.
+Advanced mechanisms that identify and priori-
+tize threshold areas with a higher likelihood of
+vegetation change could enhance prediction ac-
+curacy in critical transition zones, particularly in
+regions vulnerable to desertification or rapid land
+use transformation.
+
+=== PAGE BREAK ===
+
+Figure 6: Performance comparison across 12 sample points using 10-year input sequences. Results demonstrate
+accurate prediction of seasonal patterns and long-term trends. Adopted from (Faran et al., 2025).
+
+=== PAGE BREAK ===
+
+REFERENCES
+Bao, M. et al. (2025). Vision mamba in remote sens-
+ing: A comprehensive survey of techniques, ap-
+plications and outlook. arXiv preprint.
+Berg, P., Pham, M.-T., and Courty, N. (2022). Self-
+supervised learning for scene classification in re-
+mote sensing: Current state of the art and per-
+spectives. Remote Sensing, 14(16):3995.
+Box, G. E., Jenkins, G. M., Reinsel, G. C., and Ljung,
+G. M. (2015). Time Series Analysis: Forecasting
+and Control. John Wiley & Sons.
+Chen, G., Jiao, Q., Hu, Q., Xiao, L., and Ye, Z.
+(2022). Swinstfm: Remote sensing spatiotempo-
+ral fusion using swin transformer. IEEE Transac-
+tions on Geoscience and Remote Sensing, 60:1–
+18.
+Chen, H., Song, J., Han, C., Xia, J., and Yokoya,
+N. (2024a). Changemamba: Remote sens-
+ing change detection with spatio-temporal state
+space model. IEEE Transactions on Geoscience
+and Remote Sensing.
+Chen, X. et al. (2024b). Anthropogenic activities
+dominated the spatial and temporal changes of
+normalized difference vegetation index (NDVI)
+in the Hehuang valley in the northeastern Qing-
+hai Province between 2000 and 2020. Frontiers
+in Environmental Science, 12:1384032.
+Cheng, M., Liu, K., Liu, Z., Xu, J., Zhang, Z., and
+Sun, C. (2024). Combination of multiple vari-
+ables and machine learning for regional crop-
+land water and carbon fluxes estimation: A case
+study in the haihe river basin. Remote Sensing,
+16(17):3280.
+Cheng, X., Sun, Y., Zhang, W., Wang, Y., Cao, X.,
+and Wang, Y. (2023). Application of deep learn-
+ing in multitemporal remote sensing image clas-
+sification. Remote Sensing, 15(15):3859.
+Chu, D., Shen, H., Guan, X., Chen, J., Li, X., Li, J.,
+and Zhang, L. (2021). Long time-series NDVI
+reconstruction in cloud-prone regions via spatio-
+temporal tensor completion. Remote Sensing of
+Environment, 264:112632.
+Cong, Y., Khanna, S., Meng, C., Liu, P., Rozi, E.,
+He, Y., Burke, M., Lobell, D., and Ermon, S.
+(2022). Satmae: Pre-training transformers for
+temporal and multi-spectral satellite imagery.
+Advances in Neural Information Processing Sys-
+tems, 35:27690–27703.
+Devlin, J., Chang, M.-W., Lee, K., and Toutanova,
+K. (2019). Bert: Pre-training of deep bidi-
+rectional transformers for language understand-
+ing. In Proceedings of the 2019 conference of
+the North American chapter of the association
+for computational linguistics: human language
+technologies, volume 1 (long and short papers),
+pages 4171–4186.
+Dudek, G., Pełka, P., and Smyl, S. (2024). Analysis
+of the effectiveness of ARIMA, SARIMA, and
+SVR models in time series forecasting: A case
+study of wind farm energy production. Energies,
+17(19):4803.
+Faran, I., Netanyahu, N. S., David, E., Rud, R., and
+Shoshany, M. (2020). Multi seasonal deep learn-
+ing classification of VENuS images. In Proceed-
+ings of the IEEE International Geoscience and
+Remote Sensing Symposium, pages 6754–6757.
+Faran, I., Netanyahu, N. S., Roitberg, E., and
+Shoshany, M. (2025). Self-supervised transform-
+ers for long-term prediction of Landsat NDVI
+time series. In Proceedings of the 14th Interna-
+tional Conference on Pattern Recognition Appli-
+cations and Methods - ICPRAM, pages 542–552.
+INSTICC, SciTePress.
+Fu, Y., Zhu, Z., Liu, L., Zhan, W., He, T., Shen,
+H., Zhao, J., Liu, Y., Zhang, H., Liu, Z., et al.
+(2024). Remote sensing time series analysis: A
+review of data and applications. Journal of Re-
+mote Sensing, 4:0285.
+Gao, Z., Shi, X., Wang, H., Zhu, Y., Wang, Y. B.,
+Li, M., and Yeung, D.-Y. (2022). Earthformer:
+Exploring space-time transformers for Earth sys-
+tem forecasting. In Advances in Neural Infor-
+mation Processing Systems, volume 35, pages
+25390–25403.
+Ghanbarzadeh, A. and Soleimani, H. (2024). Self-
+supervised in-domain representation learning for
+remote sensing image scene classification. He-
+liyon, 10(19).
+Gómez, C., White, J. C., and Wulder, M. A. (2016).
+Optical remotely sensed time series data for land
+cover classification: A review. ISPRS Journal of
+Photogrammetry and Remote Sensing, 116:55–
+72.
+He, G., Johnson, B. A., et al. (2024). Transform-
+ers for remote sensing: A systematic review and
+analysis. Sensors, 24(11):3495.
+Kennedy, R. E., Andréfouët, S., Cohen, W. B.,
+Gómez, C., Griﬀiths, P., Hais, M., et al. (2018).
+Bringing an ecological view of change to Land-
+sat‐based remote sensing. Frontiers in Ecology
+and the Environment, 16(6):340–348.
+Li, W., Schmidt, T., Mueller, A., and Zhang, C.
+(2024). Transformer models for land cover classi-
+fication with satellite image time series. Journal
+of Photogrammetry, Remote Sensing and Geoin-
+formation Science, 92(3):245–260.
+Li, Y. et al. (2021). Long time-series NDVI re-
+construction in cloud-prone regions via spatio-
+temporal tensor completion. Remote Sensing of
+Environment, 264:112632.
+Lim, B., Arık, S. Ö., Loeff, N., and Pfister, T. (2021).
+Temporal fusion transformers for interpretable
+multi-horizon time series forecasting. Interna-
+tional Journal of Forecasting, 37(4):1748–1764.
+Liu, Y., Hu, T., Zhang, H., Wu, H., Wang, S., Ma,
+L., and Long, M. (2023). iTransformer: Inverted
+Transformers are effective for time series fore-
+casting. arXiv:2310.06625.
+
+=== PAGE BREAK ===
+
+MacKenzie, C., Cannon, T., and Garmire, D. (2023).
+Comparative analysis of sarima and deep learn-
+ing models for short-term offshore wind speed
+forecasting. Energy Reports, 10:2987–2997.
+Mehmood, K., Anees, S. A., Muhammad, S., Hussain,
+K., Shahzad, F., Liu, Q., Ansari, M. J., Alharbi,
+S. A., and Khan, W. R. (2024). Analyzing veg-
+etation health dynamics across seasons and re-
+gions through NDVI and climatic variables. Sci-
+entific Reports, 14(1):11775.
+Miller, L., Pelletier, C., and Webb, G. I. (2024). Deep
+learning for satellite image time-series analysis:
+A review. IEEE Geoscience and Remote Sensing
+Magazine.
+Noman, M., Naseer, M., Cholakkal, H., Anwar,
+R. M., Khan, S., and Khan, F. S. (2024).
+Rethinking transformers pre-training for multi-
+spectral satellite imagery. In Proceedings of the
+IEEE/CVF Conference on Computer Vision and
+Pattern Recognition, pages 27672–27683.
+Roitberg, E. and Shoshany, M. (2024). Pri-
+mary productivity and woody growth: a 35
+years Landsat TM NDVI time series investi-
+gation across desert-fringe in the south-eastern
+Mediterranean. In Proceedings of the IEEE
+International Geoscience and Remote Sensing
+Symposium, pages 2867–2870.
+Roßberg, N. and Schmitt, M. (2024). Estimat-
+ing vegetation indices and biophysical parame-
+ters for central european temperate forests with
+sentinel-1 sar data and machine learning. Taylor
+& Francis Online.
+Ruiz-Aguilar, J., Turias, I., and Jiménez-Come, M.
+(2014). Hybrid approaches based on sarima and
+artificial neural networks for inspection time se-
+ries forecasting. Transportation Research Part
+E: Logistics and Transportation Review, 67:1–
+13.
+Rußwurm, M. and Körner, M. (2018). Self-attention
+for raw optical satellite time series classification.
+Journal of Photogrammetry and Remote Sens-
+ing, 169:421–435.
+Sharifi, A. (2020). Vegetation detection using deep
+learning and conventional methods. Remote
+Sensing, 12(15):2502.
+Sharma, N., Sharma, P., Irwin, D., and Shenoy, P.
+(2020). Spatial forecasting of solar radiation us-
+ing arima model. Remote Sensing Applications:
+Society and Environment, 20:100423.
+Singh, M., Arshad, A., Bijlwan, A., Tamang, M.,
+Shahina, N., and Biswas, A. (2024). Monitor-
+ing vegetation degradation using remote sensing
+and machine learning over india - a multi-sensor,
+multi-temporal and multi-scale approach. Fron-
+tiers in Forests and Global Change, 7.
+Taylor, S. J. and Letham, B. (2018). Forecasting at
+scale. The American Statistician, 72(1):37–45.
+Tian, M., Wang, P., and Khan, J. (2016). Drought
+forecasting with vegetation temperature condi-
+tion index using arima models in the guanzhong
+plain. Remote Sensing, 8(9):690.
+Tseng, G. et al. (2023). Lightweight, pre-trained
+transformers for remote sensing timeseries.
+arXiv preprint.
+Van Leeuwen, W., Huete, A., and Laing, T. (2020).
+A commentary review on the use of normalized
+difference vegetation index (ndvi) in the era of
+popular remote sensing. Journal of Forestry Re-
+search.
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J.,
+Jones, L., Gomez, A. N., Keiser, L., and Polo-
+sukhin, I. (2017). Attention is all you need. In
+Advances in Neural Information Processing Sys-
+tems, pages 6000–6010.
+Verbesselt, J., Hyndman, R., Newnham, G., and Cul-
+venor, D. (2010a). Detecting trend and seasonal
+changes in satellite image time series. Remote
+sensing of Environment, 114(1):106–115.
+Verbesselt, J., Hyndman, R., Newnham, G., and Cul-
+venor, D. (2010b). Detecting trend and seasonal
+changes in satellite image time series. Remote
+Sensing of Environment, 114(1):106–115.
+Verma, A., Kumar, S., and Singh, R. (2024). Ad-
+vances in vegetation mapping through remote
+sensing and machine learning techniques: a sci-
+entometric review. Geocarto International.
+Voelsen, M., Rottensteiner, F., and Heipke, C. (2024).
+Transformer models for land cover classification
+with satellite image time series. Journal of Pho-
+togrammetry, Remote Sensing and Geoinforma-
+tion Science, 92(5):547–568.
+Wang, Y., Albrecht, C. M., Braham, N. A. A.,
+Mou, L., and Zhu, X. X. (2022). Self-
+supervised learning in remote sensing: A review.
+IEEE Geoscience and Remote Sensing Maga-
+zine, 10(4):213–247.
+Xiao, A. et al. (2024). Foundation models for remote
+sensing and earth observation: A survey. arXiv
+preprint.
+Xu, B., Mao, X., Li, X., Wei, X., Zhang, Z., Tang,
+W., Yu, H., and Wu, Y. (2024). Anthropogenic
+activities dominated the spatial and temporal
+changes of normalized difference vegetation in-
+dex (ndvi) in the hehuang valley in the north-
+eastern qinghai province between 2000 and 2020.
+Frontiers in Environmental Science, 12:1384032.
+Yang, J., Wan, H., and Shang, Z. (2025). Enhanced
+hybrid cnn and transformer network for remote
+sensing image change detection. Scientific Re-
+ports, 15(1):10161.
+Yao, F., Lu, W., Yang, H., Xu, L., Liu, C., Hu, L., Yu,
+H., Liu, N., Deng, C., Tang, D., Chen, C., Yu, J.,
+Sun, X., and Fu, K. (2023). RingMo-Sense: Re-
+mote sensing foundation model for spatiotempo-
+ral prediction via spatiotemporal evolution dis-
+entangling. IEEE Transactions on Geoscience
+and Remote Sensing, 61:1–21.
+Yuan, Y. and Lin, L. (2020). Self-supervised pretrain-
+ing of transformers for satellite image time series
+classification. IEEE Journal of Selected Topics in
+Applied Earth Observations and Remote Sens-
+ing, 14:474–487.
+
+=== PAGE BREAK ===
+
+Zhang, K., Zhu, C., Li, J., Shi, K., and Zhang, X.
+(2024). Reconstruction of dense time series high
+spatial resolution NDVI data using a spatiotem-
+poral optimal weighted combination estimation
+model based on Sentinel-2 and MODIS. Ecolog-
+ical Informatics, 82:102725.
+Zhang, Y. (2024). Transformer-based models for re-
+mote sensing. GitHub repository.
+Zhang, Y. and Yan, J. (2023). Crossformer: Trans-
+former utilizing cross-dimension dependency for
+multivariate time series forecasting. In Proceed-
+ings of the Eleventh International Conference on
+Learning Representations.
+Zhou, H., Zhang, S., Peng, J., Zhang, S., Li, J.,
+Xiong, H., and Zhang, W. (2021). Informer:
+Beyond eﬀicient transformer for long sequence
+time-series forecasting. In Proceedings of the
+AAAI Conference on Artificial Intelligence, vol-
+ume 35, pages 11106–11115.
+Zhu, X. X., Tuia, D., Mou, L., Xia, G.-S., Zhang,
+L., Xu, F., and Fraundorfer, F. (2017). Deep
+learning in remote sensing: A comprehensive re-
+view and list of resources. IEEE Geoscience and
+Remote Sensing Magazine, 5(4):8–36.
+Zhu, Z. (2017). Change detection using Landsat time
+series: A review of frequencies, preprocessing,
+algorithms, and applications. Journal of Pho-
+togrammetry and Remote Sensing, 130:370–384.
+Zhu, Z., Zhang, J., Yang, Z., Aljaddani, A. H., Cohen,
+W. B., Qiu, S., and Zhou, C. (2019). Continuous
+monitoring of land disturbance based on Land-
+sat time series. Remote Sensing of Environment,
+238:111116.

@@ -1,0 +1,31 @@
+## MODIFIED Requirements
+
+### Requirement: Checkpoint discovery and loading
+
+The system SHALL discover trained model checkpoints under `checkpoints/` by name (`masked_transformer_main.pt`, `gru_ae_main.pt`, and the legacy `sts_net_490.pt`, `tiny_cnn_mamba_490.pt`, `time2agri_490.pt`) and load each with its JSON sidecar (config, normalization statistics, threshold, persistence k, split hash, ladder rung).
+
+#### Scenario: Main checkpoint loads
+- **WHEN** `checkpoints/masked_transformer_main.pt` and its sidecar exist
+- **THEN** the exporter scores every observation causally with it and fills `scores.masked_transformer` and `stressFlag`
+
+#### Scenario: Checkpoint missing
+- **WHEN** a checkpoint for an SSL slot does not exist
+- **THEN** that slot is `absent` for every observation and the exporter does not crash
+
+### Requirement: Score provenance tracking
+
+The system SHALL write a per-score provenance map with values `"model"` or `"absent"` for SSL slots (`masked_transformer`, `gru_ae`, `sts_net`, `tiny_cnn_mamba`, `time2agri`). SSL slots SHALL NOT fall back to the CWSI proxy formula. Baseline heuristic slots (`b0_calendar`, `b1_dsh`, `b1_cusum`) MAY keep `"proxy"` only if their formula does not use CWSI.
+
+#### Scenario: Unmapped observation
+- **WHEN** an observation cannot be mapped to a cycle bin
+- **THEN** its SSL scores are null with provenance `"absent"`
+
+## ADDED Requirements
+
+### Requirement: Stress flag in the platform contract
+
+Contract v5 SHALL add per observation `stressFlag` (`normal` | `suspected_stress` | `no_data`), `stressFlagModel` (checkpoint id) and per field `ladderRung`; `scripts/platform_channels.py` and `platform/src/data/channels.ts` SHALL stay mirrored and the contract test SHALL cover the new fields.
+
+#### Scenario: Platform renders flag
+- **WHEN** the platform loads a v5 payload
+- **THEN** each observation shows its stress flag and the model that produced it, and v4 payloads still load with the flag shown as unavailable

@@ -1,0 +1,1236 @@
+Engineering Research
+Express
+              
+TOPICAL REVIEW • OPEN ACCESS
+Explainable AI in agriculture: review of
+applications, methodologies, and future directions
+To cite this article: Deepthi G Pai et al 2025 Eng. Res. Express 7 032202
+ 
+View the article online for updates and enhancements.
+You may also like
+Explaining decision structures and data
+value for neural networks in crop yield
+prediction
+Malte von Bloh, Benjamin Seiler, Patrick
+van der Smagt et al.
+-
+Deep learning and its role in smart
+agriculture
+V S Magomadov
+-
+Estimating and understanding crop yields
+with explainable deep learning in the
+Indian Wheat Belt
+Aleksandra Wolanin, Gonzalo Mateo-
+García, Gustau Camps-Valls et al.
+-
+This content was downloaded from IP address 217.218.39.174 on 25/10/2026 at 08:14
+
+=== PAGE BREAK ===
+
+Eng.Res.Express7 (2025) 032202 https://doi.org/10.1088/2631-8695/ae086a
+TOPICAL REVIEW
+Explainable AI in agriculture: review of applications, methodologies,
+and future directions
+Deepthi G Pai
+ aa, Mamatha Balachandra∗ and Radhika Kamath∗
+Manipal Institute of Technology, Manipal Academy of Higher Education, Manipal-576104, India
+∗ Authors to whom any correspondence should be addressed.
+E-mail:mamtha.bc@manipal.eduandradhika.kamath@manipal.edu
+Keywords: agriculture, artificial intelligence, deep learning, explainability, interpretability, machine learning, XAI
+Abstract
+Agriculture forms the backbone of the global economy, facing mounting pressure from population
+growth and resource constraints. The sector increasingly relies on data-driven technologies to
+enhance productivity while reducing environmental impact. Agriculture is being revolutionized by
+Artificial Intelligence (AI), which is enhancing pesticide application, weed control, and irrigation
+management. Deep Learning techniques that have demonstrated predictive power include
+Generative Adversarial Networks, Recurrent Neural Networks, and Convolutional Neural Networks.
+Their opacity and intricacy, however, make practical use difficult. In agricultural settings, Explainable
+AI (XAI) enables informed decisions by providing transparency without compromising perfor-
+mance. This comprehensive review analyzes peer- reviewed publications from 2020 onwards,
+categorizing XAI techniques and their applications in agriculture. The starting point of 2020 was
+deliberately chosen to capture the most recent advancements, as this period marks a phase of rapid
+growth and wider adoption of XAI within agricultural AI applications, making it particularly relevant
+for reflecting state-of-the-art developments. This review identifies significant challenges, current
+research trends, methodological approaches, and evaluate the efficacy of various explainability
+methods, including LIME, SHAP, Grad-CAM, and rule-based models. The analysis examines key
+domains including crop-weed discrimination, plant disease detection, precision farming techniques,
+yield forecasting, and soil quality assessment. The integration of XAI methodologies in precision
+agriculture presents promising opportunities to address pressing challenges related to resource
+optimization, climate adaptation, and global food security. This review also provides a structured
+framework for future research directions and practical implementation guidelines to enhance the
+interpretability, trustworthiness, and adoption of AI-powered agricultural systems among farmers,
+agronomists, and policymakers.
+Nomenclature
+AI Artificial Intelligence
+AIRS Aerial Imagery of Roof Segmentation Dataset, a public dataset that aims at benchmarking the
+algorithms of roof segmentation from very-high-resolution aerial imagery
+DCGAN Deep Convolutional Generative Adversarial Network
+DCNN Deep Convolutional Neural Network
+DL Deep Learning
+FRCNN Faster R-CNN
+GAN Generative Adversarial Network
+Grad-CAM Gradient-weighted Class Activation Mapping
+aaaaaaaaaaaa-
+a
+OPEN ACCESS
+RECEIVED
+24 May 2025
+REVISED
+26 August 2025
+ACCEPTED FOR PUBLICATION
+17 September 2025
+PUBLISHED
+29 September 2025
+Original content from this
+work may be used under
+the terms of the Creative
+Commons Attribution 4.0
+licence.
+Any further distribution
+of this work must
+maintain attribution to
+the author(s) and the title
+of the work, journal
+citation and DOI.
+© 2025 The Author(s). Published by IOP Publishing Ltd
+
+=== PAGE BREAK ===
+
+LIME Local Interpretable Model-agnostic Explanations
+ML Machine Learning
+OPPD Open Plant Phenotyping Dataset, a public dataset for visual recognition tasks on images of plant
+seedlings
+PSD Plant Seedlings Dataset, comprises 960 unique plant images from 12 species at various growth
+stages, arranged in annotated RGB format with a resolution of 10 pixels per mm.
+SHAP Shapley Additive Explanations
+XAI Explainable AI
+YOLO You Only Look Once
+1.Introduction
+Agriculture—the foundation of food, fiber, and commodity production through soil cultivation—confronts
+numerous critical challenges in the contemporary era. Disease outbreaks, diminishing land and water
+resources, climate change impacts, and persistent pest infestations collectively threaten global agricultural
+systems. With projections indicating the need for a 70% increase in agricultural output to meet rising demands,
+the sector stands at a crucial juncture. The implementation of intelligent farming methodologies has become
+imperative to achieve sustainability goals, strengthen food security frameworks, enhance production efficiency,
+and significantly reduce environmental footprints. These sophisticated approaches represent a necessary
+evolution in agricultural practice, balancing productivity requirements with ecological responsibility to address
+the complex challenges of feeding a growing global population while preserving natural resources for future
+generations.
+1.1.OverviewofAIinagriculture
+The field of Artificial Intelligence (AI) within computer science is growing at a remarkable pace, and its
+influence is strongly felt in agriculture—a sector that employs nearly one-third (30.7%) of the global workforce
+and covers 2781 million hectares of cultivated land. Across this vast landscape, AI has emerged as a powerful
+ally, offering solutions to some of the most pressing challenges in farming. From disease identification and pest
+management to precision chemical application, drainage and irrigation optimization, weed control, and crop
+yield forecasting [1], AI has consistently proven its value. These systems have shown exceptional accuracy and
+reliability in managing complex agricultural scenarios, with an unmatched ability to detect and analyze the
+subtle details that define diverse farming conditions [2]. One striking example lies in precise spraying, where
+weed detection plays a crucial role in reducing environmental damage, cutting costs, and minimizing chemical
+use. This is an area where AI—particularly through ML and DL—has made significant progress. Earlier, weed
+species in agricultural fields were identified using image processing algorithms that extracted textural and
+morphological features. However, these methods required manual feature extraction and often struggled with
+challenges such as varying field conditions, changing illumination, and occlusion. DL models have since
+revolutionized this domain, offering far greater accuracy and adaptability than traditional machine learning
+approaches. Yet, challenges remain, including limited datasets, environmental variability, and class imbalance.
+Overcoming these hurdles and building scalable, dependable AI-powered precision spraying systems is critical
+for ensuring sustainable weed management [3].
+AI plays a crucial role in irrigation management, integrating soil moisture sensor data, crop growth stages,
+and weather forecasts to optimize water distribution. ML models predict irrigation needs, reducing water
+wastage and ensuring adequate hydration, supporting sustainable farming practices, especially in regions
+facing water scarcity.
+AI’s transformative potential is also evident in the realm of crop yield prediction and sustainable farming
+practices. By harnessing vast amounts of data, AI empowers farmers to make informed decisions, optimize
+resources, and reduce production costs. Tools such as satellite imaging and remote sensing supply extensive
+information on crop health, soil quality, and weather conditions. ML models, trained on historical yield data
+and environmental factors, then use this knowledge to forecast future harvests. With the ability to monitor
+numerous yield-related variables, process large datasets at speed, and generalize across crops and geographies,
+AI provides timely insights and early detection of potential risks. These predictive capabilities not only enhance
+output but also lower costs and strengthen sustainability, paving the way for more resilient and secure farming
+systems [4, 5].
+Beyond precision spraying and irrigation management, AI is also being integrated into broader a agri-
+cultural systems to enhance productivity and sustainability. AI-driven solutions support tasks such as
+2
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+automated planting schedules, improved weather forecasting, fertilizer optimization, soil assessment, and
+plant spacing, achieving predictive accuracies exceeding 90% [6]. Intelligent diagnostic expert systems and
+regression-based models—including Random Forest, Support Vector Machines (SVM), and Multiple Poly-
+nomial Regression have shown strong performance in yield prediction and agronomic decision-making [7].
+Moreover, AI-powered decision support systems assist with seed timing, crop quality assessment, microcli-
+matic forecasting, and soil fertility evaluation, while real-time monitoring tools diagnose plant stress, nutrient
+imbalance, and disease outbreaks to strengthen precision agriculture practices [8]. UAVs equipped with comp-
+uter vision and DL algorithms enable targeted agrochemical applications, reducing chemical input wastage and
+mitigating environmental risks [9]. The integration of Internet of Things (IoT) technologies, including wireless
+sensor networks (WSNs), cloud computing platforms, and RFID, has further advanced mechanized farming,
+greenhouse automation, and real-time monitoring in precision agriculture, improving operational efficiency,
+resource optimization, and reducing labor dependency [10].
+Figure 1 depicts an overview diagram of the review framework.
+1.2.Thefocusofagriculturalaionexplainability
+ML and DL algorithms in agriculture are beneficial but often lack transparency, leading to concerns about
+safety, fairness, and ethics. Explainable Artificial Intelligence (XAI) aims to address these issues by making AI
+models more transparent, fostering better understanding, sound judgment, and increased confidence in AI
+systems. This has led to a rise in XAI’s importance across various scientific fields.
+XAI techniques can be categorized into three main groups based on methodological generality, explanation
+scope, and model selection approach. For model selection, practitioners can choose between model-based
+methods (simpler but requiring more sophisticated algorithms) and post-hoc methods. Both model-specific
+and model-agnostic XAI approaches offer the flexibility to generate either local explanations (for individual
+predictions) or global explanations (for overall model behavior) [11, 12].
+Figure 2 illustrates different concepts of XAI as applied in the agricultural sector.
+1.3.Motivationofreviewpaper
+Despite its potential, there is a noticeable gap in the literature regarding the application of XAI in agriculture.
+There is a lack of comprehensive studies summarizing the various XAI techniques employed in agricultural
+tasks, as well as limited research on how XAI can enhance specific applications, such as weed detection, disease
+classification, and yield prediction. This review aims to bridge this gap by providing a structured analysis of XAI
+applications in agriculture, highlighting key methodologies, challenges, and future research directions. By
+addressing the interpretability limitations of DL models, this study seeks to advance the integration of XAI-
+driven solutions in precision agriculture for improved efficiency, sustainability, and decision-making.
+1.4.Objectivesofreviewpaper
+This paper reviews the research efforts in the agricultural domain that leverage XAI techniques. The review
+spans various key areas, including crop-weed detection, leaf disease identification, precision agriculture, yield
+prediction, and soil health monitoring. These domains represent critical facets of modern agriculture where
+XAI methods have been employed to enhance the interpretability and reliability of AI-driven solutions. This
+review paper aims to consolidate existing research, identify gaps, and provide insights into future directions for
+integrating XAI into agricultural AI systems.
+Figure 3 showcases the evolution of XAI in agriculture and figure 4 depicts the list of frequently used key-
+words from the pertinent literature.
+2.Background
+2.1.AIinagriculture:evolutionandapplications
+The definition of Artificial Intelligence has evolved over time, with classifications generally falling into three
+domains: rational thinking, rational behavior, and human-like thinking [13]. This conceptual foundation dates
+back to the 1950s when Alan Turing developed his famous Turing Test to evaluate a machine’s reasoning
+capabilities [14]. At its core, AI consists of computational programs that process inputs and generate
+meaningful outputs. Its applications extend across numerous fields, including intelligent information retrieval,
+expert systems, robotics, automated programming, and perception-based challenges [15]. In agriculture
+specifically, AI is transforming traditional practices throughout the entire cultivation cycle. Machine learning
+techniques are used for soil assessment, crop management, decision support, aerial monitoring, automation,
+plant health, and weed control. AI-assisted machinery improves yield and monitoring, while predictive
+3
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+analytics aid farmers in pest control, water management, and crop rotation. Aerial monitoring and automation
+are also used, with AI systems detecting leaf diseases and managing unwanted vegetation.
+The technological approaches powering these applications include Artificial Neural Networks, genetic
+algorithms, and Deep Neural Networks. While these methods offer high performance with reduced trial- and-
+error, they typically require substantial datasets and human expertise to function effectively [16, 17].
+2.2.Challengesinapplyingaiinagriculture
+Expert systems are crucial for agricultural management, but their widespread adoption in commercial
+agriculture is limited. Despite AI advancements, challenges persist in accuracy and response time. Real- time AI
+systems require processing large data volumes and identifying significant changes, which can be complex and
+resource-intensive.
+Issues faced in the application of AI in agriculture:
+Figure1. Overview diagram of the review framework.
+4
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+• AI in agriculture presents challenges, including outdated traditional farming methods, lack of standardiza-
+tion, interoperability constraints, cost efficiency barriers, and demand of digital literacy among farmers.
+Implementation requires continuous upskilling and adaptation to evolving technological frameworks and
+algorithmic advancements [18].
+Figure2. XAI concepts and their applications in agriculture.
+Figure3. Evolution of XAI in agriculture.
+Figure4. A list of frequently used keywords from the pertinent literature.
+5
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+• Machine learning models, often referred to as ’black boxes,’ lack transparency and interpretability, causing a
+trust deficit among decision-makers in high-stakes applications like agriculture, healthcare, and finance,
+and hindering their adoption without additional interpretability or XAI techniques [19].
+• Interdisciplinary collaboration between experts and producers is crucial for agricultural expert systems, but
+high costs and limited data accessibility, especially in rural areas, hinder model training and applic-
+ability [20].
+• Government regulations, inadequate infrastructure, limited computational resources, and a shortage of
+skilled labor are significant obstacles to the adoption of advanced technologies in agriculture [21].
+3.XAItechniques
+XAI focuses on improving the transparency and accountability of AI by creating methods that make AI systems
+easier for users to understand, trust, and manage [22, 23]. In simpler terms, XAI explains how AI models make
+decisions by identifying the features that influence their predictions. For example, in plant disease detection,
+XAI can highlight the specific areas of a leaf image that the model analyzes, helping users verify that the system is
+focusing on the correct parts of the plant.
+3.1.OverviewofXAI
+Deep Neural Networks (DNNs) are sophisticated artificial intelligence models that improve transparency in
+high-stakes situations like precision medicine and driverless cars [24]. They have complex black-box models
+and strong learning algorithms. Through strong learning performance and explainable models, XAI principles
+seek to make AI comprehensible and trustworthy for people, guaranteeing accuracy and dependability across a
+range of industries, including agriculture [25]. A general overview of XAI is shown in figure 5.
+3.2.GoalsofXAI
+XAI aims to enhance transparency, interpretability, and reliability of AI systems by providing clear
+explanations, ensuring consistency, and promoting error identification. It also focuses on fairness, bias
+detection, and ethical compliance.
+• Trustworthiness: The XAI model aims to ensure trustworthiness, ensuring that the model will behave as
+planned when faced with an obstacle. However, not every reliable model can be explained by itself, and
+Figure5. Comprehensive overview of XAI: goals, applications, importance, key components, types, and challenges.
+6
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+reliability is not always easy to measure. It is challenging to ascertain whether trust is an explainable model’s
+exclusive goal because the relationship between explainability and trust is nonreciprocal [25].
+• Fairness and Bias Detection: Explainability guarantees impartiality and moral evaluation in ML models. It
+makes relational impacts easily observable, facilitating ethical examination. XAI seeks to draw attention to
+bias in data exposure. As algorithms and models become more widely used, explainability ought to stop
+unethical exploitation of the results [25].
+• Transparency: Effective configuration and real-world use of AI systems depend heavily on transparency. It
+reviews interpretable systems for fairness and privacy protection, manages AI, and explains model
+judgments. Transparency is crucial to understanding how AI makes decisions, assessments, and forecasts, as
+it encompasses data and models. More transparency, meanwhile, could contradict other qualities and
+undermine the effectiveness, equity, and reliability of AI systems [33].
+• Interpretability: Interpretability in XAI is the ability to clearly understand and explain a model’s decisions,
+such as showing which leaf features led to a plant disease prediction in agriculture. Or in other words the
+capacity to communicate a model’s output its cause-and- effect relationship, to a human being is correlated
+with interpretability [34]. Human-centered and objective methodologies assess interpretability, with
+particular attention paid to sparsity, simulatability, faithfulness, interaction intensity, and sensitivity to
+perturbations. Establishing best practices for assessing interpretation techniques and their justifications
+including human-computer interaction presents a difficulty [35].
+3.3.Interpretablemodelsversusexplainablemodels
+(1) Explainable models: A post-hoc knowledge of the model’s decision-making or prediction process is made
+possible by post hoc analysis using additional tools and careful study by subject-matter experts.
+(2) Interpretable models: The ante-hoc model design and domain expertise allow experts in the field to swiftly
+and easily comprehend the model’s prediction or decision-making process [36].
+To comprehend how intelligent systems make decisions, interpretability, and explainability are frequently
+used synonymously in literature. Explainability is connected to the internal logic and mechanics of a learning
+system, whereas interpretability is concerned with describing or expressing something in a form that is under-
+standable to humans. While both are crucial for AI systems, interpretability is what gives humans meaningful
+descriptions. Both interpretability and completeness are included in explainability; completeness is defined as a
+precise description of how a machine learning model comes to its conclusions. Explainable models are always
+interpretable, however, not all interpretable models are explainable because of their incompleteness [37].
+7
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+Table1. Analysis of different XAI techniques in the agricultural domain.
+Citation Aim of the paper Models or Algo-rithms Dataset Limitations
+[26] Explores the interpretability of deep learning models in
+agricultural classification tasks.
+VGG The Plant Village dataset was expanded with vari- ous fruit leaf images
+from Google and the AI Challenger 2018 dataset.
+The paper lacks a discussion on the generalizability of findings to other
+agricultural datasets or clas- sification tasks and does not address
+potential biases or limita- tions in the fruit leaves dataset used for
+experiments.
+GoogLeNet
+ResNet
+ResNet model + at tention based
+module SmoothGrad
+LIME
+GradCAM
+[27] A hybrid model combining transfer learning and a basic
+CNN was created to identify sunflower diseases.
+VGG19 Public dataset The research’s dataset may not accurately represent the diverse disease
+presentations in sunflowers, potentially limiting its generalizability to
+real-world scenarios.
+CNN
+LIME
+[28] Proposes an XAI-based solution forurban vegetation
+mapping.
+SHAP Aerial imagery of Roof Seg-mentation(AIRS) dataset The DNN algorithm may losefeature-to-feature association, the kernel
+SHAP approach is slow for large datasets, and more investigation is
+needed to compare and assess current interpretation approaches.
+DNN
+[29] The paper presents a method usingexplainable deep
+neural networks and a multi-layer attention
+procedure to classify weeds in agricultural imagery.
+DNN0 The model is trainedand evaluated on two agricultural datasets: the
+Plant Seedlings Dataset (PSD) and the Open Plant Phenotyping
+Dataset (OPPD).
+The proposed model may not be robust when applied to different agri-
+cultural datasets, as it showed lower accuracy in cross-dataset
+evaluations.
+ResNet5
+[30] Explores XAI in deep learningmodels for smart
+agriculture, eval- uating model accuracy and using
+Grad-CAM for interpretation.
+MobileNet VegNet dataset Not Applicable
+ResNet50
+VGG16
+EfficientNetV2
+DenseNet201
+GradCAM approach
+[31] The paper presents wearable sensing systems for
+agricultural workers, capturing real-time acceleration
+and angular velocity data. The Ex- plainable Artificial
+Intelligence system was verified and tested, obtaining
+promising data.
+SHAP Not Mentioned The limitations of this paper include the lack of concrete user suggestions,
+limited sample size, lack of discussion on method limitations, absence
+of external validation, and limited discussion on the limitations of
+wearable sensing systems.
+LIME
+LightGBM
+[32] Proposes Grad-CAM, a visual explantion technique, to
+enhance the interpretability of tea leaf classification
+models.
+VGG16 The tealeaf dataset used in this paper was manually collected from the
+Kangra tea garden in Palampur, India
+The paper lacks details on deeplearning models, pre-trained backbone
+models, dataset details, and performance metrics for tea leaf classifica-
+tion, limiting the reproducibility and generalizability of results, and
+potentially affecting the validity and applicability of the findings.
+InceptionV3 GradCAM
+8
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+3.4.CommonXAItechniques
+Table 2 provides the definitions of various XAI approaches and comparisons between them, and table 3
+categorizes XAI approaches based on their interpretability properties, computational costs, open-source
+tools, and agricultural data types, illustrating both theoretical distinctions and practical deployment.
+SHAP and SmoothGrad are computationally intensive, LightGBM has a low computational cost, and
+Grad- CAM is moderate. Grad-CAM and SmoothGrad are well-suited for image-based tasks, while
+SHAP, LIME, and LightGBM are ideal for tabular data. SHAP, LIME, and Grad-CAM enhance
+interpretability in crop–weed classification, whereas LightGBM and SHAP are particularly effective for
+crop recommender systems, offering transparency and feature relevance insights. XAI adoption in
+agricultural AI systems depends on model type, data modality, research goals, and practical constraints.
+Vision-based tasks often use model-specific visualization methods like Grad-CAM, while sensor and
+tabular studies use model- agnostic approaches like SHAP and LIME. Technique selection in agricultural
+applications is influenced by end-user preferences, computational efficiency, scalability, and interpret-
+ability-usability trade-offs.
+3.5.EvaluationmetricforXAI
+• Sensitivity: Sensitivity analysis is an essential method in XAI that evaluates modifications to machine
+learning models such as Grad-CAM, SHAP, and LIME, assisting researchers in comprehending their
+robustness and dependability.
+• Faithfulness Correlation and Faithfulness Estimate: With a high correlation signifying accurate identifica-
+tion and a low correlation signifying underfitting or overfitting, the statistic assesses how well XAI algorithms
+identify patterns and relationships in training data.
+• Monotonicity Metric: The Monotonicity Metric is a tool that measures model performance progressively
+and generates contrastive explanations using monotonic attribute functions.
+• Selectivity: In XAI models, selectivity is a statistic that evaluates the decline in the prediction function
+following the removal of highly attributed features.
+• Sensitivity: Sensitivity-N determines the relationship between the target output variation and the
+attribution sum.
+• Infidelity: The estimated mean square error between attribution and input perturbation and the model
+output difference following a large perturbation is measured by infidelity [42].
+3.6.TaxonomyofXAITechniques
+• Techniques for White Box and Black Box Model: White box models are transparent and easy to understand
+[43] after training but struggle with larger datasets with intricate connections [44]. Black box models, like
+decision trees and Neural Networks, have intricate topologies and are challenging to understand due to their
+ambiguous function in the prediction model [45]. Both models have limitations regarding complexity and
+their ability to describe complex datasets.
+• Model-Specific Techniques and Model-Agnostic Techniques: Model-specific techniques are explana-
+tion methods designed for a particular type of model because they rely on its internal structure. For
+example, Grad-CAM is used with convolutional neural networks (CNNs) to highlight which parts of a
+plant image a model focuses on when detecting diseases, helping farmers see the affected areas clearly.
+On the other hand, model-agnostic techniques can work with any model because they only use inputs
+and outputs without needing to know how the model works inside. For example, SHAP has been
+applied in agriculture to understand which factors, like rainfall, soil health, or fertilizer use, are most
+important in predicting crop yield. This way, model-specific techniques are ideal for tasks like image-
+based disease detection, while model-agnostic methods are better for analyzing patterns in
+agricultural data.
+• Global Interpretation and Local Interpretation: Decision-making processes are grouped into local
+interpretation and global interpretation. Defining variables, dependencies, and interactions within a model
+requires a deeper analysis called global interpretation. Local interpretation focuses on the immediate vicinity
+of a data point, analyzing particular predictions and decisions. Techniques like Shapley value and LIME can
+help comprehend contextual relevance [44].
+9
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+Table2. Comparison Of XAI approaches in agriculture.
+XAI Approach Definition Application Visualized As Advantages Limitations Factors Affecting Complexity
+Saliency Map AI tools that highlight areas influ-
+encing decisions by tracking
+changes in images [38].
+Crop and weed classification, plant
+disease detection, fruit ripeness
+detecting, pest and disease
+detection
+Heatmaps Model understanding,
+debugging
+May be influenced by the algo-
+rithm, may not always reflect
+human perception
+Image size, feature extraction
+method
+LightGBM Microsoft’s high- performance,
+open- source gradient boosting
+framework.
+Crop yield prediction, crop recom-
+mender system, soil health mon-
+itoring, pest and disease prediction
+Series of deci- sion trees Faster training, feature
+impor- tance
+Produces complex trees Data characteristics, hyperpara-
+meters, learning rate, optim-
+ization techniques
+SHAP A game-theory-based approach
+that explains model outputs by
+treating features as players [39].
+Weed detection, yield prediction,
+crop and weed classification, crop
+recommender system, soil health
+monitoring
+Summary plot, water-
+fall plot, force plot
+Model agnostic, global
+and local explanation
+Computationally expensive for
+large datasets
+Model complexity, number of
+features
+Grad-CAM Uses gradients to create heatmaps
+highlighting important regions
+in an image [40].
+Crop disease detection, fruit ripeness
+classification, pest and disease
+detection
+Heatmaps Versatility, visual
+interpretation
+May not always provide accurate
+explanations for complex
+models
+Dataset characteristics, model-
+specific factors
+SmoothGrad Adds noise to input images and
+averages saliency maps for better
+interpretability.
+Crop weed classification, leaf disease
+detection, pest detection, fruit
+ripeness detection
+Heatmaps Noise reduction,
+smoother explanations
+Sensitivity to model complexity Number of samples, model com-
+plexity, input dimensionality
+LIME Model-agnostic method that
+explains ML decisions using per-
+turbed samples [41].
+Livestock health monitoring, crop
+and weed classification, soil health
+monitoring, pest and disease
+detection
+Superpixel highlighting
+(image), bar
+charts (text)
+Versatility, flexibility Local interpretability, linear
+assumption
+Perturbation strategy, feature
+selection
+10
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+Table3. Different XAI approaches and their characteristics.
+XAI techniques Modelspe- cific
+Model
+agnos- tic Global Local Intrinsic Post-Hoc Explaination type Open-source tools libraries Agricultural application or data type
+LIME (Local Interpretable Model-
+agnostic Explanations)
+✗ ✓ ✗ ✓ ✗ ✓ Feature Attri-
+bution
+SHAP (Python), Captum
+(PyTorch)
+Crop recommenda-tion systems (tabular +
+sensor data)
+SHAP (Shapley Additive
+Explanations)
+✗ ✓ ✓ ✓ ✗ ✓ Feature Attri-
+bution
+LIME (Python) Crop yield prediction (tabular features like
+soil, rainfall, fertil- izer)
+Saliency Map ✓ ✗ ✗ ✓ ✗ ✓ Visualization Captum (PyTorch), tf-explain Weed detection in UAV images
+Decision Tree ✓ ✗ ✗ ✓ ✗ ✓ Feature attri-
+bution
+scikit-learn Farm managementdecision-making (tabular)
+Counterfactual Explanation ✗ ✓ ✗ ✓ ✗ ✓ Example-Based Alibi (Python), DiCE (Python) Disease diagnosis (image or tabular)
+Feature Importance ✓ ✗ ✓ ✓ ✓ ✗ Feature Attri-
+bution
+Scikit-learn, XGBoost,
+LightGBM
+Yield prediction (tabular)
+Attention Mechanism ✓ ✗ ✗ ✓ ✓ ✗ Feature Attri-
+bution
+HuggingFace Trans-formers,
+Keras Attention layers
+Weed detection (image)
+GradCAM (Gradient- weighted
+Class Activation Mapping)
+✓ ✗ ✗ ✓ ✗ ✓ Visualization tf-explain (Tensor Flow), Cap-
+tum (PyTorch), Keras-vis
+Leaf disease (image)
+11
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+Figure 6 depicts XAI taxonomy.
+4.ApplicationsofXAIinagriculture
+Tables 1, 4, and 5 provide a detailed overview of various XAI techniques, tools, and frameworks applied in the
+agricultural domain, along with their corresponding limitations and the datasets used.
+From this analysis, it is evident that XAI has primarily been applied to classification tasks in agriculture,
+with additional use cases in urban vegetation mapping, plant phenotyping, and crop recommendation systems.
+Among the various methods, LIME and Grad-CAM emerge as the most frequently used techniques, followed
+by SHAP, LightGBM, and SmoothGrad.
+However, several limitations have been identified. A key concern is the limited generalizability of findings
+to other agricultural datasets, as many studies fail to address potential biases present in their datasets. Further-
+more, the real-world applicability of these models in practical farming scenarios remains largely unexplored.
+Another pressing challenge is the need for large, well-annotated datasets to ensure the robustness and scal-
+ability of AI models. Additionally, while SHAP has proven effective for interpretability, it is often computation-
+ally slow on large datasets, underlining the importance of developing more efficient techniques.
+Recent advancements have also explored cross-modal approaches to better process and interpret agri-
+cultural data. For example, the ITF-WPI cross-modal feature fusion model, which integrates CoTN and ODLS,
+uses Pyramid Squeezed Attention to enhance a 4-stage network and leverages Transformer-based contextual
+feature extraction. Compared to similar models, the ODLS network has demonstrated strong text feature
+acquisition with a 30% reduction in MACCs, illustrating its efficiency and potential for practical applications
+such as wolfberry pest management and other agricultural use cases [46].
+4.1.Cropdiseasedetection
+Crop disease detection is being transformed by the integration of AI and DL addressing the rising global
+demand for food and the need to protect agricultural production. Recent studies demonstrate that Explainable
+AI (XAI) methods can achieve remarkable performance, with one approach identifying 38 plant diseases with
+99.69% accuracy, precision, and recall using LIME-based visual explanations [47]. CNN architectures such as
+EfficientNetB0 have been successfully applied to banana plant disease detection [48], while EfficientNetV2S
+attained 91% accuracy in identifying grapevine downy mildew symptoms in field conditions by detecting tiny
+oil spots and outperforming other CNN models [49]. Other research highlights the use of convolutional
+networks to improve productivity and reduce crop losses, with LIME providing the most interpretable strategy
+[50]. Additionally, studies combining DL with XAI methods such as LIME, Grad-CAM, and Grad-CAM++
+have demonstrated the ability to accurately localize diseased regions by overlaying interpretable heatmaps,
+thereby enhancing diagnosis, decision-making, and transparency in agricultural disease management [51].
+Figure6. Taxonomy of Explainable Artificial Intelligence.
+12
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+Table4. Analysis of different XAI techniques in agricultural domain(contd).
+Citation Aim of the paper Models or algo-rithms Dataset Limitations
+[57] Ensemble method for image classification that com-
+bines a Convolutional Neural Network with a sec-
+ondary classifier trained on statistical indicators.
+VGG19 Caltech birds2011, Cars 196, Cassava,
+Cats versus dogs, and Citrus leaves
+The datasets used for validation are not clearly described,
+making it challenging to evaluate the generalizability
+of the proposed method.
+DenseNet
+InceptionV3
+Xception
+InceptionResNetV2 The paper does not address potential limitations or chal-
+lenges in integrating the proposed method with exist-
+ing CNN architectures or image classification systems
+[58] The Grad-CAM technique is utlized to assess the
+explainability of tea-leaf classification using pre-
+trained deep learning models.
+Grad-CAM Tea Leaf Dataset Need more data to further improve the model
+performance.VGG16
+InceptionV3
+ResNet50
+[59] The authors analyze XAI methodsin deep learning
+for plant phenotyping research, finding they can
+identify unknown features, improve current
+models, and clarify results, suggesting XAI meth-
+ods can enhance plant phenotyping tools.
+The paper does notfocus on a specific model or algo-
+rithm. Instead, it provides an overview of the dif-
+ferent approaches that have been used in the field
+and discusses the advantages and limitations of
+each approach.
+Public dataset The authors do acknowledge some limitations of deep
+learning-based approaches in plant phenotyping, such
+as the need for large labeled datasets and the potential
+for overfitting. They also note that some deep learning
+models may be too complex for practical use in
+the field.
+[60] The authors use Inception V3 andResNet models on
+Plant Village and New Plant Disease Datasets to
+detect and classify crop diseases using Explainable
+AI tools.
+ResNet model Plant village dataset andNew plant disease
+dataset (created by the use of the
+augmentation method from the original
+Plant Village dataset).
+The paper lacks specific limita-tions of proposed models,
+XAI techniques, and datasets used for training and
+prediction, and pro- vides no insights into the scal-
+ability or generalizability of the approach.
+LIME
+Grad CAM
+[61] This paper shows the application outcomes of a
+computer vision system that integrates LoRa and
+Deep Learning and is capable of effectively identi-
+fying grape leaf diseases from low-resolution
+photos.
+MobileNetV2 PlantVillage, which containsimages of grape
+crops and other crop species.
+The paper lacks a detailed anal-ysis of the system’s per-
+formance in real-world scenarios, comparisons with
+other image transmis- sion methods, and specific
+details about experiments and dataset size.
+ResNet50
+[62] The authors utilized three pre-trained CNN models
+to identify 38 diseases across 14 distinct plant
+species.
+EfficientNetV2L The dataset was collectedfrom Kaggle. The dataset used in this study was limited to 5000 images.
+MobileNetV2
+ResNet152V2
+LIME
+13
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+Table4. (Continued.)
+Citation Aim of the paper Models or algo-rithms Dataset Limitations
+[63] Proposes the creation of an imageprocessing system
+that uses CNN and Deep Learning to classify leaf
+illnesses.
+Deep CNN model Not Mentioned The paper lacks details on the dataset used, plant species
+considered , and the generalizability of the proposed
+models to different environmental conditions or plant
+varieties.
+LIME
+[64] A crop recommender system is presented in this
+paper to help with crop recommendations based
+on soil nutrient levels and metrological
+parameters.
+SHAP Kaggle The study’s potential flaw is its inability to validate its
+method with real farmers or agricultural specialists,
+limiting classifications to seven features in the dataset.
+RBF SMO ANOVA
+14
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+Table5. Analysis of different XAI techniques in agricultural domain (contd.).
+Citation Aim of the paper Models or Algo-rithms Dataset Limitations
+[73] This paper proposes an XAI framework (OAK4XAI) to
+address the challenge of interpreting knowl- edge in
+digital agriculture. The framework considers data
+analysis and semantics, resulting in an Agriculture
+Computing Ontology (AgriComO) that provides a
+well- designed structure for understanding knowledge
+in agriculture and computing domains.
+OAK4XAI model Not Mentioned Doesn’t focus on the reasoning module and expla-
+nation interface for multiple user groups.AgriComO
+[12] Illustrated the potential applications of a set of inter-
+pretable machine learning technologies for the proces-
+sing of agricultural data.
+Linear model with AIC stepwise variable selection
+Decision tree (condi- tional inference tree)
+Random Forests Gradient Boosting LIME
+Public Dataset Ought to have concentrated on expanding the XAI
+approaches tool box.
+Neglected to address bias mitigation in agri-
+cultural datasets.
+[74] The study investigates the factors influencing the produc-
+tion of the flagship crops in 32 Mexican states.
+RT Mexican National Water Commission (Comi-
+sio´n Nacional del Agua, CONAGUA)
+Temporal and spatial analysis are not
+incorporated.Boosted Trees
+Agro-Food and Fisheries Information Service
+(Servicio de Informacio´n Agroalimentaria y
+Pesquera, SIAP)
+Support Vector Machines (SVM)
+Gaussian Process Regression (GPR)
+[75] Nitrogen status of wheat was estimated using machine
+learning ap- proaches using hyperspectral data.
+Support Vector Regression Gilat Agricultural Research Center, Israel. Although the study pinpoints critical wavelengths
+for estimating wheat growth stages’ nitrogen
+status, their specificity might prevent them
+from being applied to other crops or
+environments.
+Random Forest
+K-Nearest
+Neighbours
+Multilayer
+Perceptron
+Gradient Boosting Regression
+Partial Least Square Regression
+SHAP
+[66] Introduces a model that integrates eXplainable Artificial
+Intelligence (XAI) with Predictive Maintenance (PdM),
+offering predictive insights and explanations across four
+key dimensions.
+LSTM Not Applicable Not focused multi-modal data in-tegration and
+Human-in-the-Loop (HITL) systems.XGBoost
+15
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+For detecting agricultural diseases in Internet of Things (IoT) edge environments, RepAgrViT is intro-
+duced as a lightweight vision transformer architecture. It incorporates an efficient parameter fusion strategy,
+integrates CNN features with vision transformer concepts, and employs local-global attention mechanisms.
+Additionally, the model leverages neighborhood-based local search strategies and adaptive weighted delayed
+velocity optimization. Experimental findings demonstrate that RepAgrViT effectively captures discriminative
+disease features, making it suitable for resource-constrained agricultural monitoring systems [52].
+A multi-level deep information feature fusion extraction network (DFN-PSAN) is proposed for plant dis-
+ease classification in natural field scenarios. This network processes multi-level depth information and empha-
+sizes key regions of plant disease images through pyramidal squeezed attention (PSA) and multiple
+convolutional layers. The proposed approach achieved strong accuracy and improved model attention trans-
+parency, demonstrating competitive performance [53].
+The study also presents PPLC-Net, a deep learning model designed to enhance feature extraction and
+expand sample diversity using meteorological data augmentation. It addresses spatial information challenges
+through GAP layers, a lightweight CBAM attention mechanism, and sawtooth dilated convolution. The model
+achieved an F1 score of 98.442% and a recognition accuracy of 99.702%, fulfilling the criteria for precise and
+efficient recognition. Furthermore, the integrated CAM-based visualization method validated its interpret-
+ability [54].
+To support crop disease diagnosis, the article proposes YOLO V5-CAcT, an optimized detection frame-
+work built on the lightweight YOLO V5 backbone. The network incorporates Repeated Augmentation, Focal-
+Loss, and SmoothBCE for improved robustness and convergence. The model is optimized using simplified
+operators and trained through two technical pathways, reducing model size and inference time while achieving
+94.24% average recognition accuracy across 59 crop disease categories [55].
+4.2.Weeddetectionandclassification
+In weed detection and classification, XAI has been integrated with advanced deep learning models to improve
+accuracy, interpretability, and real-time applicability. A high-resolution attention architecture based on ResNet
+layers was proposed to enhance the localization of weed patches, enabling transparent comparisons across weed
+species and growth stages through self-attention maps [29]. This approach maintains accuracy from deeper
+layers while improving resolution through shallower ones, thereby supporting cross-dataset evaluations.
+Similarly, a modified YOLOv8-nano model was developed for edge device deployment, leveraging the
+CottonWeedDet12 dataset with 16,944 images to detect 12 cotton weed classes [56]. The incorporation of a
+convolutional block attention module and C3Ghost block reduced computational costs while maintaining
+reliability, and interpretability was further enhanced using XAI techniques such as Layer-CAM, Grad-CAM+
++, and Eigen-CAM, which provided visual explanations of weed detection outcomes.
+4.3.Precisionagriculture
+Crop recommendation systems have greatly improved in terms of performance and interpretability because of
+XAI approaches. A study [64] suggested a recommender model that improved decision-making transparency
+with an accuracy of 98.2%. The XAI-CROP framework, which was created using datasets from Indian crop
+farming, performed better than conventional models and provided convincing arguments for its suggestions
+[65]. With excellent scalability across many crops and areas, this improves food security, transparency, and
+resource utilization. Predictive maintenance in smart agricultural facilities has also incorporated XAI, which
+offers interpretable insights for data, models, and end users. This has improved ROC-AUC, accuracy, and F1-
+score in comparison to current methods [66].
+4.4.Yieldprediction
+In precision agriculture, XAI techniques are increasingly being employed to enhance crop prediction and
+recommendation systems. A Bayesian interpretable machine learning model has been proposed for yield
+prediction under future climate conditions, outperforming black-box models such as MARS, SVM, neural
+networks, Random Forest, and XGBoost by capturing structural discontinuities and nonlinear effects of
+temperature and precipitation [67]. Similarly, the XAI-CROP approach, developed using Python, Pandas,
+Scikit-learn, and LIME, improves transparency and reliability in crop recommendation systems in America
+[68]. Other studies have applied explainable boosting machines for cotton yield prediction, highlighting the
+role of key input features [69], while satellite imagery-based models have been used to quantify input
+contributions, track crop growth stages, and analyze production variability with feature attribution methods
+[70]. These advancements demonstrate how XAI improves interpretability, decision-making, and trust in
+agricultural prediction systems.
+Figure 7 shows XAI workflow diagram.
+16
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+4.5.Soilhealthmonitoring
+XAI has also been applied to soil health monitoring, particularly for optimizing cultivation practices. For rice
+production, XAI-based models incorporate feedback loops and real-time updates to enhance prediction
+accuracy while considering climate conditions, thereby supporting sustainable operations through soil quality
+optimization [71]. Similarly, in the European Union, XAI-driven models have been employed to predict soil
+fertility by analyzing contributing factors, with results presented through intuitive visualizations that
+demonstrate their potential for strengthening global food security [72].
+4.6.Performancemetrictrendsinreviewedliterature
+It is clear from the examined literature that, depending on the task, researchers use a variety of evaluation
+criteria. Although accuracy is still the most frequently reported metric, several studies now incorporate
+precision, recall, and F1-score to more thoroughly represent performance at the class level. Furthermore,
+research that uses regression-oriented methodologies, such growth modeling or yield prediction, usually
+reports error-based metrics like the coefficient of determination (R2), mean squared error (MSE), and mean
+absolute error (MAE). Direct comparison between research is difficult due to the variation in reported
+indicators, but it also highlights how complex performance evaluation is in agricultural AI applications.
+Crucially, accuracy alone might not adequately convey a model’s robustness or field-readiness, especially in situ
+ations where balancing error rates (F1-score) or reducing false negatives (recall) are crucial, or where inference
+time and computational efficiency have an impact on real-world deployment. Thus, implementing a complete
+and consistent set of measures will guarantee that AI-based solutions are assessed in accordance with the
+intricate requirements of actual agricultural contexts, in addition to improving comparability between
+research.
+5.XAIacrossdiversefields
+[76] provides a comprehensive review highlighting the widespread adoption of AI across multiple fields,
+including agriculture, materials science, device modeling, and healthcare. Recent research has leveraged XAI
+techniques such as LIME and SHAP to analyze nanowire gate-all-around ferroelectric FETs for neuromorphic
+computing applications. XAI has also been instrumental in enhancing diagnostic trans- parency in healthcare
+and accelerating materials discovery, underscoring its universal role in improving trust, reliability, and
+interpretability in AI systems.
+In healthcare, medical image analysis stands out as a domain where AI has been extensively applied, with
+high accuracy complemented by improved model explainability and interpretability. Many studies in this area
+focus on distinguishing between diseased and healthy tissues using visual tools such as saliency maps [77] which
+introduces the explanation interfaces designed to support automated diagnostic and predictive tasks, primarily
+Figure7. XAI workflow diagram.
+17
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+used by physicians. Similarly [78], presents a dashboard that integrates data from sensor-equipped smart
+homes to detect cognitive decline in elderly individuals and alert healthcare professionals. In the field of psy-
+chiatry and mental health, [79] emphasizes the importance of interpretability and transparency, introducing
+the TIFU framework to make AI models more comprehensible. Here, AI is primarily applied for prediction and
+discovery, where explainability remains critical for ensuring trust and safety in high- stakes clinical decision-
+making.
+Using both global and local explanations, [80] suggests an end-to-end XAI framework for deciphering and
+displaying anomaly detection classifications in AI models for VANET security of autonomous vehicles. As a
+way to illustrate the reliability and explainability of an AI-based IV-IDS (Anomaly-based In-Vehicle Intrusion
+Detection System), [81] created a visualization-based explanation called VisExp, highlighting feature and
+SHAP values, utilizing Python libraries and SHAP.
+6.Discussion
+Figure 8 shows an bar chart illustrating the DL and XAI approaches employed in the summarized studies within
+the agricultural domain. Among the DL models, ResNet exhibits the highest usage, followed by VGG. In the
+XAI category, LIME is the most frequently employed method, followed by Grad-CAM, while SmoothGrad and
+LightGBM are comparatively less utilized. Grad-CAM is widely used due to its versatility, as it can be applied to
+image classification, object detection, and semantic segmentation tasks. Similarly, LIME’s model-agnostic
+nature, along with its flexibility and adaptability, makes it a popular choice among XAI approaches compared
+to others.
+Figure 9 illustrates the classification of reviewed studies based on different agricultural task types. The
+majority of agricultural tasks utilizing XAI approaches focus on plant and leaf disease classification, followed by
+yield prediction, while vegetation mapping and plant phenotyping are the least explored. This trend can be
+attributed to the abundance of image data, as large-scale datasets of diseased plant images and crop growth
+patterns are readily available, facilitating the application of deep learning and XAI techniques. In contrast,
+vegetation mapping and plant phenotyping involve complex environmental factors and large-scale spatial data,
+making the integration of XAI techniques more challenging.
+Stakeholder needs, data modality, and model type all influence how XAI techniques are adopted in agri-
+culture: While feature significance and SHAP are typical for tabular yield models, visual attribution tools
+(Grad-CAM, saliency) predominate in image-based disease/weed tasks, and new counterfactual and concept-
+based approaches are becoming more and more respected for their applicability and conformity to agronomic
+principles.
+7.Challengesandlimitations
+Creating a fully functional white box system that produces intelligible lay-person explanations with significant
+user acceptability is XAI’s primary issue. This requires the collaboration of ML and XAI reserachers, as well as
+user interface, user experience, usability, and human-computer interaction researchers. The goal of XAI is to
+make decisions understandable and usable by human stakeholders who are not accustomed to technology.
+Stakeholders of adoption, accessibility, and acceptance include domain experts, regulatory agencies, top
+Figure8. Bar chart illustrating the DL and XAI approaches used in summarized studies applied to the agricultural domain.
+18
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+executives, and direct users of XAI. To achieve usability and acceptance, an amalgamation of XAI and
+technology acceptance models should be used [82].
+XAI enhances machine learning models, particularly those with abstract features. However, its effectiveness
+depends on various factors like task, dataset, model architecture, explanation technique, and hyperparameters
+[83]. Challenges include adaptive integration, consistent explanations, and interactive explanations [84]. To
+ensure long term use and maintainability, resource management, algorithm efficiency optimization, and bal-
+ancing predicted accuracy and model interpretability are crucial.
+DL models trained on extensive plant phenotyping datasets often struggle with real world conditions,
+where variables like fluctuating light and temperature are common. These models can be heavily influenced by
+factors such as temperature variations, types of germination materials, pH levels of nutrient solutions, aeration,
+lighting conditions, filter paper colors, and camera settings. Such biases make researchers question the general-
+izability and reliability of deep learning models for plant studies. Relying on these models for assessing plant
+varieties could lead to inaccurate results and suboptimal decision-making, posing potential risks for the future
+of plant research [59].
+Other challenges include:
+• It is crucial but difficult to protect data privacy and security, integrate many data sources (geospatial, sensor,
+and historical), and guarantee dependable connectivity [85].
+• Changes in labour, knowledge-sharing, and benefit distribution brought about by XAI necessitate
+cooperative prioritization and decision-making, which stakeholders must adjust to [86].
+• To protect data integrity, it is essential to address cybersecurity, user permission, and data ownership [85].
+• For XAI systems to be equitable, all farmers must have access to and be able to access them. It is difficult to
+effectively communicate sophisticated AI results to a variety of stakeholders. Numerous researches have
+documented the practical and computational issues that arise when balancing model simplicity and accuracy
+in real-world applications [83, 85, 87–89].
+• AI and XAI in agriculture face challenges like data availability and computational complexity, which may
+hinder widespread adoption, especially in resource-limited regions [90].
+8.Futuredirections
+The integration of Explainable Artificial Intelligence (XAI) into agricultural systems holds transformative
+potential for enhancing the transparency, reliability, and ethical deployment of AI-enabled decision support
+tools [91]. By addressing critical challenges related to interpretability, model accuracy, bias detection, and user
+Figure9. The classification of reviewed studies according to agricultural task types.
+19
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+trust, XAI facilitates informed decision-making among key stakeholders, including farmers, agronomists,
+researchers, and policymakers. Unlike conventional ‘black-box’ models, XAI frameworks provide human-
+interpretable rationales for predictions or classifications, thereby promoting transparency and accountability
+in data-driven agricultural interventions.
+Moreover, the synergistic integration of XAI with emerging technologies such as blockchain, the Internet of
+Things (IoT), and edge computing, which enables data processing directly on local devices like drones or farm
+sensors rather than distant servers, hold promise for real-time agricultural applications. Edge computing
+enhances the efficiency, security, and scalability of smart farming systems [92, 93]. For instance, XAI combined
+with blockchain can enable tamper-proof data auditing and traceability in supply chain logistics, while XAI-
+guided IoT deployments allow for real-time monitoring and autonomous decision- making with improved
+interpretability at the edge. These integrated systems facilitate the deployment of precision agriculture prac-
+tices, optimize resource utilization, and enhance food safety monitoring through traceable and interpretable
+data analytics pipelines.
+Despite these advancements, several technical and socio-economic challenges persist. The high main-
+tenance costs of XAI-integrated systems, the absence of standardized automation protocols, and unresolved
+ethical dilemmas associated with opaque or biased AI decision-making represent significant barriers to wide-
+spread adoption [13, 94–96]. Additionally, the lack of user-friendly interfaces and limited domain-specific
+interpretability tools impede the accessibility of XAI for non-expert end users, particularly in resource-con-
+strained rural settings.
+Future research should prioritize the development of sustainable, context-aware, and inclusive XAI frame-
+works that uphold the principles of fairness, accountability, and transparency. This includes the design of light-
+weight and explainable models suitable for deployment in low-power environments, the integration of multi-
+modal sensor data for robust interpretability, and the incorporation of domain-specific knowledge into XAI
+algorithms. Moreover, frameworks must be evaluated not only on performance metrics such as accuracy and
+precision but also on their explainability, usability, and social acceptability among target user groups.
+While Agriculture 5.0 envisions a highly interconnected, intelligent, and sustainable agricultural paradigm,
+an over-dependence on automated technologies may inadvertently marginalize traditional farming knowl-
+edge systems and impact rural employment. To ensure a balanced and ethical transition, future AI models must
+incorporate principles of environmental sustainability, legal transparency, and human-centered governance.
+This necessitates active collaboration between interdisciplinary stakeholders—including data scientists, ethi-
+cists, legal experts, policymakers, and agricultural practitioners—to co-design responsible AI ecosystems tai-
+lored to local socio-economic contexts [85], [97–102].
+In summary, the responsible and strategic integration of XAI into agriculture presents a promising avenue
+for building resilient, inclusive, and efficient agri-food systems. When aligned with ethical frameworks and
+participatory development models, XAI can serve as a catalyst for equitable technological transformation in the
+agricultural domain.
+9.Conclusion
+The agricultural sector is crucial for economic growth, employing significant human capital globally. Precision
+agriculture helps address challenges like climate volatility, biological invasions, and resource scarcity. Ethical
+concerns and regulatory mandates have sparked interest in model interpretability and explainability
+frameworks, with research focusing on decentralized marketplace architectures, blockchain- enabled
+provenance systems, and explainable AI implementations. XAI methodologies extend beyond weed
+differentiation and disease diagnostics to predictive analytics for cultivar selection, optimizing resource
+allocation, enhancing food security, and maximizing agricultural production. They integrate post-hoc
+interpretability techniques like Grad-CAM, LIME, and SHAP, improving user interface accessibility,
+algorithmic transparency, and stakeholder confidence among agricultural practitioners. The use of
+interpretable artificial intelligence (XAI) in agriculture has shown significant progress, with tradi- tional
+machine learning and deep learning architectures being the most commonly used. XAI-enabled precision
+agriculture systems can reduce water consumption by 15%–25% while improving crop yields. However,
+regional disparities exist, with developed economies implementing XAI more quickly than emerging markets.
+The regulatory landscape for AI transparency in agriculture is evolving, emphasizing model auditability and
+stakeholder accessibility. Implementation barriers include technical challenges in edge computing deployment
+and underdeveloped knowledge transfer mechanisms for translating complex model explanations into
+actionable insights. The review emphasizes the critical necessity for collaborative ecosystems encompassing
+farmers, agricultural stakeholders, and computational scientists to facilitate the seamless integration of model-
+agnostic interpretability techniques with established agricultural methodologies. Future research priorities
+20
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+should address cross- domain knowledge transfer from adjacent fields, develop standardized validation
+frameworks for agricultural XAI, and create specialized explainability approaches for handling multimodal
+agricultural data streams including satellite imagery, IoT sensor networks, and genomic information. This
+systematic assessment contributes substantively to the evolving discourse surrounding XAI applications in
+agriculture and provides empirically grounded insights regarding its potential benefits for sustainable
+agricultural intensification and resilient food systems in an increasingly resource- constrained global
+environment.
+Acknowledgments
+The authors wish to acknowledge Research Lab, School of Computer Engineering, Manipal Institute of
+Technology, Manipal Academy of Higher Education, Manipal-576104, India, for facilitating to carry out the
+research.
+Dataavailabilitystatement
+No new data were created or analysed in this study.
+Funding
+This work was supported in part by the Dr TMA Pai Research Scholarship under Grant 230900101- 2023; and
+in part by the School of Computer Engineering, Manipal Institute of Technology, Manipal Academy of Higher
+Education and Open access funding provided by Manipal Academy of Higher Education, Manipal.
+Declarationofcompetinginterest
+The authors declare that they have no known competing financial interests or personal relationships that could
+have appeared to influence the work reported in this paper.
+Authorcontributions
+Deepthi G Pai
+aa 0000-0002-5110-709X
+Conceptualization (equal), Funding acquisition (equal), Methodology (equal), Writing – original draft (equal)
+Mamatha Balachandra
+Supervision (equal), Validation (equal), Writing – review & editing (equal)
+Radhika Kamath
+Resources (equal), Supervision (equal), Writing – review & editing (equal)
+References
+[1] Anandhi G and Iyapparaja M 2024 Systematic approaches to machine learning models for predicting pesticide toxicityHeliyon10
+[2] Bannerjee G, Sarkar U, Das S and Ghosh I 2018 Artificial intelligence in agriculture: a literature surveyInternationalJournalof
+ScientificResearchincomputerScienceApplicationsandManagementStudies7 1–6
+[3] Ehrampoosh Aetal 2025 Intelligent weed management using aerial image processing and precision herbicide s, praying: an overview
+CropProt.194 107206
+[4] Goel M and Pandey M 2024 Crop yield prediction using ai: a review2ndInt.Conf.onDisruptiveTechnologies(ICDT) 1547–53 (IEEE)
+[5] Agarwal S and Tarar S 2021 A hybrid approach for crop yield prediction using machine learning and deep learning algorithms
+JournalofPhysics:Conf.Series 1714012012 (IOP Publishing)
+[6] Song H and He Y 2005 Crop nutrition diagnosis expert system based on artificial neural networksThirdInt.Conf.onInformation
+TechnologyandApplications(ICITA’05) 1, 357–62 (IEEE)
+[7] Shah A, Dubey A, Hemnani V, Gala D and Kalbande D 2018 Smart farming system: crop yield prediction using regression
+techniques, Proc.ofInt.Conf.onWirelessCommunication:ICWiCom2017 49–56 (Springer,)
+[8] Javaid M, Haleem A, Khan I H and Suman R 2023 Understanding the potential applications of artificial intelligence in agriculture
+sector,AdvancedAgrochem2 15–30
+[9] De Oca A M, Arreola L, Flores A, Sanchez J and Flores G 2018 Low-cost multispectral imaging system for crop monitoring
+InternationalConferenceonUnmannedAircraftSystems(ICUAS) 443–51 (IEEE)
+[10] Elijah O, Rahman T A, Orikumhi I, Leow C Y and Hindia M N 2018 An overview of internet of things (iot) and data analytics in
+agriculture: benefits and challengesIEEEInternetofthingsJournal5 3758–73
+21
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+[11] Murdoch W J, Singh C, Kumbier K, Abbasi-Asl R and Yu B 2019 Definitions, methods, and applications in interpretable machine
+learningProc.NatlAcad.Sci.116 22071–80
+[12] Ryo M 2022 Explainable artificial intelligence and interpretable machine learning for agricultural data analysis,ArtificialIntelligence
+inAgriculture6 257–65
+[13] Kok J N, Boers E J, Kosters W A, Van der Putte P and Poel M 2009 Artificial intelligence: definition, trends, techniques, and cases
+Artif.Intell.1 51
+[14] Warwick K 2013ArtificialIntelligence:theBasics. (Routledge)
+[15] Dobrev D 2012 A definition of artificial intelligencearXivpreprint arXiv:1210.1568
+[16] Balasubramanian S, Natarajan G and Raj P 2024IntelligentRobotsandDronesforPrecisionAgriculture (Springer Nature)
+[17] Singh S and Jain P 2022 Applications of artificial intelligence for the development of sustainable agricultureAgro-Biodiversityand
+Agri-ecosystemManagement 303–22 (Springer)
+[18] Qazi S, Khawaja B A and Farooq Q U 2022 Iot-equipped and ai-enabled next generation smart agriculture: a critical review, current
+challenges and future trends,IeeeAccess10 21219–35
+[19] Yang Y, Akbarzadeh Khorshidi H and Aickelin U 2022 LimitationsArtificialIntelligenceinMedicine:Applications,Limitationsand
+FutureDirections 193–215 (Springer)
+[20] Oliveira R C d and Silva R D d S e 2023 Artificial intelligence in agriculture: benefits, challenges, and trends,AppliedSciences.13 7405
+[21] Hasteer N, Mallik A, Nigam D, Sindhwani R and Van Belle J-P 2024 Analysis of challenges to implement artificial intelligence
+technologies in agriculture sectorInternationalJournalofSystemAssuranceEngineeringandManagement15 1841–60
+[22] Adadi A and Berrada M 2018 Peeking inside the black-box: a survey on explainable artificial intelligence (xai),IEEEaccess6 52138–60
+[23] Moradi M, Yan K, Colwell D, Samwald M and Asgari R 2024 Model-agnostic explainable artificial intelligence for object detection in
+image dataEng.Appl.Artif.Intell.137 109183
+[24] Redelmeier A, Jullum M and Aas K 2020 Explaining predictive models with mixed features using shapley values and conditional
+inference trees,MachineLearningandKnowledgeExtraction:4thIFIPTC5,TC12,WG8.4,WG8.9,WG12.9Int.Cross-Domain
+Conf.,Cd-Make2020,Dublin,Ireland,August25–28,2020,Proc.4 117–37 (Springer)
+[25] Arrieta A Betal 2020 Explainable artificial intelligence (xai): concepts, taxonomies, opportunities and challenges toward responsible
+aiInformationfusion58 82–115
+[26] Wei K, Chen B, Zhang J, Fan S, Wu K, Liu G and Chen D 2022 Explainable deep learning study for leaf disease classification
+Agronomy12 1035
+[27] Ghosh P, Mondal A K, Chatterjee S, Masud M, Meshref H and Bairagi A K 2023 Recognition of sunflower diseases using hybrid deep
+learning and its explainability with aiMathematics11 2241
+[28] Abdollahi A and Pradhan B 2021 Urban vegetation mapping from aerial imagery using explainable ai (xai),Sensors21 4738
+[29] Farkhani S, Skovsen S K, Dyrmann M, Jørgensen R N and Karstoft H 2021 Weed classification using explainable multi-resolution
+slot attentionSensors21 6705
+[30] Quach L-D, Nguyen K Q, Nguyen A Q, Thai-Nghe N and Nguyen T G 2023 Explainable deep learning models with gradient-
+weighted class activation mapping for smart agricultureIEEEAccess11 83752–62
+[31] Kawakura S, Hirafuji M, Ninomiya S and Shibasaki R 2022 Analyses of diverse agricultural worker data with explainable artificial
+intelligence: Xai based on shap, lime, and lightgbmEuropeanJournalofAgricultureandFoodSciences4 11–9
+[32] Banerjeea P and Barnwala R P 2021 Visual explanation using grad-cam for deep-learning based classification of tea-leavesThirty
+FourthNationalConventionofComputerEngineersonIndustrialandMedicalApplicationofArtificialIntelligence
+[33] Sadiq Z and Aqib M 2023 Advancing trustworthy explainable artificial intelligence: principles, goals, and strategies,OALib.10 1–14
+[34] Williams M-A 2021 Explainable artificial intelligenceResearchHandbookonBigDataLaw 318–40 (Edward Elgar Publishing)
+[35] Molnar C, Casalicchio G and Bischl B 2020 Interpretable machine learning–a brief history, state-of-the-art and challengesJoint
+EuropeanConferenceonMachineLearningandKnowledgeDiscoveryinDatabases 417–31(Springer)
+[36] Lisboa P J, Saralajew S, Vellido A, Ferna´ndez-Domenech R and Villmann T 2023 The coming of age of interpretable and explainable
+machine learning modelsNeurocomputing535 25–39
+[37] Gupta J and Seeja K 2024 A comparative study and systematic analysis of xai models and their applications in healthcareArch.
+Comput.Meth.Eng. 1–26
+[38] Stubbin A, Chyrikov T, Zhao J and Chajo C 2024 The limits of perception: analyzing inconsistencies in saliency maps in xaiArxiv
+Preprint arXiv:2403.15684
+[39] Scott Metal 2017 A unified approach to interpreting model predictions NeuralInformationProcessingSystems30 4765–74
+[40] Selvaraju R R, Cogswell M, Das A, Vedantam R, Parikh D and Batra D 2017 Grad-cam: visual explanations from deep networks via
+gradient-based localizationProc.oftheIEEEInternationalConferenceonComputerVision 618–26
+[41] Ribeiro M T, Singh S and Guestrin C 2016 Why should i trust you? explaining the predictions of any classifier,Proc.ofthe22ndACM
+SIGKDDInternationalConferenceonKnowledgeDiscoveryandDataMining 1135–44
+[42] Kadir M A, Mosavi A and Sonntag D 2023 Evaluation metrics for xai: a review, taxonomy, and practical applicationsIEEE27thInt.
+Conf.onIntelligentEngineeringSystems(INES) 000111–24 (IEEE)
+[43] Ables J 2023ExplainableIntrusionDetectionSystemsusingWhiteBoxTechniques (Mississippi State University)
+[44] Dwivedi Retal 2023 Explainable ai (xai): core ideas, techniques, and solutions,ACMComput.Surv.55 1–33
+[45] Asli A and Arad S 2023LookingatExplainableaiMethodsThroughtheLensofCausality
+[46] Dai G, Fan J and Dewi C 2023 Itf-wpi: image and text based cross-modal feature fusion model for wolfberry pest recognition
+Comput.Electron.Agric.212 108129
+[47] Nigar N, Faisal H M, Umer M, Oki O and Lukose J 2024 Improving plant disease classification with deep learning based prediction
+model using explainable artificial intelligenceIEEEAccess (https://doi.org/10.1109/ACCESS.2024.3428553)
+[48] Ashoka Setal 2024 Explainable AI based framework for banana disease detection20245thInternationalConferenceonInnovative
+TrendsinInformationTechnology(ICITIIT)(Kottayam,India,2024) 1–6
+[49] Herna´ndez I, Gutie´rrez S, Barrio I, ´In˜iguez R and Tardaguila J 2024 In-field disease symptom detection and localisation using
+explainable deep learning: use case for downy mildew in grapevineComput.Electron.Agric.226 109478
+[50] Mart´ınez D L, de Benito Ferna´ndez M, Gonza´lez-Briones A, Chamoso P and Corchado E S 2023 A brief review of explainable
+artificial intelligence (xai) techniquesSustainableSmartCitiesandTerritoriesInt.Conf. 442–52 (Springer)
+[51] Sagar S, Javed M and Doermann D S 2023 Leaf-based plant disease detection and explainable aiArxivpreprint arXiv:2404.16833
+[52] Dai G, Tian Z, Wang C, Tang Q, Chen H and Zhang Y 2025 Lightweight vision transformer with lite-avpso hyperparameter
+optimization for agricultural disease recognitionIEEEInternetof ThingsJournal (https://doi.org/10.1109/JIOT.2025.3574084)
+22
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+[53] Dai G, Tian Z, Fan J, Sunil C and Dewi C 2024 Dfn-psan: multi-level deep information feature fusion extraction network for
+interpretable plant disease classificationComput.Electron.Agric.216 108481
+[54] Dai G, Fan J, Tian Z and Wang C 2023 Pplc-net: neural network-based plant disease identification model supported by weather data
+augmentation and multi-level attention mechanismJournalofKingSaudUniversity-ComputerandInformationSciences35 101555
+[55] Dai G and Fan J 2022 An industrial-grade solution for crop disease image detection tasksFrontiersinPlantScience13 921057
+[56] Karim M J, Nahiduzzaman M, Ahsan M and Haider J 2024 Development of an early detection and automatic targeting system for
+cotton weeds using an improved lightweight yolov8 architecture on an edge deviceKnowl.-BasedSyst.300 112204
+[57] Huertas-Tato J, Mart´ın A, Fierrez J and Camacho D 2022 Fusing cnns and statistical indicators to improve image classification
+InformationFusion79 174–87
+[58] Banerjee P, Banerjee S and Barnwal R P 2022 Explaining deep-learning models using gradient-based localization for reliable tea-
+leaves classificationsIEEEFourthInt.Conf.onAdvancesinElectronics,ComputersandCommunications(ICAECC) 1–6 (IEEE)
+[59] Mostafa S, Mondal D, Panjvani K, Kochian L and Stavness I 2023 Explainable deep learning in plant phenotypingFrontiersin
+ArtificialIntelligence6 1203546
+[60] Rakesh S and Indiramma M 2022 Explainable ai for crop disease detection4thInt.Conf.onAdvancesinComputing,Communication
+ControlandNetworking(ICAC3N) 1601–8 (IEEE)
+[61] Zinonos Z, Gkelios S, Khalifeh A F, Hadjimitsis D G, Boutalis Y S and Chatzichristofis S A 2021 Grape leaf diseases identification
+system using convolutional neural networks and lora technologyIEEEAccess10 122–33
+[62] Mehedi M H K, Hosain A S, Ahmed S, Promita S T, Muna R K, Hasan M and Reza M T 2022 Plant leaf disease detection using
+transfer learning and explainable aiIEEE13thAnnualInformationTechnology,ElectronicsandMobileCommunicationConf.
+(IEMCON) 0166–70 (IEEE)
+[63] Mahin M R H, Moonwar W, Chy M S R, Rafi F F, Shahriar M F, Karim D Z and Rasel A A 2022 Interpretable disease classification in
+plant leaves using deep convolutional neural networks25thInt.Conf.onComputerandInformationTechnology(ICCIT) 645–50
+(IEEE)
+[64] Naga Srinivasu P, Ijaz M F and Woz´niak M 2024 Xai-driven model for crop recommender system for use in precision agriculture
+Comput.Intell.40 e12629
+[65] Shams M Y, Gamel S A and Talaat F M 2024 Enhancing crop recommendation systems with explainable artificial intelligence: a study
+on agricultural decision-makingNeuralComputingandApplications36 5695–714
+[66] Kisten M, Ezugwu A E and Olusanya M S 2024 Explainable artificial intelligence model for predictive maintenance in smart
+agricultural facilitiesIEEEAccess (https://doi.org/10.1109/ACCESS.2024.3365586)
+[67] Hu T, Zhang X, Bohrer G, Liu Y, Zhou Y, Martin J, Li Y and Zhao K 2023 Crop yield prediction via explainable ai and interpretable
+machine learning: dangers of black box models for evaluating climate change impacts on crop yieldAgric.For.Meteorol.336 109458
+[68] Hasan M R 2024 Ai and machine learning for optimal crop yield optimization in the usa,JournalofComputerScienceandTechnology
+Studies6 48–61
+[69] Celik M F, Isik M S, Taskin G, Erten E and Camps-Valls G 2023 Explainable artificial intelligence for cotton yield prediction with
+multisource dataIEEEGeosci.RemoteSens.Lett. (https://doi.org/10.1109/LGRS.2023.3303643)
+[70] Najjar H, Miranda M, Nuske M, Roscher R and Dengel A 2025 Explainability of sub-field level crop yield prediction using remote
+sensinginIEEEJournalofSelectedTopicsinAppliedEarthObservationsandRemoteSensing18 4141–61
+[71] Srikanth M, Mohan R J and Naik M C 2023 Empowering agriculture: a soil recommendation model for rice cultivation using
+explainable ai,JournalMigrationLetters20 1046–57
+[72] Chandra H, Pawar P M, Elakkiya R, Tamizharasan P S, Muthalagu R and Panthakkan A 2023 Explainable ai for soil fertility
+predictionIEEEAccess (https://doi.org/10.1109/ACCESS.2023.3311827)
+[73] Ngo Q H, Kechadi T and Le-Khac N-A 2022 Oak4xai: model towards out-of-box explainable artificial intelligence for digital
+agricultureInternationalConferenceonInnovativeTechniquesandApplicationsofArtificialIntelligence 13652 (Springer) 238–51
+[74] Ruiz-Jua´rez H M, Castillo-Araujo J, Orozco-del Castillo M G, Cuevas-Cuevas N L, Ca´rdenas-Pimentel F and Ca´ceres- Escalante R
+2023 A decision tree as an explainable artificial intelligence technique for identifying agricultural production predictor variables in
+mexicoInternationalCongressof TelematicsandComputing (Springer) 1–14
+[75] Singh H, Roy A, Setia R and Pateriya B 2022 Estimation of nitrogen content in wheat from proximal hyperspectral data using
+machine learning and explainable artificial intelligence (xai) approachEarthSystemsandEnvironment8 2505–11
+[76] Yadav S, Giri N, Maurya A, Kaushik B K and Giri A 2025 Machine learning and explainable-ai based prediction of gate-all-around
+ferroelectric-fet: how ml models influence xaiPhys.Scr.100 056006
+[77] Manresa-Yee C, Roig-Maimo´ M F, Ramis S and Mas-Sanso´ R 2021 Advances in xai: explanation interfaces in healthcareHandbook
+ofArtificialIntelligenceinHealthcare,2:PracticalitiesandProspects 357–69 (Springer)
+[78] Khodabandehloo E, Riboni D and Alimohammadi A 2021 Healthxai: collaborative and explainable ai for supporting early diagnosis
+of cognitive declineFutureGener.Comput.Syst.116 168–89
+[79] Joyce D W, Kormilitzin A, Smith K A and Cipriani A 2023 Explainable artificial intelligence for mental health through transparency
+and interpretability for understandabilityNpjDigitalMedicine6 6
+[80] Nazat S, Li L and Abdallah M 2024 Xai-ads: an explainable artificial intelligence framework for enhancing anomaly detection in
+autonomous driving systemsIeeeAccess12 48583–607
+[81] Lundberg H, Mowla N I, Abedin S F, Thar K, Mahmood A, Gidlund M and Raza S 2022 Experimental analysis of trustworthy in-
+vehicle intrusion detection system using explainable artificial intelligence (xai)IEEEAccess10 102831–41
+[82] Islam M U, Mozaharul Mottalib M, Hassan M, Alam Z I, Zobaed S and Fazle Rabby M 2022 The past, present, and prospective future
+of xai: a comprehensive reviewExplainableArtificialIntelligenceforCyberSecurity:NextGenerationArtificialIntelligence 1–29
+[83] Weber L, Lapuschkin S, Binder A and Samek W 2023 Beyond explaining: opportunities and challenges of xai-based model
+improvementInformationFusion92 154–76
+[84] Yang Wetal 2023 Survey on explainable ai: from approaches, limitations and applications aspectsHuman-CentricIntelligentSystems
+3 161–88
+[85] Razak S F A, Yogarayan S, Sayeed M S and Derafi M I F M 2024 Agriculture 5.0 and explainable ai for smart agriculture: a scoping
+reviewEmergingScienceJournal8 744–60
+[86] Saiz-Rubio V and Rovira-Ma´s F 2020 From smart farming towards agriculture 5.0: a review on crop data managementAgronomy
+10 207
+[87] Du Y, Antoniadi A M, McNestry C, McAuliffe F M and Mooney C 2022 The role of xai in advice-taking from a clinical decision
+support system: a comparative user study of feature contribution-based and example-based explanationsAppliedSciences12 10323
+23
+Eng.Res.Express7 (2025) 032202 D G Paietal
+
+=== PAGE BREAK ===
+
+[88] Jamil H, Umer T, Ceken C and Al-Turjman F 2021 Decision based model for real-time iot analysis using big data and machine
+learningWirel.Pers.Commun.121 2947–59
+[89] Maryono M, Killoes A M, Adhikari R and Aziz A A 2024 Agriculture development through multi-stakeholder partnerships in
+developing countries: a systematic literature reviewAgric.Syst.213 103792
+[90] Mohan R J, Rayanoothala P S and Sree R P 2025 Next-gen agriculture: integrating ai and xai for precision crop yield predictions
+FrontiersinPlantScience15 1451607
+[91] Sarac F 2023 A brief review of explainable artificial intelligence reviews and methodsExplainableMachineLearningforMultimedia
+BasedHealthcareApplications 151–67
+[92] Louta M, Banti K and Karampelia I 2024 Emerging technologies for sustainable agriculture: the power of humans and the way ahead
+IEEEAccess12
+[93] Chen H-Y, Sharma K, Sharma C and Sharma S 2023 Integrating explainable artificial intelligence and blockchain to smart
+agriculture: research prospects for decision making and improved securitySmartAgriculturalTechnology6 100350
+[94] Gandhi R, Bhardwaj S, Sehgal B and Gupta D 2021 An explainable ai approach for agriculture using iot,Proc.oftheInt.Conf.on
+InnovativeComputing&Communication(ICICC)
+[95] Tsakiridis N L, Diamantopoulos T, Symeonidis A L, Theocharis J B, Iossifides A, Chatzimisios P, Pratos G and Kouvas D 2020
+Versatile internet of things for agriculture: an explainable ai approachArtificialIntelligenceApplicationsandInnovations:16thIFIP
+WG12,5Int.Conf.,AIAI2020,NeosMarmaras,Greece,June5–7,2020,Proc.,PartII16 180–91(Springer)
+[96] Gummadi A N, Napier J C and Abdallah M 2024 Xai-iot: an explainable ai framework for enhancing anomaly detection in iot
+systemsIEEEAccess
+[97] Dara R, Hazrati Fard S M and Kaur J 2022 Recommendations for ethical and responsible use of artificial intelligence in digital
+agricultureFrontiersinArtificialIntelligence5 884192
+[98] Dignum Vetal 2018 Ethics by design: necessity or curse?Proc.ofthe2018AAAI/ACMConf.onAI,Ethics,andSociety 60–6
+[99] Walter A, Finger R, Huber R and Buchmann N 2017 Smart farming is key to developing sustainable agricultureProc.NatlAcad.Sci.
+114 6148–50
+[100] Mark R 2019 Ethics of using ai and big data in agriculture: the case of a large agriculture multinationalTheORBITJournal2 1–27
+[101] D’Agostino G and Fay R 2024GoverningDataandaitoProtectInnerFreedomsIncludesaRoleforip (Centre for International
+Governance Innovation)
+[102] Jobin A, Ienca M and Vayena E 2019 The global landscape of ai ethics guidelinesNatureMachineIntelligence1 389–99
+24
+Eng.Res.Express7 (2025) 032202 D G Paietal

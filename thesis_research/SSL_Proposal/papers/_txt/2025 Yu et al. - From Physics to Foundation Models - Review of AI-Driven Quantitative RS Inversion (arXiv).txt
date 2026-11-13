@@ -1,0 +1,1448 @@
+From Physics to Foundation Models: A Review of
+AI-Driven Quantitative Remote Sensing Inversion
+Zhenyu Yu1,2,3, Mohd Yamani Idna Idris 3, Hua Wang 2*,
+Pei Wang1*, Junyi Chen 4, Kun Wang 5
+1Faculty of Information Engineering and Automation, Kunming
+University of Science and Technology, Kunming, 650093, China.
+2School of Business Administration, Zhejiang University of Finance and
+Economics Dongfang College, Jiaxing, 310018, China.
+3Faculty of Computer Science and Information Technology, Universiti
+Malaya, Kuala Lumpur, 50603, Malaysia.
+4Faculty of Land Resources Engineering, Kunming University of Science
+and Technology, Kunming, 650093, China.
+5School of Information, Yunnan University of Finance and Economic,
+Kunming, 650221, China.
+*Corresponding author(s). E-mail(s): wangh df@163.com;
+peiwang@kust.edu.cn;
+Contributing authors: yuzhenyuyxl@foxmail.com; yamani@um.edu.my;
+joel59cjy@163.com; wk@um.edu.my;
+Abstract
+Quantitative remote sensing inversion aims to estimate continuous surface
+variables—such as biomass, vegetation indices, and evapotranspiration—from
+satellite observations, supporting applications in ecosystem monitoring, carbon
+accounting, and land management. With the evolution of remote sensing sys-
+tems and artificial intelligence, traditional physics-based paradigms are giving
+way to data-driven and foundation model (FM)–based approaches. This paper
+systematically reviews the methodological evolution of inversion techniques, from
+physical models (e.g., PROSPECT, SCOPE, DART) to machine learning meth-
+ods (e.g., deep learning, multimodal fusion), and further to foundation models
+(e.g., SatMAE, GFM, mmEarth). We compare the modeling assumptions, appli-
+cation scenarios, and limitations of each paradigm, with emphasis on recent FM
+advances in self-supervised pretraining, multi-modal integration, and cross-task
+1
+arXiv:2507.09081v1  [cs.CV]  11 Jul 2025
+
+=== PAGE BREAK ===
+
+adaptation. We also highlight persistent challenges in physical interpretabil-
+ity, domain generalization, limited supervision, and uncertainty quantification.
+Finally, we envision the development of next-generation foundation models for
+remote sensing inversion, emphasizing unified modeling capacity, cross-domain
+generalization, and physical interpretability.
+Keywords: Remote Sensing Inversion, Foundation Models, Physics-Based Modeling,
+Deep Learning, Machine Learning
+1 Introduction
+Quantitative remote sensing inversion serves as a critical link between remote
+observations and geophysical parameter estimation, underpinning key applications
+such as land use change monitoring, ecosystem evaluation, water resource manage-
+ment, and carbon cycle modeling. With the advancement of remote sensing systems
+from single optical sensors to multi-source and heterogeneous platforms—including
+multispectral (MSI) [1], hyperspectral (HSI) [2], synthetic aperture radar (SAR) [3],
+and LiDAR—remote sensing data [4] now exhibit high spatiotemporal resolution and
+multimodal characteristics, offering a solid foundation for the accurate inversion of sur-
+face state variables [5–9]. Traditional inversion approaches based on physical models
+[10] and look-up tables [11] ensure strong physical consistency [12] and interpretabil-
+ity [13], yet they are often limited by modeling complexity, parameter accessibility,
+and poor generalization. Data-driven methods, such as random forests (RF) [14],
+support vector regression (SVR) [15], and deep neural networks [16], offer improved
+flexibility and predictive accuracy but suffer from dependence on high-quality labeled
+data and lack inherent physical constraints [17]. Recently, foundation models (FMs)
+[18], characterized by large-scale self-supervised pretraining, multi-task learning, and
+cross-modal fusion, have gained prominence. Representative models such as SatMAE
+[19], GFM [20], and MMEarth [21] demonstrate notable advantages in representa-
+tion learning, transferability, and scientific reasoning [21, 22], paving the way toward
+a paradigm shift from task-specific customization to unified, general-purpose archi-
+tectures. Thus, a systematic review of the current progress, modeling principles, and
+future trends of FMs in quantitative remote sensing inversion is essential for advanc-
+ing theoretical understanding and guiding the development of robust and scalable
+inversion frameworks.
+Common Inversion Tasks and Output Characteristics.Quantitative remote
+sensing inversion focuses on the high-precision estimation of continuous geophysical
+parameters, which serve as critical inputs for environmental modeling and geoscien-
+tific analysis [23, 24]. These variables hold broad scientific and practical value. As
+illustrated in Figure 1, quantitative inversion aims to derive a range of physically
+meaningful surface parameters from multi-source observational data, including leaf
+area index (LAI) [25], normalized difference vegetation index (NDVI) [26], fraction
+of absorbed photosynthetically active radiation (FAPAR) [27], aboveground biomass
+(AGB) [28], and canopy height [29]—all of which provide essential foundations for
+2
+
+=== PAGE BREAK ===
+
+ecological monitoring and carbon cycle modeling [30]. Additional parameters such
+as evapotranspiration (ET) [31], soil moisture (SM) [32], surface albedo [33], surface
+roughness [34], total suspended solids (TSS) [35], and turbidity [36] are widely used in
+hydrological process simulation and climate response analysis [17, 37]. These variables
+collectively reflect the structural features of terrestrial ecosystems, land-atmosphere
+energy and water exchange processes, and carbon–nitrogen cycling characteristics,
+serving as indispensable inputs to Earth system science [8, 38]. In recent years,
+improvements in the spatial, spectral, and temporal capabilities of remote sensing
+platforms have led to high-resolution, multimodal, and high-frequency observation sys-
+tems, enabling inversion tasks to become increasingly high-dimensional, multi-scale,
+and heterogeneous [39, 40]. This evolution imposes growing demands on modeling
+techniques in terms of feature representation, cross-regional generalization, and uncer-
+tainty quantification [41]. Consequently, the accurate and robust inversion of such
+geophysical variables has emerged as a core challenge in advancing remote sensing
+from perception-driven observations toward cognitively informed understanding.
+Evolution of Methodological Paradigms. The development of quantitative
+remote sensing inversion methods has progressed from physically based modeling
+approaches to data-driven machine learning frameworks, and more recently, toward the
+emerging paradigm of foundation models (FMs) that aim to provide general-purpose
+learning capabilities [6, 17, 42]. Early physical models, such as PROSAIL, SCOPE, and
+DART, are grounded in radiative transfer theory and process-based simulations, estab-
+lishing forward models that link remote sensing observations to surface parameters.
+These methods emphasize physical interpretability and consistency [43, 44]. However,
+when faced with multi-source heterogeneous data, high-dimensional nonlinear relation-
+ships, and large-scale automation demands, these approaches suffer from limitations
+in parameter accessibility and modeling flexibility. In the data-driven era, machine
+learning and deep learning methods—such as RF, SVR, CNNs, GNNs, and Transform-
+ers—have demonstrated strong modeling capabilities. By enabling end-to-end learning
+of nonlinear mappings between remote sensing observations and geophysical variables,
+these methods significantly improve predictive accuracy and generalization [8, 45].
+Nonetheless, they often require large volumes of labeled data and lack intrinsic physical
+constraints, which limits their transferability, scientific interpretability, and controlla-
+bility across diverse regions [46]. In recent years, the paradigm of foundation models
+has gained traction, characterized by self-supervised pretraining, multi-task adapta-
+tion, and multimodal fusion. These models aim to construct universal representation
+frameworks for remote sensing, exhibiting transformative potential in weakly super-
+vised learning, cross-modal perception, and geoscientific reasoning [21, 22]. This trend
+marks a significant shift from task-specific modeling approaches toward structurally
+unified paradigms in remote sensing inversion.
+To systematically review the methodological evolution of quantitative remote
+sensing inversion, this study categorizes existing technical approaches into three
+representative paradigms: physics-based models, data-driven methods, and foun-
+dation model frameworks. The first category, physics-based models, relies on radiative
+transfer mechanisms and surface process simulations. Representative models such
+as PROSAIL [47] and SCOPE [48] establish physical mappings between observed
+3
+
+=== PAGE BREAK ===
+
+radiance and geophysical variables, emphasizing theoretical interpretability and sci-
+entific consistency. These methods are well-suited for inversion scenarios with clearly
+defined physical mechanisms and strong prior constraints [43, 49, 50]. The second cat-
+egory, data-driven methods, builds upon statistical learning and deep neural networks
+to directly model nonlinear relationships from remote sensing observations. These
+approaches exhibit flexible model expression capabilities and high predictive accuracy,
+showing significant advances in multi-source data fusion and automated modeling
+[8, 17, 51]. However, their limitations in regional generalization, scientific consistency,
+and reliance on labeled samples remain unresolved. The third paradigm, foundation
+models, features large-scale self-supervised pretraining, unified representation learning,
+and cross-modal task adaptation. Representative models such as SatMAE, GFM, and
+MMEarth aim to enhance adaptability and transferability in multi-task, multi-modal,
+and cross-regional remote sensing applications by adopting unified architectures and
+general-purpose task interfaces [21, 22]. This review focuses on quantitative inversion
+tasks for surface parameters (e.g., NDVI, LAI, AGB, SIF), systematically analyzing
+the modeling mechanisms, adaptation characteristics, and methodological advantages
+of the three paradigms. By clarifying their technical boundaries and evolutionary
+trends, this work seeks to provide a theoretical foundation and methodological guid-
+ance for constructing the next generation of remote sensing inversion frameworks with
+high adaptability and generalization capacity.
+Although artificial intelligence technologies have been widely applied to remote
+sensing tasks such as image classification, change detection, and scene understanding
+in recent years—with a growing number of relevant review articles [8, 17]—a system-
+atic review specifically focused on quantitative remote sensing inversion, particularly
+under the emerging foundation model paradigm, remains limited. At present, a com-
+prehensive understanding of how foundation models are constructed, adapted, and
+evolved for inversion tasks is still lacking. This has led to gaps in guiding researchers
+on model selection, paradigm integration, and multimodal modeling strategies. This
+review attempts to address this gap by offering a preliminary systematic synthesis,
+with the following contributions:
+• Task-centered perspective: This paper focuses on a core challenge in remote
+sensing—quantitative inversion of surface parameters—and analyzes the modeling
+characteristics and inversion difficulties of typical geophysical variables such as LAI,
+NDVI, AGB, and ET. It clarifies both the unique and generalizable aspects of
+applying AI models to these tasks.
+• Paradigm evolution framework: We propose a three-stage evolutionary frame-
+work, transitioning from physics-based modeling to data-driven methods, and finally
+to foundation models. This structure summarizes the theoretical underpinnings,
+modeling strategies, and application scopes of each paradigm, highlighting key
+turning points.
+• Toward unified inversion frameworks: We outline future directions for founda-
+tion model–driven inversion systems with multi-task, multimodal, and cross-domain
+adaptability, paving the way toward scalable, interpretable, and general-purpose
+modeling in quantitative remote sensing.
+4
+
+=== PAGE BREAK ===
+
+Satellite Observation Reflectance Data OutputLand Surface
+SegmentationClassification InversionObject Detection
+Model
+Data-Driven MethodsPhysics-Based Method
+Change Detection
+Remote Sensing Tasks
+Quantitative Remote Sensing (QRS) Inversion
+Inversion Methods
+From Physics to 
+Foundation Models
+Fig. 1 Overview of representative remote sensing inversion tasks, including typical input modalities,
+output variables, and application scenarios.
+From Physics to Foundation Models:
+AI-Driven Quantitative Remote Sensing Inversion
+Physics-Based Methods Data-Driven Methods
+ Lookup Table (LUT)
+ Optimization-Based
+ Physics-Informed Neural Networks 
+(PINNs)
+ Machine Learning Methods
+ Deep Learning Methods
+ Foundation Models
+Fig. 2 Taxonomy of remote sensing inversion methods, categorized into physics-based methods,
+data-driven methods, and hybrid/physics-informed methods.
+2 Task Taxonomy and Attributes
+2.1 Task Definition
+Quantitative Remote Sensing Inversion refers to the process of deriving a set
+of geophysical parameters with explicit physical meanings from multi-source observa-
+tional data acquired by remote sensing platforms. This task plays a central role in a
+wide range of critical applications, including ecosystem structure assessment, carbon
+5
+
+=== PAGE BREAK ===
+
+stock estimation, hydrological modeling, and surface energy exchange studies. Unlike
+discriminative tasks such as classification or detection, quantitative inversion focuses
+on the numerical prediction of continuous variables that describe the structure, func-
+tion, or state of the Earth’s surface. These results are expected not only to achieve
+pixel-level spatial accuracy but also to ensure regional consistency and process-level
+interpretability [7, 52].
+A key challenge in this task lies in the fact that remote sensing observations typi-
+cally capture radiative or reflective signals (e.g., spectral reflectance, radar backscatter,
+or LiDAR return intensity), while the target variables are often physical quantities of
+Earth surface processes (e.g., LAI, NDVI, AGB, ET, SM). There is no simple linear
+or explicit functional mapping between them. The inversion process can typically be
+formulated as a functional learning problem:
+ˆy = f(x) or ˆy = arg min
+θ
+L(fθ(x), y) (1)
+where x∈ Rd denotes the multi-source remote sensing input data, ˆy∈ R denotes
+the estimated physical parameter, fθ is a learnable nonlinear mapping function, and
+L is the loss function quantifying the inversion error. To approximate this complex
+nonlinear relationship, inversion models often leverage radiative transfer models, look-
+up tables (LUT), machine learning regressors, or deep neural networks [9, 53].
+From the input perspective, quantitative inversion relies on data acquired by multi-
+modal sensors such as optical, multispectral, hyperspectral, thermal infrared, synthetic
+aperture radar (SAR), and LiDAR. These sensors differ significantly in spectral range,
+spatial resolution, viewing geometry, and revisit frequency, creating a highly hetero-
+geneous and high-dimensional input space. From the output perspective, the target
+variables typically exhibit spatial continuity, temporal dynamics, and cross-regional
+transferability. Therefore, models are expected to produce not only high-accuracy
+pointwise estimations but also spatially consistent and physically plausible predictions
+across large-scale geographical regions [17, 54].
+With the continuous advancement in remote sensing acquisition capabilities and
+the rapid evolution of artificial intelligence, quantitative inversion tasks are transition-
+ing from traditional small-scale, single-variable modeling to multi-variable, multi-task,
+and cross-modal collaborative modeling. This paradigm shift demands more sophis-
+ticated model architectures and has prompted researchers to pay increased attention
+to scientific consistency, generalization capacity, and the integration of data-driven
+and physics-based approaches. These developments are collectively propelling remote
+sensing inversion from the perception layer to the cognition layer [7, 9, 21].
+2.2 Task Categories and Representative Variables
+Quantitative remote sensing inversion involves the continuous estimation of physically
+meaningful surface variables that describe key ecological, hydrological, and atmo-
+spheric processes. These variables serve as essential inputs for Earth system modeling,
+environmental assessment, and resource management. Based on the underlying geo-
+physical processes and domain-specific applications, inversion tasks can be broadly
+categorized into five representative groups: vegetation structural parameters, biomass
+6
+
+=== PAGE BREAK ===
+
+and carbon estimation, hydrological and energy fluxes, surface physical properties,
+and water quality and atmospheric composition. Table 1 summarizes these categories
+along with representative variables, full names, and typical application scenarios.
+Vegetation structural parameters such as LAI, NDVI, FAPAR, and FVC
+characterize canopy density, photosynthetic capacity, and vegetation cover. These
+parameters are foundational for monitoring vegetation dynamics, crop yield prediction,
+and ecosystem modeling. They are often estimated using canopy radiative trans-
+fer models such as PROSAIL and SCOPE, which simulate spectral responses across
+varying canopy structures.
+Biomass and carbon estimation tasks target parameters such as aboveground
+biomass (AGB), canopy height (CH), and carbon stock (CS). These variables are key to
+forest carbon accounting, biomass inventorying, and climate change policy evaluation.
+Models such as DART and FLIGHT simulate 3D canopy structure and light scattering,
+while allometric and empirical models are used to relate remote sensing observations
+to biomass and carbon content.
+Hydrological and energy flux variables , including evapotranspiration (ET),
+soil moisture (SM), land surface temperature (LST), and vapor pressure deficit (VPD),
+reflect surface water-energy exchange dynamics. These parameters are crucial for
+hydrological modeling, drought monitoring, and climate response assessments. Energy
+balance models such as SCOPE and Penman–Monteith, as well as land surface mod-
+els (e.g., Noah, CLM), support the inversion of these variables based on thermal or
+microwave observations.
+Surface physical properties such as albedo, surface roughness, and land
+surface emissivity (LSE) influence radiative transfer and energy balance at the
+land–atmosphere interface. Accurate retrieval of these properties enables improved
+surface parameterization in climate and energy models. Their estimation typically
+involves models like PROSAIL, DART, and MODTRAN.
+Water quality and atmospheric composition variables—including turbidity,
+total suspended solids (TSS), colored dissolved organic matter (CDOM), and aerosol
+optical depth (AOD)—are indicative of aquatic ecosystem health and atmospheric
+clarity. Hydrolight and bio-optical models simulate water-leaving radiance under vary-
+ing water quality conditions, while MODTRAN and 6S serve as standard atmospheric
+radiative transfer models for aerosol characterization.
+These inversion tasks are typically defined over continuous variable domains,
+exhibit multi-scale spatial and temporal dynamics, and are derived from multimodal
+remote sensing data. Moreover, they are often coupled—e.g., LAI and FAPAR, AGB
+and CH, or ET and SM—reflecting interdependent biophysical processes.
+7
+
+=== PAGE BREAK ===
+
+T able 1 Remote Sensing Inversion Tasks with Categories, Variables, Full Names, and Applications
+No. Category V ariable F ull Name Application Scenarios
+1 Vegetation Structural
+Parameters
+LAI Leaf Area Index Vegetation dynamics monitoring, ecosystem
+modeling, drought detection, crop yield
+estimation
+NDVI Normalized Difference Vegetation Index
+FAPAR Fraction of Absorbed Photosynthetically
+Active Radiation
+FVC Fractional Vegetation Cover
+2 Biomass and Carbon
+Estimation
+AGB Aboveground Biomass
+Forest carbon stock assessment, biomass
+inventory, carbon neutrality and policy modeling
+CH Canopy Height
+CS Carbon Stock
+Biomass Biomass Index
+3 Hydrological and
+Energy Fluxes
+ET Evapotranspiration
+Hydrological cycle simulation, flood
+management, climate impact analysis
+SM Soil Moisture
+LST Land Surface Temperature
+VPD Vapor Pressure Deficit
+4 Surface Physical
+Properties
+Albedo Surface Reflectance Coefficient Radiative transfer modeling, energy balance
+modeling, land cover classificationRoughness Surface Roughness
+LSE Land Surface Emissivity
+5
+Water Quality and
+Atmospheric
+Composition
+Turbidity Water Turbidity Water quality monitoring, eutrophication
+assessment, pollutant tracing, atmospheric
+correction
+TSS Total Suspended Solids
+CDOM Colored Dissolved Organic Matter
+AOD Aerosol Optical Depth
+8
+
+=== PAGE BREAK ===
+
+2.3 Key Characteristics
+Quantitative remote sensing inversion exhibits distinct methodological and structural
+characteristics that differentiate it fundamentally from conventional remote sens-
+ing tasks such as classification or object detection. As summarized in Table 2, its
+core attributes span five major dimensions: output continuity, spatial and temporal
+scalability, multimodal input structures, and cross-regional generalizability.
+(1) Output continuity and physical interpretability. In contrast to cat-
+egorical prediction tasks, quantitative inversion aims to estimate continuous-valued
+geophysical variables (e.g., LAI, soil moisture, evapotranspiration) that possess explicit
+physical meanings and ecological relevance [7]. These variables are intrinsically linked
+to underlying surface processes, and thus the inversion models must not only achieve
+high numerical accuracy but also ensure physical consistency and semantic inter-
+pretability [9]. This imposes additional constraints on model formulation, loss design,
+and evaluation metrics.
+(2) Multi-scale spatial and temporal representation.Inversion tasks require
+models to operate across a broad range of spatial scales—from high-resolution opti-
+cal sensors (e.g., Sentinel-2 at 10 m) to medium- and low-resolution platforms (e.g.,
+MODIS at 500 m)—necessitating effective scale normalization and resolution-aware
+modeling strategies [54]. Temporally, inversion must support both snapshot-based
+estimation and dynamic modeling over seasonal or interannual timescales, requiring
+robust temporal encoding and sequential representation learning capabilities [8].
+(3) Multimodal data fusion and sensor heterogeneity.Modern Earth obser-
+vation platforms generate multimodal datasets across diverse sensor types, including
+multispectral (MSI), hyperspectral (HSI), synthetic aperture radar (SAR), thermal
+infrared (TIR), and LiDAR. These modalities offer complementary information in
+terms of spectral sensitivity, structural penetration, and material discrimination [17].
+For instance, SAR provides structural features under all-weather conditions, while HSI
+enables fine-grained material classification. Effectively integrating such heterogeneous
+inputs remains a critical challenge for inversion models [21].
+(4) Cross-region generalization under domain shifts. Remote sensing
+inversion often involves geographic domain shifts due to variability in topography, veg-
+etation type, and climatic conditions between training and application regions [55].
+This leads to degradation in model performance when deployed beyond the train-
+ing distribution. Achieving cross-region transferability therefore requires models to be
+robust to distributional discrepancies, which motivates the adoption of weak super-
+vision, domain adaptation, multi-task learning, and foundation model pretraining
+strategies [21, 56].
+(5) Integrated modeling constraints and transfer mechanisms. Given the
+inherent heterogeneity in variable types, spatial resolution, and sensor modalities,
+inversion models must satisfy multiple constraints simultaneously: accurate numerical
+regression, physical plausibility, spatiotemporal consistency, and transferability. This
+necessitates hybrid modeling strategies that integrate physical priors, representation
+learning, and knowledge-guided regularization into a unified framework for robust and
+scalable inversion.
+9
+
+=== PAGE BREAK ===
+
+T able 2 Core Characteristics and Challenges of Quantitative Remote Sensing Inversion
+Characteristic Representation Challenges
+Output Variable Type Continuous values with physi-
+cal semantics
+1. Achieving accurate regression
+2. Preserving physical consistency
+Spatial Resolution Multi-scale (10–500 m) 1. Handling scale variation
+2. Designing resolution-adaptive models
+Temporal Dynamics Single to multi-temporal
+sequences
+1. Modeling seasonal dynamics
+2. Learning temporal dependencies
+Data Modalities Multisource and heterogeneous
+sensors
+1. Sensor alignment and fusion
+2. Capturing modality-specific structures
+Geographic Generalization Cross-region deployment 1. Mitigating domain shifts
+2. Ensuring transferability and robustness
+3 Physics-Based Methods
+3.1 Theoretical and Mechanistic Foundations
+Physics-based methods in quantitative remote sensing inversion are grounded in the
+simulation of fundamental physical processes governing the interaction of electro-
+magnetic radiation with the Earth’s surface and atmosphere. These approaches aim
+to preserve physical consistency and semantic interpretability by explicitly modeling
+radiative transfer, surface energy balance, biochemical dynamics, or hydrodynamic
+behaviors, depending on the variable of interest.
+Among these, Radiative Transfer Models (RTMs) remain central to character-
+izing radiation–vegetation interactions. The PROSAIL model, which couples the
+PROSPECT module (leaf optical properties) with SAIL (canopy scattering), enables
+the forward simulation of directional reflectance spectra and supports inversion of
+vegetation structural parameters such as LAI, NDVI, FAPAR, and FVC [43, 57]. For
+more complex canopies and heterogeneous surfaces, the DART model simulates three-
+dimensional radiative transfer and has been extensively applied to the estimation of
+aboveground biomass (AGB) and canopy height (CH) [58].
+SCOPE (Soil Canopy Observation, Photochemistry and Energy fluxes) extends this
+framework by incorporating photosynthesis, thermal radiation, and energy balance
+processes, thereby facilitating the joint inversion of variables such as evapotranspi-
+ration (ET), land surface temperature (LST), solar-induced fluorescence (SIF), and
+vapor pressure deficit (VPD) [59]. In aquatic and atmospheric domains, models such
+as Hydrolight simulate underwater light propagation in relation to turbidity, total
+suspended solids (TSS), and colored dissolved organic matter (CDOM) [60, 61]. Atmo-
+spheric radiative transfer tools including MODTRAN and 6S are employed for aerosol
+optical depth (AOD) estimation and atmospheric correction by modeling radiation
+paths through different atmospheric layers [62, 63].
+In addition to RTMs, various mechanistic models are used for specific geophysical
+targets. For instance, allometric models, which relate tree structure to biomass, are
+10
+
+=== PAGE BREAK ===
+
+commonly adopted in forest carbon estimation [64]. The Penman–Monteith equation
+is widely used in ET modeling, while soil moisture retrieval is often based on dielectric
+mixing models or land surface schemes such as Noah and CLM [7].
+Table 3 summarizes key remote sensing inversion variables alongside their repre-
+sentative mechanistic models. These frameworks collectively constitute the theoretical
+foundation of physics-based inversion, offering interpretability, transferability, and
+robustness, particularly under data-limited or cross-regional conditions.
+T able 3 Mapping of Remote Sensing Inversion Variables to Representative Mechanistic Models
+V ariable Representative Mechanistic Models References
+1. Vegetation Structural Parameters
+LAI PROSAIL, SCOPE, DART [57–59]
+NDVI PROSAIL (reflectance proxy) [57]
+FAPAR SAIL, SCOPE [43, 59]
+FVC SAIL, PROSAIL [43]
+2. Biomass and Carbon Estimation
+AGB DART, FLIGHT, allometric biomass models [58, 64, 65]
+CH DART, LiDAR-based canopy models [65]
+CS AGB × carbon coefficient models (e.g., IPCC) [30]
+Biomass Spectral-structural index models [64]
+3. Hydrological and Energy Fluxes
+ET SCOPE, Penman–Monteith equation [59]
+LST SCOPE (thermal balance), surface radiative models [59]
+SM Microwave dielectric models, land surface models (Noah, CLM) [7]
+VPD Meteorological + canopy energy models (via SCOPE) [59]
+4. Surface Physical Properties
+Albedo PROSAIL, SCOPE [57, 59]
+Roughness DART, Li–Strahler geometric–optical model [58]
+LSE SCOPE, MODTRAN (thermal emissivity) [59, 62]
+5. Water Quality and Atmospheric Composition
+Turbidity Hydrolight, semi-analytical bio-optical models [60, 66]
+TSS Hydrolight, empirical scattering-based models [66]
+CDOM Hydrolight, absorption-based bio-optical models [61]
+AOD 6S, MODTRAN (atmospheric radiative transfer) [62, 63]
+3.2 Inverse Modeling Strategies
+Physics-based inversion in remote sensing commonly adopts a forward–inverse mod-
+eling paradigm, wherein the forward model simulates the transformation from surface
+11
+
+=== PAGE BREAK ===
+
+biophysical parameters to observable signals, such as spectral reflectance or radi-
+ance. Inversion strategies then aim to retrieve the unknown parameters by inverting
+this model. Depending on how the inversion process is formulated and solved, three
+principal categories of approaches can be distinguished.
+Look-Up Table (LUT) Methods construct a synthetic database of reflectance
+or radiance values across the parameter space using forward simulations (e.g., RTMs).
+During inversion, the observed signal is compared against this table to identify the
+best-matching entry. LUT methods are easy to implement, do not require model
+differentiability, and allow for fast prototyping [43]. Nevertheless, their applicability
+is constrained by sampling resolution, high computational cost in high-dimensional
+settings, and poor generalization to out-of-distribution scenarios.
+Optimization-Based Estimation reformulates inversion as a minimization
+problem over a defined cost or likelihood function, such as least-squares error or
+Bayesian posterior. Estimation is then performed using iterative algorithms, includ-
+ing gradient descent, Markov Chain Monte Carlo (MCMC), or Kalman filtering [67].
+These methods offer high accuracy when applied to well-posed, differentiable models.
+However, they are often computationally demanding and susceptible to local minima
+and sensitivity to initialization, limiting their scalability in large or noisy datasets.
+Physics-Informed Neural Networks (PINNs)represent a more recent class of
+methods that integrate physical equations or constraints—such as radiative transfer or
+energy balance—into the training of deep neural networks. Rather than replacing phys-
+ical models, PINNs embed them as soft constraints or loss terms, thereby improving
+learning efficiency and physical plausibility [68]. These models are particularly suited
+for weakly supervised or data-scarce applications. Their limitations include instability
+during training, sensitivity to loss term weighting, and challenges in interpretability.
+Taken together, these strategies illustrate the evolution of physics-based inversion
+from table-driven and iterative methods toward integrated frameworks that leverage
+both physical knowledge and statistical learning. The comparative characteristics of
+the three approaches are summarized in Table 4.
+3.3 Challenges
+(1) Limited observability of key physical parameters. Physics-based inversion
+methods offer strong physical grounding and interpretability, as they directly model
+the causal relationships between surface states and observed signals [52]. However,
+their reliance on parameters that are not directly measurable—such as leaf biochemical
+constituents, canopy architecture, or sub-surface soil properties—often necessitates
+empirical assumptions or indirect proxies. This limits model robustness and introduces
+uncertainty, particularly in heterogeneous or poorly characterized environments.
+(2) High computational burden restricts operational scalability. Simula-
+tions based on RTMs like PROSAIL or SCOPE typically involve solving nonlinear,
+high-dimensional equations with radiative or thermodynamic constraints. While such
+models are theoretically complete, they are computationally intensive and often unsuit-
+able for large-scale or real-time inversion. Recent efforts to accelerate RTM simulations
+12
+
+=== PAGE BREAK ===
+
+T able 4 Comparison of Physics-Based Inversion Strategies
+Strategy Advantages Limitations
+Look-Up T able
+(LUT) [43] • Easy to implement and
+interpret
+• No gradient required;
+applicable to non-
+differentiable models
+• Minimal reliance on model
+assumptions
+• Limited resolution and
+scalability
+• Poor generalization to out-
+of-distribution data
+• High computational cost in
+high-dimensional settings
+Optimization-
+Based
+Estimation [67]
+• High retrieval accuracy
+under well-posed condi-
+tions
+• Compatible with prob-
+abilistic and Bayesian
+frameworks
+• Flexible for differentiable
+physical models
+• Sensitive to initial values
+and local optima
+• Computationally demand-
+ing for large-scale problems
+• Limited robustness in ill-
+posed or noisy scenarios
+Physics-
+Informed Neural
+Networks
+(PINNs) [68]
+• Embeds physical laws into
+learning
+• Strong expressive power
+with data-physics synergy
+• Effective in low-sample or
+weak-supervision settings
+• Requires careful loss term
+balancing
+• May suffer from conver-
+gence instability
+• Interpretability and debug-
+ging remain challenging
+using emulators or surrogate models remain limited in generalizability [69]. The associ-
+ated computational cost is a key barrier to integrating these models into Earth system
+applications that demand efficiency and throughput.
+(3) Simplifying assumptions limit model generalization. Many RTMs
+are built upon idealized assumptions—such as horizontally homogeneous canopies,
+isotropic scattering, or stable atmospheric layers—which may hold in experimental
+plots but not in real-world landscapes. These simplifications compromise model per-
+formance in complex terrains, mixed vegetation types, or anisotropic illumination
+conditions, resulting in limited geographic transferability [17].
+(4) Poor adaptability in weak-supervision and multi-source settings.
+Purely physical models typically assume high-quality, domain-specific input and cali-
+bration. In contrast, many practical remote sensing applications operate under weak
+supervision, limited ground truth, and multi-sensor fusion (e.g., combining optical,
+13
+
+=== PAGE BREAK ===
+
+thermal, and SAR data). In such contexts, RTMs lack the flexibility to adapt across
+modalities and conditions without extensive reparameterization or prior knowledge [7].
+(5) Data-driven integration remains challenging but necessary. To over-
+come the limitations above, integrating physical models with machine learning is
+increasingly seen as a promising direction [8]. Nonetheless, this hybridization poses new
+challenges, such as how to encode physical constraints into differentiable architectures,
+or how to balance physical priors with data-driven patterns in the loss landscape. This
+remains an open question in current research, especially in global-scale or ill-posed
+inversion settings [8, 68].
+4 Data-Driven Methods
+4.1 Machine Learning Methods
+The development of traditional machine learning (ML) algorithms has provided a
+pragmatic solution for remote sensing inversion, particularly in scenarios where phys-
+ical models face limitations in scalability, parameter observability, or computational
+efficiency. With the increasing availability of labeled geospatial data, empirical learn-
+ing frameworks such as Random Forests (RF), Support Vector Regression (SVR), and
+gradient boosting techniques (e.g., XGBoost) have been widely adopted to estimate
+land surface variables from multi-source remote sensing inputs [8, 70].
+RF models are particularly favored for their robustness, low sensitivity to parame-
+ter tuning, and inherent feature importance measures. They have been extensively used
+for variables including leaf area index (LAI), fraction of absorbed photosynthetically
+active radiation (FAPAR), and aboveground biomass (AGB), often with satisfac-
+tory accuracy under varying ecological conditions [71]. SVR, by contrast, offers high
+generalization performance in small-sample and high-dimensional settings, making it
+suitable for localized or region-specific inversion tasks where data scarcity remains
+a challenge [8]. XGBoost and other ensemble-based boosting methods have demon-
+strated improved prediction stability and nonlinear regression capacity, particularly
+in the estimation of land surface temperature (LST), soil properties, and aquatic
+parameters [72, 73].
+Despite these advantages, traditional ML methods remain constrained by their
+reliance on manually derived features and statistical descriptors, which may not
+capture the full complexity of raw image data. Their performance often degrades
+when applied to high-dimensional inputs such as hyperspectral imagery or when spa-
+tial–temporal dynamics are prominent. Moreover, conventional ML models typically
+lack the architectural capacity to integrate heterogeneous inputs (e.g., SAR and optical
+data), limiting their effectiveness in multimodal or multi-scale data fusion tasks.
+Recent studies have explored hybrid strategies, such as feature-enhanced regression
+using texture indices or dimensionality-reduction preprocessing (e.g., PCA, t-SNE), to
+partially alleviate these constraints. However, the absence of end-to-end representation
+learning remains a core limitation. As highlighted in Table 6 and Table 7, ML models
+continue to play a complementary role in modern inversion pipelines, especially when
+interpretability, lightweight deployment, or limited training samples are prioritized.
+14
+
+=== PAGE BREAK ===
+
+4.2 Deep Learning Methods
+The rise of deep learning has profoundly transformed remote sensing inversion, par-
+ticularly in applications requiring spatial, temporal, or spectral feature extraction
+from high-dimensional imagery. Deep neural networks (DNNs), especially those with
+convolutional or recurrent structures, have demonstrated superior capacity in model-
+ing nonlinear and multi-modal relationships that traditional approaches struggle to
+capture.
+Convolutional Neural Networks (CNNs) are among the most widely used archi-
+tectures for pixel- and patch-level inversion of biophysical parameters such as NDVI,
+ET, and AGB. Their convolutional structure enables spatially consistent learning
+from optical or multispectral imagery, making them particularly effective in vege-
+tation monitoring and land surface characterization [54, 74]. In contrast, Recurrent
+Neural Networks (RNNs) and their improved variant, Long Short-Term Memory
+(LSTM) networks, are well-suited for modeling sequential dependencies in time-series
+datasets. These models have been successfully applied to MODIS or Sentinel-based
+multi-temporal datasets for tasks such as evapotranspiration prediction and drought
+monitoring [75, 76].
+Recent advances have also introduced Graph Neural Networks (GNNs) for learning
+spatial dependencies beyond fixed grids, particularly useful in applications involving
+irregular geographic entities or network-structured inputs. Meanwhile, Transform-
+ers, originally designed for sequence modeling, have shown notable effectiveness in
+long-range spatial–temporal learning. Their self-attention mechanism enables global
+contextual understanding and has recently been adapted for remote sensing inversion,
+including canopy structure estimation and carbon stock modeling [77, 78].
+Another key strength of deep learning lies in its support for end-to-end train-
+ing pipelines. This enables joint optimization from raw input to prediction, reducing
+the need for handcrafted features. Furthermore, strategies such as transfer learn-
+ing, self-supervised pretraining, and generative data augmentation (e.g., GANs) are
+increasingly used to mitigate data scarcity and improve robustness in under-sampled
+regions [8]. CNN–LSTM hybrid models and attention-based multi-branch architec-
+tures also facilitate the integration of heterogeneous inputs such as SAR, optical, and
+meteorological data [79].
+Nonetheless, deep models are not without limitations. Their lack of interpretability,
+high demand for labeled training data, and sensitivity to regional domain shifts remain
+persistent challenges. While visualization tools and explainability techniques (e.g.,
+saliency maps, SHAP) are under active development, their maturity in geoscientific
+applications remains limited. Moreover, generalization performance often deteriorates
+when models are transferred across regions with differing land cover, sensor conditions,
+or phenological cycles, limiting their scalability for global applications.
+In sum, deep learning has enabled substantial improvements in estimation accuracy
+and model capacity, yet its reliability, transparency, and regional transferability remain
+open concerns. The integration of deep models with domain knowledge and physically
+informed constraints represents a promising avenue for future development.
+15
+
+=== PAGE BREAK ===
+
+4.3 Foundation Models
+Foundation models (FMs) have recently emerged as a transformative paradigm in
+quantitative remote sensing inversion, characterized by large-scale pretraining, multi-
+modal integration, and task-agnostic adaptation. Unlike conventional deep learning
+approaches that rely on task-specific architectures and extensive supervision, FMs
+are designed to learn unified spatial–temporal representations across variables, tasks,
+and sensor modalities. These models typically adopt masked modeling or contrastive
+objectives during pretraining, enabling them to capture generic geospatial priors and
+support a variety of downstream inversion tasks under limited supervision.
+Representative models include SatMAE, which employs masked autoencoding
+over multi-temporal Sentinel-2 data to learn spectral–temporal representations. Its
+encoder–decoder structure facilitates fine-tuning for variables such as NDVI, LAI,
+and FAPAR, demonstrating improved performance in label-scarce settings [19].GFM
+(Geospatial Foundation Model) builds on this idea by introducing a multimodal
+Transformer backbone capable of fusing optical, SAR, and DEM data. Through a
+shared latent representation and multi-task adaptation head, GFM supports concur-
+rent estimation of AGB, CH, SIF, and CS, and exhibits strong generalization across
+ecological regions [20]. Extending further, mmEarth aligns diverse modalities includ-
+ing hyperspectral imagery, SAR, and DSM using contrastive and multimodal masking
+strategies. Its architecture is optimized for pixel-level regression under heterogeneous
+input spaces, addressing domain shifts and multi-source inconsistencies [21].
+Despite these advances, current foundation models face several limitations in
+quantitative inversion contexts. First, the design of regression heads remains under-
+explored, with most approaches relying on shallow MLPs that may not capture the
+task-specific structure of geophysical variables. Second, fine-tuning strategies often
+require substantial computational resources and lack standardization, making adap-
+tation across tasks or regions non-trivial. Finally, most existing FMs treat remote
+sensing inversion as a purely data-driven problem, with minimal incorporation of
+physical constraints, leading to concerns regarding physical plausibility and inter-
+pretability. Ongoing research is exploring physically-informed pretraining, adaptive
+regression heads, and uncertainty-aware modeling to bridge this gap and build more
+trustworthy inversion systems.
+T able 5 Overview of Foundation Models for Quantitative Remote Sensing Inversion
+Model Backbone Input Modalities Pretraining Strategy Supported T asks
+SatMAE
+[19]
+MAE + Vision
+Transformer
+Multi-temporal
+Sentinel-2
+Masked Autoencoding
+(masking + reconstruction)
+NDVI, LAI, FAPAR
+GFM
+[20]
+Multimodal
+Transformer
+Optical + SAR +
+DEM
+Self-supervised + Multi-task
+learning
+AGB, CH, SIF, CS
+mmEarth
+[21]
+Cross-modal
+Transformer
+HSI + SAR + DSM Masked + Contrastive Learn-
+ing
+NDVI, Biomass
+16
+
+=== PAGE BREAK ===
+
+T able 6 Comparison of Machine Learning, Deep Learning, and Foundation Models for Remote
+Sensing Inversion
+Method Category Strengths Limitations
+Machine Learning
+(e.g., RF, SVR,
+XGBoost)
+• Interpretable and easy to
+implement
+• Performs well with small or
+moderate datasets
+• Effective for structured,
+tabular-like inputs
+• Requires manual feature
+extraction
+• Poor in handling high-
+dimensional raw imagery
+• Weak in capturing spatial
+or temporal context
+Deep Learning
+(e.g., CNN, LSTM,
+Transformer)
+• Learns directly from raw
+spatial/temporal data
+• Captures nonlinear and
+multimodal relationships
+• Supports transfer learning
+and data augmentation
+• Demands large labeled
+datasets
+• Limited interpretability in
+scientific contexts
+• Generalization across
+regions remains challeng-
+ing
+F oundation Models
+(e.g., SatMAE, GFM,
+mmEarth)
+• Pretrained on large-scale
+multi-source data
+• Strong capability in multi-
+task and multi-modal
+fusion
+• Suited for weak supervision
+and few-shot adaptation
+• High computational cost
+for training and inference
+• Regression adaptation not
+always straightforward
+• Fine-tuning strategies still
+under development
+17
+
+=== PAGE BREAK ===
+
+T able 7 Mapping of Inversion Variables to ML, DL, and FM Models with Input Data
+Category V ariable Input Data ML Models DL Models FM Models
+Vegetation Structure
+LAI Sentinel-2, SAR RF [71], B-RF [80] CNN–LSTM [79] SatMAE [19]
+NDVI Sentinel-2 RF [71] CNN [74] mmEarth [21]
+FAPAR MODIS, Sentinel-2 RF [8] ResNet [79] SatMAE [19]
+FVC Landsat, Vegetation inds. SVR [8] CNN [54] —
+Biomass & Carbon
+AGB Sentinel, Lidar XGBoost [73] AGBUNet [81] GFM [20]
+CH Lidar, RGB SVR [64] CNN [82] GFM [20]
+CS AGB × Coef. RF [30] GBDT [64] GFM [20]
+Biomass Sentinel, Canopy metrics RF [73] CNN [54] mmEarth [21]
+Hydrology & Energy
+ET MODIS, meteo RF [83] LSTM [76] —
+LST MODIS, Landsat XGBoost [72] CNN–LSTM [8] mmEarth [21]
+SM Microwave, NDVI SVR [84] LSTM [85] —
+VPD S2, Meteorology RF [86] CNN [79] —
+Surface Properties
+Albedo MODIS, BRDF comps RF [72] CNN [54] —
+Roughness DEM, Lidar-derived GBDT [87] CNN [76] —
+LSE TIR, NDVI RF [88] CNN [74] —
+Water & Atmosphere
+Turbidity HSI, MSI RF [89] CNN [90] —
+TSS Sentinel-2, Rivers id. SVR [66] CNN [90] —
+CDOM Optical reflectance XGBoost [91] CNN [91] —
+AOD MODIS, meteorology RF [71] CNN [76] mmEarth [21]
+18
+
+=== PAGE BREAK ===
+
+4.4 Challenges
+Despite the substantial progress brought by data-driven methods—especially the
+emergence of foundation models—in improving accuracy and flexibility for remote
+sensing inversion, several challenges remain that hinder their scientific reliability and
+large-scale deployment:
+1. Limited interpretability and physical consistency. Most machine learn-
+ing and deep learning models rely on statistical associations rather than physically
+grounded mechanisms. The absence of domain constraints and causal structures makes
+them difficult to interpret or validate in geophysical applications, raising concerns
+about their scientific credibility and error propagation [7, 9].
+2. Dependency on high-quality labeled samples. Inversion tasks such as
+AGB, ET, and SM estimation require accurate field measurements for supervision, yet
+such ground truth is often scarce, expensive to acquire, and spatially biased. While
+pretraining and transfer learning can mitigate this to some extent, model performance
+still heavily depends on sample density and representativeness across regions and scales
+[8, 83].
+3. Domain shift and poor generalization. Data-driven models often fail to
+maintain accuracy under cross-regional, cross-seasonal, or sensor-inconsistent scenar-
+ios. This generalization bottleneck—especially pronounced in ecological or climate-
+sensitive variables—limits their applicability in global-scale or long-term monitoring
+settings [17, 56].
+4. Incomplete integration of physical models. Although recent foundation
+models have improved cross-modal representation, most architectures still lack explicit
+incorporation of radiative transfer models, energy balance equations, or physical con-
+straints. As a result, predictions may violate physical laws or respond incorrectly to
+out-of-distribution inputs, limiting their use in scientific decision-making [92].
+5. Computational cost and tuning complexity. Advanced deep learning and
+foundation models typically require substantial computational resources for train-
+ing and inference. Additionally, fine-tuning these models for regression tasks remains
+non-trivial, often involving architecture adaptation, head design, and loss function
+balancing [21].
+In sum, future advancements in remote sensing inversion will require a transition
+from purely data-driven modeling to hybrid frameworks that combine physical consis-
+tency, interpretability, generalization, and efficiency. This direction holds the key to
+developing trustworthy, scalable, and explainable geospatial estimation systems.
+5 Datasets and Evaluation
+High-quality datasets and scientifically sound evaluation metrics are fun-
+damental to advancing quantitative remote sensing inversion methods.
+In recent years, the emergence of open-access remote sensing data platforms and
+standardized inversion products has provided researchers with increasingly diverse,
+comprehensive, and physically consistent datasets. These resources enable the devel-
+opment of inversion models with enhanced comparability and generalizability. Con-
+currently, for inversion tasks involving continuous variable outputs, a performance
+19
+
+=== PAGE BREAK ===
+
+evaluation framework has gradually taken shape. This framework encompasses multi-
+ple dimensions, including accuracy, structural preservation, and interpretability. This
+chapter systematically reviews the current technical foundations supporting main-
+stream inversion tasks, focusing on two key aspects: open data resources and evaluation
+metrics.
+5.1 Benchmark Datasets
+Recent years have witnessed the emergence of open-access benchmark
+datasets tailored for remote sensing inversion, providing critical support
+for the development and evaluation of data-driven methods. These datasets
+span a wide range of spatial resolutions (from 1 to 30 meters), geographic domains
+(regional to global), and sensor modalities (e.g., optical, SAR, LiDAR), enabling
+diverse estimation tasks across ecological, agricultural, and biogeophysical domains.
+Table 8 summarizes several representative datasets. BigEarthNet [93] is a large-
+scale benchmark combining Sentinel-1 and Sentinel-2 observations across Europe,
+widely used for land cover classification and vegetation index retrieval. SSL4EO [94]
+(including Sentinel-2 and Landsat variants) supports self-supervised learning and has
+been applied to LAI, FAPAR, and SIF estimation across multiple continents. Sat-
+las [95] incorporates Sentinel-2, SMAP, and meteorological data for soil moisture and
+biomass inversion on a global scale, promoting fusion-based modeling. Sen4AgriNet
+[96] combines SAR and optical imagery with agronomic ground truth for crop and
+yield estimation in Europe and Africa. Finally, Open-Canopy [97] provides high-
+resolution RGB and LiDAR measurements, enabling detailed estimation of canopy
+height, aboveground biomass (AGB), and carbon stock at fine scales.
+Looking forward, the development of benchmark datasets with broader
+ecological coverage, richer annotation types, and stronger temporal depth
+will be essential to support large-scale, multi-task, and foundation-model-based
+remote sensing inversion. In particular, datasets enabling the alignment of ground
+truth with physical priors and multi-modal observations will play a key role in
+advancing the accuracy, robustness, and interpretability of next-generation inversion
+models.
+5.2 Evaluation Metrics
+Remote sensing inversion tasks typically involve the prediction of continuous geophys-
+ical variables. Common evaluation metrics include Root Mean Square Error (RMSE)
+[99], Mean Absolute Error (MAE) [100], the Coefficient of Determination ( R2) [101],
+the Structural Similarity Index Measure (SSIM) [102], and Peak Signal-to-Noise Ratio
+(PSNR) [103]. RMSE and MAE respectively quantify the squared and absolute devi-
+ations between predictions and ground truth, and both converge to zero under perfect
+prediction, offering intuitive measures of average error.
+The R2 metric assesses the proportion of variance explained by the model and typ-
+ically ranges from (−∞, 1], with higher values indicating stronger explanatory power.
+Inversion tasks with spatially structured outputs—such as LAI or AGB maps—often
+require additional metrics to assess spatial consistency. SSIM evaluates similarity in
+20
+
+=== PAGE BREAK ===
+
+T able 8 Representative Datasets for Remote Sensing Inversion
+Dataset Resolution Region Modalities Inversion T asks
+BigEarthNet
+[93]
+10–20 m Europe Sentinel-1, Sentinel-2 Land cover, NDVI, EVI
+SSL4EO
+(S12/L)
+[94, 98]
+10–30 m Global Sentinel-1/2, Landsat LAI, FAPAR, SIF
+Satlas [95] 10–30 m Global Sentinel-2, SMAP, meteo Soil moisture, AGB
+Sen4AgriNet
+[96]
+10–30 m Europe,
+Africa
+Sentinel-1/2 Crops, Biomass
+Open-
+Canopy [97]
+1–10 m France RGB, LiDAR CH, AGB, Carbon stock
+terms of luminance, contrast, and structural information, where a score of 1 reflects
+perfect structural agreement. PSNR, expressed in decibels, is used to measure image
+fidelity; higher values suggest lower distortion and better detail preservation. Together,
+these metrics provide a comprehensive evaluation framework covering error magni-
+tude, variance explanation, and structural preservation, supporting fair comparison
+across different inversion models and tasks.
+T able 9 Common Evaluation Metrics for Remote Sensing Inversion
+Abbreviation F ull Name Typical Range Optimal V alue
+RMSE [99] Root Mean Square Error [0, +∞) 0
+MAE [100] Mean Absolute Error [0, +∞) 0
+R2 [101] Coefficient of Determination (−∞, 1] 1
+SSIM [102] Structural Similarity Index [0, 1] 1
+PSNR [103] Peak Signal-to-Noise Ratio (dB) [0, +∞) ↑
+6 Future Perspectives
+Although foundation model–driven data paradigms have substantially advanced the
+capabilities of quantitative remote sensing inversion, several core challenges remain
+unresolved. These challenges hinder the scientific credibility, operational scalability,
+and global adaptability of current inversion models. To move toward next-generation
+frameworks that are interpretable, generalizable, and robust across diverse scenarios,
+future research must address the following three priorities: interpretability and physical
+consistency, generalization and cross-domain adaptability, and data infrastructure and
+labeling quality.
+21
+
+=== PAGE BREAK ===
+
+6.1 Interpretability and Physical Consistency
+(1) Enhancing physical interpretability is crucial for scientific trust. Most
+existing foundation models adopt end-to-end black-box architectures that directly
+map high-dimensional remote sensing data to target variables without incorporating
+underlying geophysical principles. This limits the interpretability and verifiability of
+model outputs, particularly in policy-sensitive or decision-critical applications [7, 68].
+For example, predictions of carbon stock or evapotranspiration may lack physical
+plausibility if they do not adhere to known energy or mass conservation laws.
+(2) Future models should integrate physical constraints.Embedding radia-
+tive transfer models, energy balance equations, or known functional relationships (e.g.,
+LAI–NDVI, SM–SAR backscatter) within model architectures or training objectives
+can guide learning toward physically meaningful solutions. Approaches such as physics-
+informed loss functions, differentiable simulation modules, or constrained regression
+layers are promising directions.
+(3) Toward scientific grounding : A shift from empirical optimization to
+physics-constrained learning is essential to achieve models that not only perform well
+statistically but also reflect the causality and mechanisms of Earth system processes.
+6.2 Generalization and Cross-Sensor Adaptability
+(1) Cross-region transfer remains a bottleneck. Inversion models trained on
+specific biomes, climatic zones, or land-use types often fail when applied to out-
+of-distribution regions, primarily due to shifts in surface properties, atmospheric
+conditions, and vegetation phenology [55, 56]. This limits their application in global
+monitoring programs.
+(2) Sensor heterogeneity complicates data fusion. Differences in spectral
+range, spatial resolution, radiometric calibration, and revisit frequency among sen-
+sors (e.g., Sentinel-2, Landsat-8, PlanetScope, MODIS) pose challenges to model
+generalization. Even models with strong multi-modal fusion mechanisms (e.g., GFM,
+mmEarth) may struggle to maintain consistent performance across modalities.
+(3) Future directions should emphasize:
+• Developing domain-invariant feature representations that are robust to spatial,
+spectral, and temporal shifts.
+• Leveraging unsupervised domain adaptation and contrastive alignment strategies
+for sensor harmonization.
+• Constructing benchmark datasets explicitly designed for cross-sensor, cross-region,
+and multi-task evaluation.
+6.3 Data Constraints and Label Reliability
+(1) High-quality ground truth remains scarce. Many inversion targets—such as
+AGB, SIF, or soil moisture—require intensive field campaigns and are only sparsely
+sampled in space and time. This creates strong reliance on synthetic data or proxies,
+which may introduce systematic uncertainties.
+22
+
+=== PAGE BREAK ===
+
+(2) Label quality often undermines training effectiveness. Publicly avail-
+able inversion datasets may suffer from temporal mismatch (e.g., satellite–field date
+misalignment), heterogeneous protocols (e.g., AGB plot scaling methods), or label
+noise due to propagation from upstream models. These issues can bias model learning
+and result in degraded physical fidelity.
+(3) Recommended future directions include:
+• Using RTM-based simulations (e.g., SCOPE, DART) for weakly supervised or semi-
+supervised pretraining;
+• Incorporating uncertainty quantification (e.g., Monte Carlo dropout, Bayesian
+ensembles) into regression pipelines;
+• Applying label refinement through multi-source fusion, expert knowledge, or
+physically consistent filtering.
+In conclusion , quantitative remote sensing inversion is evolving toward a
+cognition-driven modeling paradigm that fuses physical theory with data-centric
+learning. Advancing this transition will require: (1) deeper integration of physical
+principles into model architectures, (2) robust adaptation across regions, modalities,
+and platforms, and (3) reliable and scalable data infrastructures grounded in scientific
+validation. These efforts will collectively support the development of next-generation
+intelligent inversion systems capable of operating at continental to global scales for
+applications in climate monitoring, ecosystem assessment, and carbon cycle modeling.
+7 Conclusion
+Quantitative remote sensing inversion has evolved from physically grounded mod-
+els to data-driven learning and, more recently, to foundation model–based paradigms
+that support multi-task, multi-modal estimation. Each approach offers distinct advan-
+tages and limitations in terms of interpretability, scalability, and generalization. While
+foundation models mark a promising step toward unified and flexible inversion frame-
+works, challenges remain in physical consistency, cross-domain adaptability, and data
+quality. Future efforts should prioritize the integration of physical principles, devel-
+opment of benchmark datasets, and collaboration across disciplines to build robust,
+interpretable, and globally deployable inversion systems.
+Funding. This study is supported by the National Natural Science Foundation
+of China (Grant No. 62466061); supported by the Yunnan Fundamental Research
+Projects (Grant No. 202401AU070052); supported by the Caizhou Technology Remote
+Sensing AI Innovation Research Fund (Grant No. CZ-RS-AI-2025-001); supported by
+the Yunnan Fundamental Research Projects (No. 202501AT070456) and the Talent
+Introduction Project of Science Research Foundation of Yunnan University of Finance
+and Economics (No.2023D49).
+Competing interests. All authors have no conflict of interest.
+Author contribution. Zhenyu Yu: Conceptualization, Methodology, Writing –
+original draft, Writing – review & editing. Mohd Yamani Inda Idris: Supervision, Writ-
+ing – review & editing. Hua Wang: Writing – review & editing. Pei Wang: Writing
+23
+
+=== PAGE BREAK ===
+
+– review & editing. Junyi Chen: Writing – review & editing. Kun Wang: Writing –
+review & editing. Xiang Yong: Writing – review & editing.
+References
+[1] Shu, J.-C., Cao, M.-S., Zhang, Y.-L., Cao, W.-Q.: Heterodimensional structure
+switching multispectral stealth and multimedia interaction devices. Advanced
+Science 10(26), 2302361 (2023)
+[2] Sun, D.-W., Pu, H., Yu, J.: Applications of hyperspectral imaging technology in
+the food industry. Nature Reviews Electrical Engineering 1(4), 251–263 (2024)
+[3] Hashemi, M.G., Jalilvand, E., Alemohammad, H., Tan, P.-N., Das, N.N.: Review
+of synthetic aperture radar with deep learning in agricultural applications.
+ISPRS Journal of Photogrammetry and Remote Sensing 218, 20–49 (2024)
+[4] Min, W., Chen, Y., Huang, W., Wilson, J.P., Tang, H., Guo, M., Xu, R.:
+Incorporating of spatial effects in forest canopy height mapping using airborne,
+spaceborne lidar and spatial continuous remote sensing data. International
+Journal of Applied Earth Observation and Geoinformation 133, 104123 (2024)
+[5] Wulder, M.A., Roy, D.P., Radeloff, V.C., Loveland, T.R., Anderson, M.C., John-
+son, D.M., Healey, S., Zhu, Z., Scambos, T.A., Pahlevan, N., et al. : Fifty years
+of landsat science and impacts. Remote Sensing of Environment 280, 113195
+(2022)
+[6] Karim, S., Tong, G., Li, J., Qadir, A., Farooq, U., Yu, Y.: Current advances
+and future perspectives of image fusion: A comprehensive review. Information
+Fusion 90, 185–217 (2023)
+[7] Li, X., Feng, M., Ran, Y., Su, Y., Liu, F., Huang, C., Shen, H., Xiao, Q., Su, J.,
+Yuan, S., et al. : Big data in earth system science and progress towards a digital
+twin. Nature Reviews Earth & Environment 4(5), 319–332 (2023)
+[8] Han, W., Zhang, X., Wang, Y., Wang, L., Huang, X., Li, J., Wang, S., Chen,
+W., Li, X., Feng, R., et al. : A survey of machine learning and deep learning
+in remote sensing of geological environment: Challenges, advances, and oppor-
+tunities. ISPRS Journal of Photogrammetry and Remote Sensing 202, 87–113
+(2023)
+[9] Qianqian, Y., Caiyi, J., Tongwen, L., Qiangqiang, Y., Huanfeng, S., et al. :
+Research progress and challenges of data-driven quantitative remote sensing.
+National Remote Sensing Bulletin 26(2), 268–285 (2022)
+[10] Abbes, A.B., Jarray, N., Farah, I.R.: Advances in remote sensing based soil
+moisture retrieval: applications, techniques, scales and challenges for combining
+24
+
+=== PAGE BREAK ===
+
+machine learning and physical models. Artificial Intelligence Review 57(9), 224
+(2024)
+[11] Wang, Q., Zhang, Z., Wu, T., Jin, W., Meng, K., Song, Q., Wang, C., Yin, G.,
+Xu, B.: Exploring the optimized leaf area index retrieval strategy based on the
+look-up table approach for decametric-resolution images. IEEE Transactions on
+Geoscience and Remote Sensing (2024)
+[12] Chen, J., Zhang, Y., Liu, C., Chen, K., Zou, Z., Shi, Z.: Digital-to-physical visual
+consistency optimization for adversarial patch generation in remote sensing
+scenes. IEEE Transactions on Geoscience and Remote Sensing (2024)
+[13] Guo, F., Wang, P., Tansey, K., Zhang, Y., Li, M., Liu, J., Zhang, S.: A novel
+transformer-based neural network under model interpretability for improving
+wheat yield estimation using remotely sensed multi-variables. Computers and
+Electronics in Agriculture 223, 109111 (2024)
+[14] Tan, J., Ding, J., Wang, Z., Han, L., Wang, X., Li, Y., Zhang, Z., Meng, S., Cai,
+W., Hong, Y.: Estimating soil salinity in mulched cotton fields using uav-based
+hyperspectral remote sensing and a seagull optimization algorithm-enhanced
+random forest model. Computers and Electronics in Agriculture 221, 109017
+(2024)
+[15] Chen, S., Ouyang, X., Luo, F.: Ensemble one-class support vector machine for sea
+surface target detection based on k-means clustering. Remote Sensing 16(13),
+2401 (2024)
+[16] Yasir, M., Liu, S., Mingming, X., Wan, J., Pirasteh, S., Dang, K.B.: Shipgeonet:
+Sar image-based geometric feature extraction of ships using convolutional neu-
+ral networks. IEEE Transactions on Geoscience and Remote Sensing 62, 1–13
+(2024)
+[17] Bai, Y., Mallick, K., Hu, T., Zhang, S., Yang, S., Ahmadi, A.: Integrating
+machine learning with thermal-driven analytical energy balance model improved
+terrestrial evapotranspiration estimation through enhanced surface conductance.
+Remote Sensing of Environment 311, 114308 (2024)
+[18] Hong, D., Zhang, B., Li, X., Li, Y., Li, C., Yao, J., Yokoya, N., Li, H., Ghamisi,
+P., Jia, X., et al.: Spectralgpt: Spectral remote sensing foundation model. IEEE
+Transactions on Pattern Analysis and Machine Intelligence (2024)
+[19] Cong, Y., Khanna, S., Meng, C., Liu, P., Rozi, E., He, Y., Burke, M., Lobell, D.,
+Ermon, S.: Satmae: Pre-training transformers for temporal and multi-spectral
+satellite imagery. Advances in Neural Information Processing Systems 35, 197–
+211 (2022)
+25
+
+=== PAGE BREAK ===
+
+[20] Mendieta, M., Han, B., Shi, X., Zhu, Y., Chen, C.: Towards geospatial foun-
+dation models via continual pretraining. In: Proceedings of the IEEE/CVF
+International Conference on Computer Vision, pp. 16806–16816 (2023)
+[21] Nedungadi, V., Kariryaa, A., Oehmcke, S., Belongie, S., Igel, C., Lang, N.:
+Mmearth: Exploring multi-modal pretext tasks for geospatial representation
+learning. In: European Conference on Computer Vision, pp. 164–182 (2024).
+Springer
+[22] Bommasani, R., Hudson, D.A., Adeli, E., Altman, R., Arora, S., Arx, S., Bern-
+stein, M.S., Bohg, J., Bosselut, A., Brunskill, E., et al.: On the opportunities
+and risks of foundation models. arXiv preprint arXiv:2108.07258 (2021)
+[23] Yu, Z., Wang, J., Chen, H., Idris, M.Y.I.: Qrs-trs: Style transfer-based image-
+to-image translation for carbon stock estimation in quantitative remote sensing.
+IEEE Access (2025)
+[24] Yu, Z.: Ai for science: A comprehensive review on innovations, challenges,
+and future directions. International Journal of Artificial Intelligence for Science
+(IJAI4S) 1(1) (2025)
+[25] Li, D., Chen, J.M., Yu, W., Zheng, H., Yao, X., Zhu, Y., Cao, W., Cheng, T.:
+A chlorophyll-constrained semi-empirical model for estimating leaf area index
+using a red-edge vegetation index. Computers and Electronics in Agriculture
+220, 108891 (2024)
+[26] Almouctar, M.A.S., Wu, Y., Zhao, F., Qin, C.: Drought analysis using nor-
+malized difference vegetation index and land surface temperature over niamey
+region, the southwestern of the niger between 2013 and 2019. Journal of
+Hydrology: Regional Studies 52, 101689 (2024)
+[27] Mallick, K., Verfaillie, J., Wang, T., Ortiz, A.A., Szutu, D., Yi, K., Kang, Y.,
+Shortt, R., Hu, T., Sulis, M., et al.: Net fluxes of broadband shortwave and pho-
+tosynthetically active radiation complement ndvi and near infrared reflectance
+of vegetation to explain gross photosynthesis variability across ecosystems and
+climate. Remote Sensing of Environment 307, 114123 (2024)
+[28] Ma, T., Zhang, C., Ji, L., Zuo, Z., Beckline, M., Hu, Y., Li, X., Xiao, X.:
+Development of forest aboveground biomass estimation, its problems and future
+solutions: A review. Ecological Indicators 159, 111653 (2024)
+[29] Malambo, L., Popescu, S.: Mapping vegetation canopy height across the con-
+tiguous united states using icesat-2 and ancillary datasets. Remote Sensing of
+Environment 309, 114226 (2024)
+[30] Guo, L., Sun, X., Fu, P., Shi, T., Dang, L., Chen, Y., Linderman, M., Zhang, G.,
+Zhang, Y., Jiang, Q., et al.: Mapping soil organic carbon stock by hyperspectral
+26
+
+=== PAGE BREAK ===
+
+and time-series multispectral remote sensing images in low-relief agricultural
+areas. Geoderma 398, 115118 (2021)
+[31] Tang, R., Peng, Z., Liu, M., Li, Z.-L., Jiang, Y., Hu, Y., Huang, L., Wang, Y.,
+Wang, J., Jia, L., et al. : Spatial-temporal patterns of land surface evapotran-
+spiration from global products. Remote Sensing of Environment 304, 114066
+(2024)
+[32] Mane, S., Das, N., Singh, G., Cosh, M., Dong, Y.: Advancements in dielectric soil
+moisture sensor calibration: A comprehensive review of methods and techniques.
+Computers and Electronics in Agriculture 218, 108686 (2024)
+[33] Chen, A., Zhao, C., Zhang, H., Yang, Y., Li, J.: Surface albedo regulates aerosol
+direct climate effect. Nature Communications 15(1), 7816 (2024)
+[34] Djurovi´ c, S., Lazarevi´ c, D.,´Cirkovi´ c, B., Miˇ si´ c, M., Ivkovi´ c, M., Stojˇ cetovi´ c,
+B., Petkovi´ c, M., Aˇ sonja, A.: Modeling and prediction of surface roughness in
+hybrid manufacturing–milling after fdm using artificial neural networks. Applied
+Sciences 14(14), 5980 (2024)
+[35] Harringmeyer, J.P., Ghosh, N., Weiser, M.W., Thompson, D.R., Simard, M.,
+Lohrenz, S.E., Fichot, C.G.: A hyperspectral view of the nearshore mississippi
+river delta: Characterizing suspended particles in coastal wetlands using imaging
+spectroscopy. Remote Sensing of Environment 301, 113943 (2024)
+[36] Grandjean, T.J., Weenink, R., Wal, D., Addink, E.A., Hu, Z., Liu, S., Wang,
+Z.B., Yuan, L., Bouma, T.J.: Critical turbidity thresholds for maintenance of
+estuarine tidal flats worldwide. Nature Geoscience 17(6), 539–544 (2024)
+[37] Yu, Z., Chen, H., Idris, M.Y.I., Wang, P.: Rainy: Unlocking satellite calibration
+for deep learning in precipitation. arXiv preprint arXiv:2504.10776 (2025)
+[38] Yu, Z., Wang, J., Idris, M.Y.I.: Iidm: Improved implicit diffusion model with
+knowledge distillation to estimate the spatial distribution density of carbon stock
+in remote sensing imagery. arXiv preprint arXiv:2411.17973 (2024)
+[39] Yue, C., Zhang, Y., Yan, J., Luo, Z., Liu, Y., Guo, P.: Diffusion mechanism and
+knowledge distillation object detection in multimodal remote sensing imagery.
+IEEE Transactions on Geoscience and Remote Sensing (2025)
+[40] Wang, T., Chen, G., Zhang, X., Liu, C., Wang, J., Tan, X., Zhou, W., He,
+C.: Lmfnet: Lightweight multimodal fusion network for high-resolution remote
+sensing image segmentation. Pattern Recognition 164, 111579 (2025)
+[41] Lu, X., Li, L., Jiao, L., Liu, X., Liu, F., Ma, W., Yang, S.: Uncertainty-
+aware semi-supervised learning segmentation for remote sensing images. IEEE
+Transactions on Multimedia (2025)
+27
+
+=== PAGE BREAK ===
+
+[42] Yu, Z., Idris, M.Y.I., Wang, P.: Satellitemaker: A diffusion-based frame-
+work for terrain-aware remote sensing image reconstruction. arXiv preprint
+arXiv:2504.12112 (2025)
+[43] Verrelst, J., Camps-Valls, G., Mu˜ noz-Mar´ ı, J., Rivera, J.P., Veroustraete,
+F., Clevers, J.G., Moreno, J.: Optical remote sensing and the retrieval of
+terrestrial vegetation bio-geophysical properties–a review. ISPRS Journal of
+Photogrammetry and Remote Sensing 108, 273–290 (2015)
+[44] Yu, Z., Idris, M., Wang, P.: Satellitecalculator: A multi-task vision foun-
+dation model for quantitative remote sensing inversion. arXiv preprint
+arXiv:2504.13442 (2025)
+[45] Lei, S., Shi, Z., Mo, W.: Transformer-based multistage enhancement for remote
+sensing image super-resolution. IEEE Transactions on Geoscience and Remote
+Sensing 60, 1–11 (2021)
+[46] Luo, T., Li, H., Gong, M., Zhou, Y., Qin, A.: Steam: Style transfer enabled
+adversarial attack with attention mechanism on remote sensing image scene
+classification. IEEE Transactions on Circuits and Systems for Video Technology
+(2025)
+[47] Zhang, S., Tian, J., Lu, X., Tian, Q., He, S., Lin, Y., Li, S., Zheng, W., Wen,
+T., Mu, X., et al. : Monitoring of chlorophyll content in local saltwort species
+suaeda salsa under water and salt stress based on the prosail-d model in coastal
+wetland. Remote Sensing of Environment 306, 114117 (2024)
+[48] Ntakos, G., Prikaziuk, E., Den, T., Reidsma, P., Vilfan, N., Wal, T., Tol, C.: Cou-
+pled wofost and scope model for remote sensing-based crop growth simulations.
+Computers and Electronics in Agriculture 225, 109238 (2024)
+[49] Mutanga, O., Masenyama, A., Sibanda, M.: Spectral saturation in the remote
+sensing of high-density vegetation traits: A systematic review of progress, chal-
+lenges, and prospects. ISPRS Journal of Photogrammetry and Remote Sensing
+198, 297–309 (2023)
+[50] Yu, Z., Idris, M.Y.I., Wang, P.: Dc4cr: When cloud removal meets diffusion
+control in remote sensing. arXiv preprint arXiv:2504.14785 (2025)
+[51] Yu, Z., Idris, M., Wang, P., Xia, Y., Ma, F., Qureshi, R., et al.: Satellitefor-
+mula: Multi-modal symbolic regression from remote sensing imagery for physics
+discovery. arXiv preprint arXiv:2506.06176 (2025)
+[52] Hu, Y., Tang, R., Jiang, X., Li, Z.-L., Jiang, Y., Liu, M., Gao, C., Zhou, X.: A
+physical method for downscaling land surface temperatures using surface energy
+balance theory. Remote Sensing of Environment 286, 113421 (2023)
+28
+
+=== PAGE BREAK ===
+
+[53] Li, B., Ryu, Y., Jiang, C., Dechant, B., Liu, J., Yan, Y., Li, X.: Bessv2. 0:
+A satellite-based and coupled-process model for quantifying long-term global
+land–atmosphere fluxes. Remote Sensing of Environment 295, 113696 (2023)
+[54] Zhu, X.X., Tuia, D., Mou, L., Xia, G.-S., Zhang, L., Xu, F., Fraundorfer, F.:
+Deep learning in remote sensing: A comprehensive review and list of resources.
+IEEE geoscience and remote sensing magazine 5(4), 8–36 (2017)
+[55] Peng, J., Huang, Y., Sun, W., Chen, N., Ning, Y., Du, Q.: Domain adaptation in
+remote sensing image classification: A survey. IEEE Journal of Selected Topics
+in Applied Earth Observations and Remote Sensing 15, 9842–9859 (2022)
+[56] Hu, J., Li, Q., Wang, Q.: Dualstrip-net: A strip-based unified framework for
+weakly-and semi-supervised road segmentation from satellite images. IEEE
+Transactions on Geoscience and Remote Sensing (2025)
+[57] Jacquemoud, S., Verhoef, W., Baret, F., Bacour, C., Zarco-Tejada, P.J., Asner,
+G.P., Fran¸ cois, C., Ustin, S.L.: Prospect+ sail models: A review of use for
+vegetation characterization. Remote sensing of environment 113, 56–66 (2009)
+[58] Gastellu-Etchegorry, J., Martin, E., Gascon, F.: Dart: a 3d model for simulating
+satellite images and studying surface radiation budget. International journal of
+remote sensing 25(1), 73–96 (2004)
+[59] Yang, P., Prikaziuk, E., Verhoef, W., Der Tol, C.: Scope 2.0: A model to sim-
+ulate vegetated land surface fluxes and satellite signals. Geoscientific Model
+Development 14(7), 4697–4712 (2021)
+[60] Zaneveld, J.R.V.: Light and water: Radiative transfer in natural waters. JSTOR
+(1995)
+[61] Binding, C.E., Jerome, J.H., Bukata, R.P., Booty, W.G.: Spectral absorption
+properties of dissolved and particulate matter in lake erie. Remote sensing of
+environment 112(4), 1702–1711 (2008)
+[62] Vermote, E.F., Tanr´ e, D., Deuze, J.L., Herman, M., Morcette, J.-J.: Second
+simulation of the satellite signal in the solar spectrum, 6s: An overview. IEEE
+transactions on geoscience and remote sensing 35(3), 675–686 (1997)
+[63] Verhoef, W., Bach, H.: Simulation of hyperspectral and directional radiance
+images using coupled biophysical and atmospheric radiative transfer models.
+Remote sensing of environment 87(1), 23–41 (2003)
+[64] Li, K.-Y., Lima, R., Burnside, N.G., Vahtm¨ ae, E., Kutser, T., Sepp, K.,
+Cabral Pinheiro, V.H., Yang, M.-D., Vain, A., Sepp, K.: Toward automated
+machine learning-based hyperspectral image analysis in crop yield and biomass
+estimation. Remote Sensing 14(5), 1114 (2022)
+29
+
+=== PAGE BREAK ===
+
+[65] North, P.R.: Three-dimensional forest light interaction model using a monte carlo
+method. IEEE Transactions on geoscience and remote sensing 34(4), 946–956
+(2002)
+[66] Bernardo, N., Carmo, A., Park, E., Alcˆ antara, E.: Retrieval of suspended par-
+ticulate matter in inland waters with widely differing optical properties using a
+semi-analytical scheme. Remote Sensing 11(19), 2283 (2019)
+[67] Combal, B., Baret, F., Weiss, M., Trubuil, A., Mac´ e, D., Pragnere, A., Myneni,
+R., Knyazikhin, Y., Wang, L.: Retrieval of canopy biophysical variables from
+bidirectional reflectance: Using prior information to solve the ill-posed inverse
+problem. Remote sensing of environment 84(1), 1–15 (2003)
+[68] Karpatne, A., Atluri, G., Faghmous, J.H., Steinbach, M., Banerjee, A., Ganguly,
+A., Shekhar, S., Samatova, N., Kumar, V.: Theory-guided data science: A new
+paradigm for scientific discovery from data. IEEE Transactions on knowledge
+and data engineering 29(10), 2318–2331 (2017)
+[69] Brodrick, P.G., Thompson, D.R., Fahlen, J.E., Eastwood, M.L., Sarture, C.M.,
+Lundeen, S.R., Olson-Duvall, W., Carmon, N., Green, R.O.: Generalized radia-
+tive transfer emulation for imaging spectroscopy reflectance retrievals. Remote
+Sensing of Environment 261, 112476 (2021)
+[70] Belgiu, M., Dr˘ agut ¸, L.: Random forest in remote sensing: A review of appli-
+cations and future directions. ISPRS journal of photogrammetry and remote
+sensing 114, 24–31 (2016)
+[71] Soltanikazemi, M., Minaei, S., Shafizadeh-Moghadam, H., Mahdavian, A.: Field-
+scale estimation of sugarcane leaf nitrogen content using vegetation indices and
+spectral bands of sentinel-2: Application of random forest and support vector
+regression. Computers and Electronics in Agriculture 200, 107130 (2022)
+[72] Li, R., Gong, J., Chen, L., Wang, Z.: Estimating ground-level pm2. 5 using
+fine-resolution satellite data in the megacity of beijing, china. Aerosol and Air
+Quality Research 15(4), 1347–1356 (2015)
+[73] Li, H., Li, F., Xiao, J., Chen, J., Lin, K., Bao, G., Liu, A., Wei, G.: A machine
+learning scheme for estimating fine-resolution grassland aboveground biomass
+over china with sentinel-1/2 satellite images. Remote Sensing of Environment
+311, 114317 (2024)
+[74] Su, Z., Shen, J., Sun, Y., Hu, R., Zhou, Q., Yong, B.: Deep spatio-temporal
+fuzzy model for ndvi forecasting. IEEE Transactions on Fuzzy Systems (2024)
+[75] Ma, Y., Hu, Y., Moncrieff, G.R., Slingsby, J.A., Wilson, A.M., Maitner, B., Zhou,
+R.Z.: Forecasting vegetation dynamics in an open ecosystem by integrating deep
+learning and environmental variables. International Journal of Applied Earth
+30
+
+=== PAGE BREAK ===
+
+Observation and Geoinformation 114, 103060 (2022)
+[76] Zheng, X., Zhang, S., Yang, S., Huang, J., Meng, X., Zhang, J., Bai, Y.: Pre-
+dicting future evapotranspiration based on remote sensing and deep learning.
+Journal of Hydrology: Regional Studies 56, 102023 (2024)
+[77] Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X.,
+Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., et al.: An
+image is worth 16x16 words: Transformers for image recognition at scale. arXiv
+preprint arXiv:2010.11929 (2020)
+[78] Rehman, M.Z.U., Islam, S.M.S., Blake, D., Ulhaq, A., Janjua, N.: Deep learning
+for land use classification: a systematic review of hs-lidar imagery. Artificial
+Intelligence Review 58(9), 272 (2025)
+[79] Xie, Y.: Combining ceres-wheat model, sentinel-2 data, and deep learning
+method for winter wheat yield estimation. International Journal of Remote
+Sensing 43(2), 630–648 (2022)
+[80] Zhang, J., Wu, Q., Liu, C., Xiong, S., Yang, H., Chang, S., Fu, Y., Yang, M.,
+Yang, G., Ma, X., et al.: Retracted: Enhanced crop lai estimation via random
+forest regression: Bayesian optimization and feature selection approach (2024)
+[81] Arumai Shiney, S., Geetha, R.: Agbunet: an enhanced cnn-unet architecture for
+the prediction of above ground biomass using deep learning. Neural Computing
+and Applications 37(5), 3809–3826 (2025)
+[82] Cao, Y., Weng, Q.: A deep learning-based super-resolution method for building
+height estimation at 2.5 m spatial resolution in the northern hemisphere. Remote
+Sensing of Environment 310, 114241 (2024)
+[83] Di, S.-C., Li, Z.-L., Ren, Y., Liu, M., Jiang, Y.-Z., Zheng, F.-D., Li, X.-M., Qi, Y.-
+B., Liu, H.-L., Tang, R.: Estimation of regional evapotranspiration based on the
+decouple model and remote sensing information——a case study in beijing city
+and nearby region. International Journal of Remote Sensing 45(19-20), 7753–
+7774 (2024)
+[84] Rains, D., Lievens, H., De Lannoy, G.J., McCabe, M.F., Jeu, R.A., Miralles,
+D.G.: Sentinel-1 backscatter assimilation using support vector regression or the
+water cloud model at european soil moisture sites. IEEE Geoscience and Remote
+Sensing Letters 19, 1–5 (2021)
+[85] Efremova, N., Seddik, M.E.A., Erten, E.: Soil moisture estimation using sentinel-
+1/-2 imagery coupled with cyclegan for time-series gap filing. IEEE Transactions
+on Geoscience and Remote Sensing 60, 1–11 (2021)
+[86] Chen, T., Peng, L., Wang, Y.: Prediction of global water use efficiency and its
+31
+
+=== PAGE BREAK ===
+
+response to vapor pressure deficit and soil moisture coupling in the 21st century.
+Journal of Hydrology 635, 131203 (2024)
+[87] Fan, L., Neto, J.F.S.R.: Using neural networks for fast sar roughness estimation
+of high resolution images. arXiv preprint arXiv:2309.03351 (2023)
+[88] Zhao, W., Duan, S.-B., Li, A., Yin, G.: A practical method for reducing ter-
+rain effect on land surface temperature using random forest regression. Remote
+sensing of environment 221, 635–649 (2019)
+[89] Adjovu, G.E., Stephen, H., James, D., Ahmad, S.: Measurement of total dis-
+solved solids and total suspended solids in water systems: A review of the
+issues, conventional, and remote sensing techniques. Remote Sensing 15(14),
+3534 (2023)
+[90] Moon, J., Suh, S., Jung, S., Baek, S.-S., Pyo, J.: Deep learning-based mapping of
+total suspended solids in rivers across south korea using high resolution satellite
+imagery. GIScience & Remote Sensing 61(1), 2393489 (2024)
+[91] Harkort, L., Duan, Z.: Estimation of dissolved organic carbon from inland
+waters at a large scale using satellite data and machine learning methods. Water
+Research 229, 119478 (2023)
+[92] Li, Y., Liu, H., Ma, J., Zhang, L.: Estimation of leaf area index for winter
+wheat at early stages based on convolutional neural networks. Computers and
+electronics in agriculture 190, 106480 (2021)
+[93] Sumbul, G., De Wall, A., Kreuziger, T., Marcelino, F., Costa, H., Benevides,
+P., Caetano, M., Demir, B., Markl, V.: Bigearthnet-mm: A large-scale, mul-
+timodal, multilabel benchmark archive for remote sensing image classification
+and retrieval [software and data sets]. IEEE Geoscience and Remote Sensing
+Magazine 9(3), 174–180 (2021)
+[94] Wang, Y., Braham, N.A.A., Xiong, Z., Liu, C., Albrecht, C.M., Zhu, X.X.:
+Ssl4eo-s12: A large-scale multimodal, multitemporal dataset for self-supervised
+learning in earth observation [software and data sets]. IEEE Geoscience and
+Remote Sensing Magazine 11(3), 98–106 (2023)
+[95] Bastani, F., Wolters, P., Gupta, R., Ferdinando, J., Kembhavi, A.: Sat-
+laspretrain: A large-scale dataset for remote sensing image understanding. In:
+Proceedings of the IEEE/CVF International Conference on Computer Vision,
+pp. 16772–16782 (2023)
+[96] Sykas, D., Papoutsis, I., Zografakis, D.: Sen4agrinet: A harmonized multi-
+country, multi-temporal benchmark dataset for agricultural earth observation
+machine learning applications. In: 2021 IEEE International Geoscience and
+Remote Sensing Symposium IGARSS, pp. 5830–5833 (2021). IEEE
+32
+
+=== PAGE BREAK ===
+
+[97] Fogel, F., Perron, Y., Besic, N., Saint-Andr´ e, L., Pellissier-Tanon, A., Schwartz,
+M., Boudras, T., Fayad, I., d’Aspremont, A., Landrieu, L., et al. : Open-canopy:
+Towards very high resolution forest monitoring. In: Proceedings of the Computer
+Vision and Pattern Recognition Conference, pp. 1395–1406 (2025)
+[98] Stewart, A., Lehmann, N., Corley, I., Wang, Y., Chang, Y.-C., Ait Ali Braham,
+N.A., Sehgal, S., Robinson, C., Banerjee, A.: Ssl4eo-l: Datasets and foundation
+models for landsat imagery. Advances in Neural Information Processing Systems
+36, 59787–59807 (2023)
+[99] Zollanvari, A., Dougherty, E.R.: Moments and root-mean-square error of the
+bayesian mmse estimator of classification error in the gaussian model. Pattern
+Recognition (6) (2014)
+[100] Hodson, T.O.: Root mean square error (rmse) or mean absolute error (mae):
+When to use them or not. Geoscientific Model Development Discussions 2022,
+1–10 (2022)
+[101] Chicco, D., Warrens, M.J., Jurman, G.: The coefficient of determination r-
+squared is more informative than smape, mae, mape, mse and rmse in regression
+analysis evaluation. Peerj computer science 7, 623 (2021)
+[102] Mudeng, V., Kim, M., Choe, S.-w.: Prospects of structural similarity index for
+medical image analysis. Applied Sciences 12(8), 3754 (2022)
+[103] Bae, Y.-Y., Cho, D.-J., Jung, K.-H.: A new reversible data hiding method using a
+proportional relation between peak signal-to-noise ratio and embedding capacity
+on convolutional neural network. Applied Sciences 14(14), 6370 (2024)
+33

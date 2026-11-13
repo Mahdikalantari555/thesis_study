@@ -1,0 +1,1112 @@
+Foundation Models Meet Agriculture: Challenges Beyond
+Pretraining
+Vishal Nedungadi✉
+Artificial Intelligence and Plant Science Group
+Wageningen University and Research
+Wageningen, Netherlands
+vishal.nedungadi@wur.nl
+Xingguo Xiong
+Institute of Digital Agriculture
+Zhejiang Academy of Agricultural Sciences
+Hangzhou, China
+xiong_xg@zju.edu.cn
+Marc Rußwurm
+Machine Learning in Earth Observation Lab
+University of Bonn
+Bonn, Germany
+marc.russwurm@uni-bonn.de
+Ioannis N. Athanasiadis
+Artificial Intelligence and Plant Science Group
+Wageningen University and Research
+Wageningen, Netherlands
+ioannis.athanasiadis@wur.nl
+Best Performing Class
+EO FMs
+T abular FMs
+Supervised Baselines
+Spatial
+Unit
+Farming
+System
+Split
+Design
+T arget
+T ype
+Dataset
+Size
+Axes of
+Task Heterogeneity
+Figure 1: The map (left) demonstrates the geographic diversity of our evaluation and highlights the winning model family
+for each region. The absence of a universal winner is driven by the structural complexity of the tasks, which vary drastically
+across five key dimensions of shifts (right).
+Abstract
+Global food security and sustainable climate action increasingly
+rely on robust, scalable agricultural monitoring. Earth observation
+foundation models have emerged as powerful, label-efficient tools
+across general remote sensing domains, yet early attempts to deploy
+them for agricultural applications have yielded surprisingly poor
+results. We hypothesize that this performance gap stems from the
+extreme heterogeneity of agricultural landscapes and the inherent
+inability of current earth observation foundation models to adapt
+to task-specific nuances. In this work, we systematically evaluate
+two critical bottlenecks hindering the deployment of foundation
+models in agricultural tasks, benchmarking two earth observation
+foundation models, a foundation model designed for tabular data,
+and conventional supervised baselines across seven real-world agri-
+cultural datasets spanning yield prediction, phenology estimation,
+and crop classification. First, we identify a pretraining-deployment
+modality gap: agricultural downstream tasks frequently require
+diverse, non-imagery data modalities that earth observation foun-
+dation models are architecturally unequipped to ingest, while a
+foundation model built for tabular data handles this heterogeneity
+more naturally. Second, we formalize the agricultural task space
+across five structural axes to demonstrate why current models fail
+to generalize reliably, resulting in highly unstable model rankings
+across evaluation settings. By characterizing these structural and
+modal gaps, our insights highlight the friction between general-
+purpose architectures and specialized agricultural downstream data,
+providing a strategic roadmap for developing the next generation
+of domain-aware foundation models.
+arXiv:2608.30392v1  [cs.LG]  31 Aug 2026
+
+=== PAGE BREAK ===
+
+Preprint Nedungadi et al.
+CCS Concepts
+•Applied computing→Agriculture.
+Keywords
+Foundation Models, Agriculture, Food Security
+1 Introduction
+Agricultural monitoring has evolved from simple economic util-
+ity into a critical instrument for global food security. As climate
+change intensifies extreme weather events, the historical baselines
+that once made crop production predictable are rapidly destabiliz-
+ing [15, 22]. Managing this risk depends on monitoring systems
+that are scalable, timely, and precise across highly diverse geogra-
+phies, and that together answer three interdependent questions
+central to food security:wherecrops are grown (crop type map-
+ping),whenthey develop (phenology estimation), andhow much
+they will produce (yield estimation). Although these tasks draw on
+the same underlying biophysical signals (vegetation and soil state,
+and meteorological forcing), building supervised models for them
+at a global scale remains fundamentally bottlenecked by labels;
+dense, high-quality ground truth is expensive and logistically diffi-
+cult to acquire across the full range of climates, farming systems,
+and topographies where such systems must operate [16, 19, 33].
+Foundation models (FMs) have been proposed to relieve exactly
+this bottleneck, amongst others. In the broader remote sensing
+domain, Earth Observation (EO) FMs learn generalized spatial and
+temporal representations by self-supervised pretraining on massive
+archives of unlabeled multi-modal satellite imagery [ 3, 4, 20, 29,
+30]. Because agricultural tasks share many of these same satellite
+modalities, the pretrained priors are expected to transfer with only
+minimal labeled data [9, 10, 24, 35]. Throughout this work we are
+concerned specifically with this transfer setting, in whichpretrained
+FMs are adapted to downstream tasks [2].
+In practice, however, this promise has proven fragile. General EO
+benchmarks report that no single pretrained backbone dominates
+and that model rankings shift with sensor, resolution, and task
+[17, 27], and within agriculture the same backbones transfer un-
+evenly even across regions of a single task [26]. We argue that this
+instability is not merely a symptom of geographic distribution shift,
+but a deeper mismatch between what a general-purpose EO FM
+assumes and what agricultural monitoring actually requires. Even
+as EO FMs have grown more flexible, ingesting multiple modalities
+and operating across spatial scales [ 29, 30, 34], each model still
+fixes, at pretraining time, both the set of modalities it can repre-
+sent and the representational structure it imposes on its inputs,
+while agriculture routinely steps outside both. On the input side,
+agricultural tasks hinge on modalities that are not imagery at all,
+such as deep soil properties, agro-meteorological indices, and daily
+weather [12, 13]. Furthermore, each task can be realized through
+many possible datasets that often considers a different subset of
+these modalities. Therefore no fixed pretraining modality set covers
+every task a deployed FM will face; we refer to this asmodality
+mismatch. On the task side, agricultural monitoring is not a single
+problem but many, and even datasets within the same task can differ
+in spatial unit, temporal framing, label density, and farming system,
+such that no single pretraining objective can be well-aligned to all
+of them at once; we refer to this astask heterogeneity. These two
+challenges organize our analysis.
+To make these two challenges measurable rather than anecdotal,
+we compare three model families that differ along two axes: whether
+a model carries pretrained priors, and whether it can natively in-
+gest arbitrary modalities.EO FMscarry priors but are modality-
+constrained;supervised baselinestrained from scratch carry none
+but ingest whatever is available;tabular FMshave both, though
+their priors can come from massive synthetic tabular data rather
+than satellite imagery [8]. This last combination is pivotal, as it lets
+us separate the cost of the modality mismatch from the value of
+pretraining itself. We evaluate these families across seven represen-
+tative, real-world datasets spanning three task and a wide range
+of geographies and farming systems, from industrial agriculture in
+the US and Europe to smallholder systems in Senegal and Kenya.
+Across this suite, both challenges surface clearly: EO FMs in-
+cur a substantial penalty whenever a task depends on modalities
+outside their pretraining set, and even when no mismatch exists,
+no single architecture ranks consistently. Rather than averaging
+this instability away, we diagnose why current FMs underperform
+in agriculture and chart what domain-aware models must address.
+Concretely, our contributions are as follows:
+• Characterizing the modality mismatch.We quantify the
+modality mismatch as the fraction of each task’s available modal-
+ities an EO FM can natively ingest, and test whether pretraining
+compensates for what is missing.
+• Formalizing task heterogeneity.We characterize the agricul-
+tural task space along five structural axes (spatial unit, farming
+system, split design, task type, and dataset size) and reflect on if
+this heterogeneity results in unstable ranking of models.
+• Implications for agricultural FM design.We show that a
+domain-agnostic tabular FM, despite carrying no geospatial or
+agricultural priors, is competitive with or superior to EO FMs in
+several settings. We distill our results into open challenges for
+the community.
+2 Experimental Setup
+2.1 The Task Suite
+We identify Crop Type Mapping, Crop Phenology Estimation, and
+Crop Yield Estimation as three representativetasksfor addressing
+global food security challenges [21]. Among these, we curate seven
+highly diversedatasetsspanning five structural axes (top panel in
+Figure 4), including spatial unit, farming system, split design, target
+type and dataset size. A description of each dataset is provided
+below. The specific modalities curated for each task are detailed in
+the top partition of Table 1. We note that several of the underlying
+benchmarks and tasks cover many more regions than we evaluate
+here, and our chosen regions are not necessarily representative of
+the full diversity within each broader benchmark. Region selection
+was instead driven by the goal of axis coverage together with data
+quality and availability. Nevertheless, we believe the resulting suite
+is representative enough of the broader structural variation at stake
+and to support the conclusions about task heterogeneity we discuss
+in Section 3.2.
+• CropHarvest [31]: A pixel-level crop type mapping dataset with
+monthly temporal steps. While the original dataset is global,
+
+=== PAGE BREAK ===
+
+Foundation Models Meet Agriculture: Challenges Beyond PretrainingPreprint
+we explicitly isolate theKenyasubset to stress-test models on
+a fragmented, smallholder farming system. Similar to [30], we
+formulate this as a Maize vs. Rest binary classification problem,
+noting that the task is highly class-imbalanced.
+• Breizhcrops [25]: A parcel-level 9-class crop classification dataset
+situated inBrittany, France. It represents a large-scale farming
+system monitored with dense, high-frequency optical time series
+(45 temporal steps).
+• BloomBench [32]: A phenology benchmark on multi species fruit
+trees. We adapt the original benchmarks evaluation protocols,
+data splits, and preprocessing code to model maize inGermany.
+The problem is formulated as a time-to-event regression task to
+estimate the date of tassel emergence. Ground truth phenological
+labels are sourced from the PEP725 database, while the predictive
+modalities consist exclusively of daily meteorological forcing
+(365 time steps) derived from ERA5 reanalysis data [7].
+• CY-Bench [12]: A sub-national level crop yield estimation bench-
+mark covering maize and wheat in 30 countries. We choose
+United States, Germany and Senegal, representing both industrial
+and smallholder farming systems. Unlike pixel-level tasks, this
+dataset predicts heavily aggregated administrative yields (e.g.,
+counties or regions, depending on the country).
+• YieldSAT [18]: A massive-scale, pixel-level corn yield estimation
+benchmark covering 4 countries, where ground-truth labels are
+derived directly from combine harvester yield monitors. We
+selectArgentina, and use the original datasets input modalities
+that are processed into a fixed 24 timesteps based on the sentinel-
+2 coverage.
+2.2 Models
+We evaluate models across three families:Supervised Baselines,EO
+FMsandTabular FMs.
+Supervised Baselines.We include supervised baselines because
+they represent the class of models with no architectural constraint
+on input modalities and can be freely designed around each task’s
+available features. We consider aRandom Forest, a strong, well-
+established baseline for tabular and concatenated feature sets; an
+LSTM, which explicitly models temporal dependencies such as phe-
+nological and seasonal weather trends across the time-series inputs;
+and aTransformer, trained from scratch, which isolates the raw ben-
+efit of the attention mechanism on each task’s temporal dynamics
+independent of any large-scale pretraining. We intentionally select
+these over highly engineered architectures to minimize architec-
+tural inductive biases, allowing us to focus purely on the complexity
+of the task [6, 11, 23].
+EO FMs.For EO FMs, several pretrained backbones exist [ 9, 10,
+29, 30]; we focus on models that operate over pixel time series,
+since this representation aligns naturally with the structure of our
+datasets, and selectGalileo[ 30] as a strong, actively maintained
+representative of this class. To probe whether a more accommodat-
+ing prior could close this gap, we additionally instantiateCropFM,
+an idealized, purpose-built EO FM. We build CropFM as an exten-
+sion of the lightweight Presto architecture [ 29] while making it
+natively ingest more modalities and finer (weekly) timesteps. We
+deliberately exclude precomputed global embedding products such
+as AlphaEarth [3] and Tessera [4] as their embeddings are precom-
+puted at a temporal granularity misaligned with our datasets; we
+highlight that there needs to be a dedicated study on using these
+embeddings for such tasks.
+Tabular FMs.Finally, distinct from both of these families, tabu-
+lar FMs carry generic priors unrelated to EO or agriculture, while
+imposing no modality constraints whatsoever; we includeTabPFN
+[8], pretrained on large-scale synthetic data via in-context learning,
+to represent this family and test whether such domain-agnostic
+priors transfer to agricultural monitoring.
+2.3 Evaluation
+Task Metrics.Since our evaluation spans fundamentally differ-
+ent tasks (and datasets), we evaluate performance using dataset-
+specific metrics. For classification datasets (BreizhCrop and CropHar-
+vest), we report the Macro F1-score. For regression datasets (Phe-
+nology, YieldSAT, and CY-Bench), we report the Mean Absolute
+Error (MAE) for phenology, which quantifies the average prediction
+error in days, and the coefficient of determination ( 2) for yield
+estimation, measuring the proportion of variance explained by the
+model.
+Evaluation Splits.To evaluate model generalization across dif-
+ferent dimensions, we apply tailored data splitting strategies suited
+to each dataset. For CropHarvest, we employ a standard 70/15/15
+randomized pixel split, whereas Breizhcrops follows a strict spatial
+holdout based on its original evaluation protocol to test geographic
+generalization. To assess temporal extrapolation, both Phenology
+estimation and YieldSAT utilize chronological holdouts; Phenol-
+ogy estimation relies on a 70/15/15 chronological split to evaluate
+on unseen future weather patterns, while YieldSAT reserves the
+final available year as a strict temporal test set. Finally, to simulate
+operational forecasting for CY-Bench, we employ a chronological
+walk-forward validation strategy on the final 5 years. Instead of
+a single static test set, the model iteratively trains on all available
+historical data up to year  to predict yields for the unseen year
++ 1. In the subsequent iteration, year + 1is incorporated into the
+training set to predict year+2.
+Evaluation Protocol.All experiments are deterministic runs
+repeated with three random seeds, and we report the mean perfor-
+mance across runs. Standard deviations for all results are provided
+in Appendix B.
+For the EO FMs (CropFM and Galileo),we evaluate two adapta-
+tion strategies representing two dominant paradigms for reusing
+pretrained representations: (i) full fine-tuning, which adapts the
+underlying representation itself, and (ii) frozen feature extraction,
+in which a Random Forest is trained on the frozen FM embeddings,
+which instead probes the representation as-is. For full fine-tuning,
+we adopt a two-stage warm-up schedule to mitigate the risk of
+pretrained features being distorted by an initially unadapted head
+[14]: we first optimize only the task-specific prediction head for
+five epochs using a higher learning rate (1 − 4), after which all
+model parameters are jointly optimized for an additional 25 epochs
+using a lower learning rate (1− 3). The LSTM and Transformer
+baselines are also trained for 30 epochs. Finally, we emphasize that
+all models only accept the inputs that they are capable of accepting.
+
+=== PAGE BREAK ===
+
+Preprint Nedungadi et al.
+Table 1: Modality Coverage Matrix. The top partition shows the input modalities curated for each dataset. The bottom partition
+shows the physical modalities supported natively by each model architecture. Acronyms: S1/S2 (Sentinel-1/2), NDVI (Normalized
+Difference Vegetation Index), FAPAR (Fraction of Absorbed Photosynthetically Active Radiation), DEM (Digital Elevation
+Model), Basic Meteo (standard weather variables like temperature and precipitation), Ag-Meteo (agro-meteorological variables
+such as radiation and climatic water balance), and SSM (Surface Soil Moisture).
+Primary EO Derived Topo. Meteo. Subsurface
+Task / ModelS2 S1 NDVI FAPAR DEM Basic Ag-Meteo SSM Deep Soil
+Downstream Datasets (A vailable Modalities)
+Yield Estimation
+CYBench (Germany)• • • • ◦ • • • ◦
+CYBench (US)• • • • ◦ • • • ◦
+CYBench (Senegal)• • • • ◦ • • • ◦
+YieldSat (Argentina)• ◦ ◦ ◦ • • ◦ ◦ •
+Phenology Estimation
+BloomBench (Germany)◦ ◦ ◦ ◦ ◦ • ◦ ◦ ◦
+Crop Type Mapping
+CropHarvest (Kenya)• ◦ • ◦ • • ◦ ◦ ◦
+BreizhCrop (France)• ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦
+Model Architectures (Natively Supported)
+CropFM• • ◦ • • • • ◦ •
+Galileo• • • ◦ • • ◦ ◦ ◦
+Supervised / TabPFN• • • • • • • • •
+Germany US Senegal Argentina
+Yield Estimation
+0.3
+0.2
+0.1
+0.0
+0.1
+0.2
+0.3
+ Performance
+Relative R2 ( )
+Germany
+Phenology Estimation
+2
+0
+2
+Relative MAE ( )
+Kenya France
+Crop T ype Mapping
+0.1
+0.0
+0.1
+Relative F1-score ( )
+RF (all features) [baseline] Galileo CropFM T abPFN
+Figure 2: Relative Performance Gap. The zero-line represents the unconstrained Random Forest baseline utilizing all available
+dataset specific modalities. Bars show the relative performance ( Δ) of models restricted to their natively supported modalities
+and evaluated using frozen features and a Random Forest. To ensure positive values always indicate improvement,Δ is computed
+as Model−Baseline for 2 and F1-score, and Baseline−Model for MAE. Negative values explicitly highlight the performance
+gap incurred from missing dataset-critical modalities.
+Temporal Aggregation.For each task, we define a standard
+temporal resolution used consistently across Random Forest, LSTM,
+Transformer, TabPFN, and CropFM. Where a task’s raw data is
+available at high or irregular frequency, we aggregate it to a more
+tractable resolution: BreizhCrop’s individual Sentinel-2 acquisitions
+are aggregated to weekly composites, CY-Bench’s high-frequency
+meteorological and vegetation index observations are similarly
+aggregated to weekly, and Phenology’s daily meteorological obser-
+vations are also aggregated to weekly. CropHarvest and YieldSAT
+require no further aggregation.
+Galileo imposes an additional constraint beyond this standard
+resolution: its fixed maximum sequence length is exceeded by the
+weekly resolution used for BreizhCrop, CY-Bench, and Phenology.
+
+=== PAGE BREAK ===
+
+Foundation Models Meet Agriculture: Challenges Beyond PretrainingPreprint
+For these three tasks only, we aggregate further to monthly com-
+posites specifically for Galileo, while CropHarvest and YieldSAT
+already fall within its sequence budget at the standard resolution
+and are left unchanged.
+Hyperparameter Policy.We adopt a standardized set of hyper-
+parameters across datasets. This design reflects two considerations.
+First, several datasets contain only a limited number of labeled
+samples, making extensive hyperparameter optimization unreliable
+and prone to overfitting. Second, our objective is to evaluate model
+robustness under a realistic benchmarking protocol instead of mea-
+suring the best achievable performance on each individual dataset.
+A fixed evaluation protocol also enables a fairer comparison across
+tasks with widely varying label availability and distribution shifts
+[5].
+Model Configurations.The LSTM consists of two layers with a
+hidden dimension of 128 and a dropout rate of 0.2. The Transformer
+uses an embedding dimension of 128, two encoder layers, eight
+attention heads, a feed-forward dimension of 128, and a dropout rate
+of 0.1. The Random Forest classifier/regressor is trained with 500
+trees using the default settings for all remaining hyperparameters.
+3 Results and Empirical Analysis
+We structure our empirical evaluation around two primary struc-
+tural challenges that govern model performance across the task
+suite:Modality MismatchandTask Heterogeneity.
+3.1 Challenge 1: Modality Mismatch
+A fundamental bottleneck in adapting EO FMs to diverse agricul-
+tural tasks is the rigid architectural assumption regarding the input.
+Unlike supervised machine learning baselines that can dynamically
+ingest an arbitrary number of curated, heterogeneous modalities,
+pretrained architectures are strictly bounded by what is present in
+their pretraining distributions. This section breaks down the scale
+of this discrepancy and evaluates whether learned representations
+can overcome missing task-critical modalities.
+3.1.1The Pretraining-Downstream Modality Gap.We for-
+mally define the modality gap as the discrepancy between the rich
+modalities curated for specific datasets and the ingestion capabili-
+ties of a given FM. We quantify this gap usingmodality coverage: the
+percentage of a dataset’s curated modality set that a given model
+architecture can natively ingest, computed per dataset-model pair
+from the modality presence indicators in the Modality Coverage
+Matrix (Table 1; full computation details in Appendix Table 2) and
+visualized in Figure 3). This gap is highly variable and dataset-
+dependent. Note that even when two datasets share a modality, the
+specific variables it comprises can differ, for example a 12-band
+Sentinel-2 acquisition versus a 10-band one, or a meteorological
+modality consisting of temperature alone versus temperature and
+precipitation together.
+For crop classification datasets such as BreizhCrop, the required
+modalities (Sentinel-2 optical bands) align closely with the archi-
+tectural expectations of CropFM and Galileo, resulting in near-
+complete modality coverage. Coverage narrows substantially, how-
+ever, for datasets built around yield estimation, which depend on
+the deep soil and agro-meteorological signals we identified above as
+BreizhCrop
+     Phenology
+CropHarvestYieldSAT
+CY-Bench    
+25%
+50%
+75%
+100%
+100
+100
+100
+94
+22
+47
+36
+54
+Galileo
+CropFM
+Figure 3: Modality Coverage Percentage. The radial chart
+illustrates the percentage of dataset-specific modalities na-
+tively supported by Galileo and CropFM.
+characteristic of the modality mismatch. Consequently, for datasets
+like CY-Bench and YieldSAT, true modality coverage drops sig-
+nificantly, challenging FMs’ capacity to reconstruct meaningful
+embeddings when the modality mismatch is large.
+3.1.2Does Pretraining Compensate for Missing Modalities?
+To determine if the rich latent representations learned during large-
+scale pretraining can compensate for the lack of explicit physical
+inputs, we analyze the relative performance (Δ) between the con-
+strained FM features (using a frozen feature extractor with a Ran-
+dom Forest head) and the unconstrained Random Forest baseline
+utilizing all available modalities (Figure 2), where a negative Δ in-
+dicates a performance penalty incurred during modality mismatch.
+The results reveal that incomplete modality coverage imposes a
+highly context-dependent penalty, not a uniform one:
+• Low Coverage Dominates Performance (Germany & US):
+For yield estimation in Germany and the US, both Galileo and
+CropFM underperform the baseline. Despite the depth of their
+pretraining, the models cannot compensate for missing critical
+physical modalities that the baseline utilizes natively.
+• The Volatility of Low Coverage (Argentina):In the Argentina
+yield dataset, where native modality coverage is at its lowest (Ta-
+ble 1), we observe a stark architectural split. Galileo manages to
+yield a slightly positive Δ2≈ 0.05, whereas CropFM collapses
+to Δ2≈− 0.21. This divergence highlights that when critical
+physical modalities are missing, the reliability of the frozen rep-
+resentations becomes highly volatile and entirely dependent on
+how a specific model’s pretraining objective happens to align
+with the target region.
+• High Coverage is No Guarantee (Kenya & France):Most
+surprisingly, in the crop type mapping tasks where modality
+coverage is near 100% (Figure 3), the FMs still struggle. Galileo
+suffers performance penalties in both Kenya (ΔF1≈− 0.16) and
+
+=== PAGE BREAK ===
+
+Preprint Nedungadi et al.
+France (ΔF1≈− 0.16). This indicates that while resolving modal-
+ity mismatch is a necessary condition for robust agricultural
+modeling, it is not a sufficient one; even with perfect modality
+alignment, other localized factors disrupt frozen feature transfer
+(Section 4).
+• Benefit of Pretraining under Full Coverage (Germany Phe-
+nology):In the German phenology task, where there is no modal-
+ity mismatch (100% coverage), the frozen FM features outperform
+the Random Forest baseline (ΔMAE>0).
+The Senegal Anomaly.We note an exception in the Senegal
+yield estimation task, where both Galileo (Δ2≈+ 0.15) and CropFM
+(Δ2≈+ 0.06) produce positive deltas relative to the unconstrained
+RF baseline, despite operating under the same modality constraints
+as in Germany and the US. This result inverts the pattern observed
+before: rather than incomplete coverage dominating performance,
+the frozen FM representations prevent the downstream head from
+collapsing under extreme data scarcity. In this regime, we hypothe-
+size that the unconstrained RF baseline lacks sufficient signal since
+Senegal represents smallholder farming systems.
+TabPFN and the Value of Unconstrained Feature Access.A
+consistent finding across both challenges is the strong performance
+of TabPFN, a prior-data fitted network with no geospatial or agri-
+cultural pretraining. We find that it matches or outperforms FMs
+across several datasets. On Senegal specifically, TabPFN achieves a
+high positive delta (Δ2≈+ 0.22). Unlike the other FMs, TabPFN
+operates without modality constraints: it natively ingests the full
+suite of available task features regardless of pretraining coverage,
+and applies a highly expressive prior over tabular distributions
+learned from synthetic data.
+3.2 Challenge 2: Task Heterogeneity
+3.2.1Structural Heterogeneity of the Task Suite.To formalize
+the scale of this challenge, we categorize our downstream datasets
+across five distinct "structural axes" of variation, detailed in the top
+panel of Figure 4. These axes define the massive environmental and
+geometric shifts that a FM must bridge:
+• Spatial and Resolution Heterogeneity:Although all datasets
+provide point-wise features for specific geographic locations,
+what these individual points represent varies drastically. This
+ranges from raw 10m pixels (in YieldSAT, CropHarvest, and
+BreizhCrop) and point-station level observation sites (in phe-
+nology), to county-level aggregated regions (in CY-Bench). This
+structural mismatch forces foundation models (which are typ-
+ically pre-trained on uniform, high-resolution pixel grids e.g.,
+10m) to adapt to highly varied spatial aggregation levels. Fur-
+thermore, even within datasets sharing similar native pixel reso-
+lutions (e.g., CropHarvest vs. BreizhCrop), the underlying land-
+scapes represent contrasting agricultural paradigms, ranging
+from fragmented, smallholder plots in Kenya to large-scale, in-
+dustrial fields in France [1].
+• Temporal Dynamics and Evaluation:The temporal evalu-
+ation targets shift from point-in-time classification (e.g., pre-
+dicting crop types at the end of a season) to continuous, highly
+non-linear regression profiles. In phenology estimation, the tar-
+get variable is a physical day-of-year event driven by cumulative
+thermal curves. Conversely, yield estimation requires mapping
+a complex, year-long sequence of weather and soil signals to a
+single scalar mass value. Furthermore, the temporal framing can
+also differ, namely middle-of-season and end-of-season estima-
+tion of yield.
+• Label Density and Quality:The datasets transition from dense,
+continental-scale, and clean administrative registries (e.g., offi-
+cial agricultural records in Germany and the US) to highly sparse,
+noisy, and manually collected datasets in underrepresented re-
+gions like Senegal and Kenya. In these latter data-scarce regimes,
+severe class imbalances introduce additional noise that com-
+pounds the spatial-temporal shift.
+3.2.2Rank Instability Across Datasets.The direct consequence
+of this structural heterogeneity is a lack of consistency in model per-
+formance. Rather than showing a steady hierarchy of model capa-
+bility, the performance heatmap (Figure 4) reveals a highly volatile
+landscape where the relative order of models fluctuates between
+datasets. On highly structured, data-rich yield estimation tasks like
+CY-US, the unconstrained, tabular-focused TabPFN outperforms all
+other models with an 2 of0 .65. However, on the Argentinian yield
+dataset (YS-AR), the hierarchy completely flips: CropFM under full
+fine-tuning yields the best performance (2 = 0.33), while sequen-
+tial baselines like LSTMs suffer a complete collapse (2 =− 0.15).
+On crop type mapping tasks (CH-KE and BC-FR), the sequence-based
+Transformer performs better than the frozen FM features, yielding
+the top F1-scores (0.89and0.60, respectively).
+3.2.3The Risk of Finetuning.We note that the results of fine-
+tuning Galileo on German yield estimation (CY-DE) and the Ger-
+man phenology estimation (PH-DE) yield very poor performance
+(2 =− 0.85, and 53.42 MAE). We hypothesize that this is due to
+catastrophic forgetting of pretrained representations when finetun-
+ing an overparameterized model on a localized small-scale dataset
+under shifts [14].
+4 Reflections on Agricultural FM Development
+Agricultural remote sensing presents structural challenges that dis-
+tinguish it from the domains in which FMs have achieved their most
+celebrated successes [28]. Our evaluation surfaces three properties
+of agricultural monitoring that are fundamental to the problem do-
+main, not incidental implementation difficulties, and one practical
+barrier the community has not yet adequately addressed. Together,
+they suggest that adapting FMs to agriculture requires more than
+scaling existing approaches.
+The Modality Superset Problem.FM transfer assumes pre-
+training and downstream tasks share a compatible input space.
+This assumption breaks down in agricultural monitoring in a way
+with no direct analogue in NLP or computer vision: different agri-
+cultural datasets provide different subsets of modalities, whichever
+the dataset authors considered most relevant to their task, while
+FMs are pretrained on diverse but fixed multi-modal data [29, 30].
+This makes it difficult to build a general-purpose agricultural FM
+spanning a superset of every modality any dataset might need,
+and no single downstream task provides the full modality set si-
+multaneously: crop type mapping provides only optical imagery,
+sub-national yield estimation relies on aggregated weather and
+
+=== PAGE BREAK ===
+
+Foundation Models Meet Agriculture: Challenges Beyond PretrainingPreprint
+CY-DE
+R²
+CY-US
+R²
+CY-SN
+R²
+YS-AR
+R²
+PH-DE
+MAE
+CH-KE
+F1
+BC-FR
+F1
+Spatial Unit
+Farming System
+Split Design
+Target Type
+Dataset Size
+Admin Admin Admin Pixel Station Field Parcel
+Industrial Industrial Smallholder Industrial Industrial Smallholder Industrial
+T emporal T emporal T emporal Spatio-temp. T emporal Spatial Spatial
+Regression Regression Regression Regression Regression Binary Class. Multiclass Class.
+N  3.4k
+ N  34.0k
+ N  400
+ N  1.27M
+ N  28.3k
+ N  460
+ N  608.5k
+RF
+LSTM
+Transformer
+TabPFN
+Galileo+RF
+Galileo FT
+CropFM+RF
+CropFM FT
+0.53 0.55 -0.05 0.13 10.50 0.85 0.50
+0.49 0.49 0.01 -0.15 8.01 0.85 0.58
+0.53 0.51 -0.20 -0.05 6.71 0.89 0.60
+0.53 0.65 0.22 0.31 7.15 0.84 0.55
+0.46 0.38 0.11 0.19 8.46 0.70 0.34
+-0.85 0.44 0.06 0.30 53.42 0.46 0.56
+0.49 0.42 0.01 -0.08 8.76 0.83 0.38
+0.47 0.42 -0.08 0.33 8.56 0.46 0.57
+Figure 4: Task Heterogeneity and Performance Benchmarking. The top panel maps the structural axes (spatial unit, farming
+system, split design, task type, and dataset size) characterizing each dataset. The bottom heatmap displays model performance
+across these heterogeneous targets; darker shades indicate better relative performance after per-dataset normalization, and bold
+values denote the best-performing model per column. No single architecture consistently dominates, highlighting the volatility
+induced by spatial-temporal shifts. Abbreviations: CY-DE/US/SN (CY-Bench - Germany, USA, Senegal), YS-AR (YieldSAT -
+Argentina), PH-DE (Phenology - Germany), CH-KE (CropHarvest - Kenya), BC-FR (BreizhCrop - France); FT denotes full
+fine-tuning.
+vegetation indicators, pixel-level yield estimation offers a richer
+set, and phenology reduces to a single meteorological variable. A
+deployed model therefore always operates on a strict subset of its
+training distribution, with no mechanism to signal which modalities
+are absent rather than merely uninformative. Our results show this
+is not uniformly harmful: learned representations partially compen-
+sate for missing modalities in some settings, but the compensation
+is unreliable and dataset-dependent in ways that are difficult to
+predict.
+Task Heterogeneity as a Fundamental Barrier.The breadth
+of "agricultural monitoring" poses a challenge model design alone
+cannot resolve. Our task suite spans pixel-level and sub-national
+yield estimation, point-observation phenology, and field- and parcel-
+level crop classification, tasks that differ not only in output target
+but in spatial granularity, temporal aggregation, label provenance,
+label density, and farming system. The rank instability we observe,
+where no model ranks consistently across datasets, reflects this
+structural diversity rather than any individual model’s failure, con-
+sistent with findings in general EO benchmarks [17, 27]. No single
+pretraining objective optimizes for all of these settings: a recon-
+struction objective over pixel time series suits phenological and
+fine-grained spectral tasks, but loses relevance once targets are
+aggregated to county-level annual scalars. Meaningful progress
+requires embracing this heterogeneity as a first-class property of
+the domain, designing for it explicitly rather than benchmarking
+around it.
+Ease of Use and the Practical Deployment Gap.Performance
+benchmarks rarely capture the practical cost of deployment. De-
+ploying an FM requires choosing between frozen feature extraction
+(a Random Forest or linear head over the encoder) and full fine-
+tuning where labels permit; the former requires selecting and tuning
+a probe architecture, the latter demands careful regularization to
+avoid the representation collapse we observe in several experiments,
+and both are compounded when a task cannot supply the modalities
+the encoder expects. Tabular baselines such as TabPFN and Random
+Forest require none of this: they ingest whatever modalities are
+available with minimal preprocessing, and in our evaluation are
+competitive with or superior to FMs in multiple settings. This does
+not argue against agricultural FM development, but it does show
+that the practical gap between deploying an FM and a well-tuned
+tabular baseline currently exceeds the performance gap in many
+agricultural monitoring contexts.
+
+=== PAGE BREAK ===
+
+Preprint Nedungadi et al.
+5 Conclusion
+We evaluate a diverse set of foundation models and standard base-
+lines across three agricultural monitoring tasks central to food
+security, asking not merely whether these models generalize but,
+when they fail, why. Rather than treating agriculture as one more
+downstream domain for a general-purpose EO backbone, we con-
+struct a evaluation suite with seven datasets spanning the axes
+along which agricultural monitoring actually varies, spatial unit,
+farming system, split design, target type and dataset size to isolate
+the conditions under which FMs break down. Across pixel-level
+crop type mapping, point-observation phenology, and administra-
+tively aggregated yield estimation over industrial and smallholder
+systems, failures trace back to specific structural mismatches be-
+tween how these models are built and what agricultural monitoring
+demands: FMs pay a substantial modality-mismatch penalty when-
+ever a dataset depends on variables outside their pretraining set,
+and even under full modality coverage, frozen representations do
+not consistently outperform simple, unconstrained baselines. No
+single model ranks consistently across datasets; the best architec-
+ture changes with geography, spatial aggregation, and label regime,
+underscoring that no single design choice, pretraining objective,
+adaptation strategy, or architecture, is sufficient on its own.
+These findings motivate the three challenges above: the modality
+superset problem, the fundamental heterogeneity of agricultural
+tasks, and the deployment gap separating FMs from well-tuned
+tabular baselines. None of this argues against agricultural founda-
+tion models as a direction; our results with CropFM suggest models
+designed explicitly around agriculture’s modality and resolution
+requirements can close part of the gap. It argues instead for a shift
+in how the community builds and evaluates them: architectures that
+ingest varied modalities, benchmarks that treat task heterogeneity
+as a first-class evaluation axis rather than averaging it away, and
+honesty about when a simple supervised baseline is the right tool
+for the job. As these models increasingly inform decisions with real
+consequences for farmers, closing this gap responsibly will also
+require looking beyond the industrial systems most current data
+comes from, toward the smallholder, data-scarce systems where
+the stakes of getting it wrong are highest.
+6 Limitations and Ethical Considerations
+Several limitations exist within this research that should be noted.
+First, our evaluation relies on EO models, but not many EO models
+can be structurally applied to these datasets, as they are not natively
+designed for long temporal sequences or built to ingest a variety
+of modalities. This slightly limits the scope of cross-comparisons
+between various models. Secondly, while the evaluation tests a
+variety of structural shifts, it does not consider a truly global scale
+of different regions, diverse farming practices, and other relevant
+agricultural tasks. Thirdly, the study utilizes traditional, simple
+methods as baselines, whereas a large body of literature exists
+detailing complex, domain-specific models designed for each indi-
+vidual task. Finally, the most critical, while this study highlights
+two critical challenges, there could also be other unknown chal-
+lenges that cause such rank instabilities across datasets, for example,
+there could be some biases in what FMs were pretrained on and
+information leakage to the downstream tasks.
+From an ethical standpoint, the deployment of FMs in agriculture
+introduces several significant risks. It is critical that pre-training
+corpora avoid systemic bias toward data-rich, large-scale industrial
+farming systems, which are predominantly located in the US and
+Europe. Because these models can inform high-stakes applications
+such as crop insurance estimation and regional food security plan-
+ning, biased representations can actively distort local market prices
+and systematically disadvantage vulnerable farming communities.
+Therefore, these representational biases must be strictly considered
+when developing general-purpose models for agriculture.
+7 Generative AI Usage
+Generative AI tools were used in this work primarily to assist with
+code development and manuscript drafting, specifically Google
+Antigravity, Gemini and Claude. Following the use of these tools,
+the code and the text were double checked, validated and also
+modified when necessary to ensure technical accuracy and scientific
+integrity. The authors take full responsibility for the final content
+of this research.
+8 Data and Code Availability
+To support full reproducibility, the benchmarking codebase for all
+downstream tasks is open-sourced at https://github.com/vishalned/
+CropBench. All data utilized in this benchmark is sourced from
+existing, publicly available datasets. Although the original respec-
+tive GitHub repositories provide their own dataloaders, we have
+unified them into a single, standardized pipeline to streamline the
+evaluation of diverse models.
+Acknowledgments
+This work was supported by the EU Horizon project "AI Foundation
+Models in Agricultural Sciences" (grant number 101293777). We
+further acknowledge the Dutch national e-infrastructure, provided
+with the support of SURF Cooperative under grant no. EINF-15689.
+We also thank other members part of the Artificial Intelligence
+Group at Wageningen University and Research who gave feedback
+with the writing of this manuscript.
+
+=== PAGE BREAK ===
+
+Foundation Models Meet Agriculture: Challenges Beyond PretrainingPreprint
+References
+[1] 2024. . FAO. doi:10.4060/cd2991en
+[2] Ioannis N Athanasiadis. 2026. Foundation models for agricultural sciences -
+Challenges and opportunities. InICLR 2026 Workshop on Foundation Models for
+Science: Real-World Impact and Science-First Design. https://openreview.net/
+forum?id=2gewa9tg5p
+[3] Christopher F. Brown, Michal R. Kazmierski, Valerie J. Pasquarella, William J.
+Rucklidge, Masha Samsikova, Chenhui Zhang, Evan Shelhamer, Estefania Lahera,
+Olivia Wiles, Simon Ilyushchenko, Noel Gorelick, Lihui Lydia Zhang, Sophia
+Alj, Emily Schechter, Sean Askay, Oliver Guinan, Rebecca Moore, Alexis Bouk-
+ouvalas, and Pushmeet Kohli. 2025. AlphaEarth Foundations: An embedding
+field model for accurate and efficient global mapping from sparse label data.
+arXiv:2507.22291 [cs.CV] https://arxiv.org/abs/2507.22291
+[4] Zhengpeng Feng, Clement Atzberger, Sadiq Jaffer, Jovana Knezevic, Silja Sor-
+munen, Robin Young, Madeline C. Lisaius, Markus Immitzer, Toby Jackson, James
+Ball, David A. Coomes, Anil Madhavapeddy, Andrew Blake, and Srinivasan
+Keshav. 2026. TESSERA: Temporal Embeddings of Surface Spectra for Earth
+Representation and Analysis. arXiv:2506.20380 [cs.LG] https://arxiv.org/abs/
+2506.20380
+[5] Luca Franceschi, Michele Donini, Valerio Perrone, Aaron Klein, Cédric Archam-
+beau, Matthias Seeger, Massimiliano Pontil, and Paolo Frasconi. 2025. Hyperpa-
+rameter Optimization in Machine Learning.Foundations and Trends®in Machine
+Learning18, 6 (2025), 1054–1201. doi:10.1561/2200000088
+[6] Léo Grinsztajn, Edouard Oyallon, and Gaël Varoquaux. 2022. Why do tree-based
+models still outperform deep learning on tabular data? arXiv:2207.08815 [cs.LG]
+https://arxiv.org/abs/2207.08815
+[7] Hans Hersbach, Bill Bell, Paul Berrisford, Shoji Hirahara, András Horányi, Joaquín
+Muñoz-Sabater, Julien Nicolas, Carole Peubey, Raluca Radu, Dinand Schepers,
+Adrian Simmons, Cornel Soci, Saleh Abdalla, Xavier Abellan, Gianpaolo Bal-
+samo, Peter Bechtold, Gionata Biavati, Jean Bidlot, Massimo Bonavita, Giovanna
+De Chiara, Per Dahlgren, Dick Dee, Michail Diamantakis, Rossana Dragani, Jo-
+hannes Flemming, Richard Forbes, Manuel Fuentes, Alan Geer, Leo Haimberger,
+Sean Healy, Robin J. Hogan, Elías Hólm, Marta Janisková, Sarah Keeley, Patrick
+Laloyaux, Philippe Lopez, Cristina Lupu, Gabor Radnoti, Patricia de Rosnay, Iryna
+Rozum, Freja Vamborg, Sebastien Villaume, and Jean-Noël Thépaut. 2020. The
+ERA5 global reanalysis.Quarterly Journal of the Royal Meteorological Society146,
+730 (2020), 1999–2049. doi:10.1002/qj.3803
+[8] Noah Hollmann, Samuel Müller, Lennart Purucker, Arjun Krishnakumar, Max
+Körfer, Shi Bin Hoo, Robin Tibor Schirrmeister, and Frank Hutter. 2025. Accurate
+predictions on small data with a tabular foundation model.Nature637, 8045 (Jan.
+2025), 319–326. doi:10.1038/s41586-024-08328-6
+[9] Johannes Jakubik, Sujit Roy, C. E. Phillips, Paolo Fraccaro, Denys Godwin, Bianca
+Zadrozny, Daniela Szwarcman, Carlos Gomes, Gabby Nyirjesy, Blair Edwards,
+Daiki Kimura, Naomi Simumba, Linsong Chu, S. Karthik Mukkavilli, Devyani
+Lambhate, Kamal Das, Ranjini Bangalore, Dario Oliveira, Michal Muszynski,
+Kumar Ankur, Muthukumaran Ramasubramanian, Iksha Gurung, Sam Khallaghi,
+Hanxi, Li, Michael Cecil, Maryam Ahmadi, Fatemeh Kordi, Hamed Alemoham-
+mad, Manil Maskey, Raghu Ganti, Kommy Weldemariam, and Rahul Ramachan-
+dran. 2023. Foundation Models for Generalist Geospatial Artificial Intelligence.
+arXiv:2310.18660 [cs.CV] https://arxiv.org/abs/2310.18660
+[10] Johannes Jakubik, Felix Yang, Benedikt Blumenstiel, Erik Scheurer, Rocco
+Sedona, Stefano Maurogiovanni, Jente Bosmans, Nikolaos Dionelis, Valerio
+Marsocci, Niklas Kopp, Rahul Ramachandran, Paolo Fraccaro, Thomas Brun-
+schwiler, Gabriele Cavallaro, Juan Bernabe-Moreno, and Nicolas Longépé.
+2026. TerraMind: Large-Scale Generative Multimodality for Earth Observation.
+arXiv:2504.11171 [cs.CV] https://arxiv.org/abs/2504.11171
+[11] Jig Han Jeong, Jonathan P. Resop, Nathaniel D. Mueller, David H. Fleisher,
+Kyungdahm Yun, Ethan E. Butler, Dennis J. Timlin, Kyo-Moon Shim, James S.
+Gerber, Vangimalla R. Reddy, and Soo-Hyung Kim. 2016. Random Forests for
+Global and Regional Crop Yield Predictions.PLOS ONE11, 6 (2016), e0156571.
+doi:10.1371/journal.pone.0156571
+[12] M. Kallenberg, D. Paudel, S. Ofori-Ampofo, H. Baja, R. van Bree, A. Potze, P.
+Poudel, A. Saleh, W. Anderson, M. von Bloh, A. Castellano, O. Ennaji, R. Hamed,
+R. Laudien, D. Lee, I. Luna, D. Masili¯unas, M. Meroni, J. M. Mutuku, S. Mkuhlani,
+J. Richetti, A. C. Ruane, R. Sahajpal, G. Shuai, V. Sitokonstantinou, R. D. S. Nóia-
+Júnior, A. K. Srivastava, R. Strong, L. Sweet, P. Vojnović, A. de Wit, M. Zachow,
+and I. N. Athanasiadis. 2026. CY-Bench: a comprehensive benchmark dataset
+for sub-national crop yield forecasting.Earth System Science Data18, 6 (2026),
+3997–4018. doi:10.5194/essd-18-3997-2026
+[13] Hamid Kamangir, Mona Hajiesmaeeli, and Mason Earles. 2025. California
+Crop Yield Benchmark: Combining Satellite Image, Climate, Evapotranspira-
+tion, and Soil Data Layers for County-Level Yield Forecasting of Over 70 Crops.
+arXiv:2506.10228 [cs.CV] https://arxiv.org/abs/2506.10228
+[14] Ananya Kumar, Aditi Raghunathan, Robbie Jones, Tengyu Ma, and Percy Liang.
+2022. Fine-Tuning can Distort Pretrained Features and Underperform Out-of-
+Distribution. arXiv:2202.10054 [cs.LG] https://arxiv.org/abs/2202.10054
+[15] David B. Lobell, Wolfram Schlenker, and Justin Costa-Roberts. 2011. Climate
+Trends and Global Crop Production Since 1980.Science333, 6042 (2011), 616–
+620. arXiv:https://www.science.org/doi/pdf/10.1126/science.1204531 doi:10.1126/
+science.1204531
+[16] Yuchi Ma, Shuo Chen, Stefano Ermon, and David B. Lobell. 2024. Transfer
+learning in environmental remote sensing.Remote Sensing of Environment301
+(Feb. 2024), 113924. doi:10.1016/j.rse.2023.113924
+[17] Valerio Marsocci, Yuru Jia, Georges Le Bellier, David Kerekes, Liang Zeng, Se-
+bastian Hafner, Sebastian Gerard, Eric Brune, Ritu Yadav, Ali Shibli, Heng Fang,
+Yifang Ban, Maarten Vergauwen, Nicolas Audebert, and Andrea Nascetti. 2025.
+PANGAEA: A Global and Inclusive Benchmark for Geospatial Foundation Models.
+arXiv:2412.04204 [cs.CV] https://arxiv.org/abs/2412.04204
+[18] Miro Miranda, Deepak Pathak, Patrick Helber, Benjamin Bischke, Hiba Najjar,
+Francisco Mena, Cristhian Sanchez, Akshay Pai, Diego Arenas, Matias Valdenegro
+Toro, Marcela Charfualan, Marlon Nuske, and Andreas Dengel. 2026. YieldSAT:
+A Multimodal Benchmark Dataset for High-Resolution Crop Yield Prediction. In
+Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR).
+[19] Sina Mohammadi, Mariana Belgiu, and Alfred Stein. 2024. A source-free unsuper-
+vised domain adaptation method for cross-regional and cross-time crop mapping
+from satellite image time series.Remote Sensing of Environment314 (Dec. 2024),
+114385. doi:10.1016/j.rse.2024.114385
+[20] Vishal Nedungadi, Ankit Kariryaa, Stefan Oehmcke, Serge Belongie, Christian
+Igel, and Nico Lang. 2024. MMEarth: Exploring Multi-Modal Pretext Tasks For
+Geospatial Representation Learning. arXiv:2405.02771 [cs.CV] https://arxiv.org/
+abs/2405.02771
+[21] Vishal Nedungadi, Xingguo Xiong, Aike Potze, Ron Van Bree, Tao Lin, Marc
+Rußwurm, and Ioannis N. Athanasiadis. 2025. From General to Specialized:
+The Need for Foundational Models in Agriculture. arXiv:2507.05390 [cs.CV]
+https://arxiv.org/abs/2507.05390
+[22] Intergovernmental Panel on Climate Change (IPCC). 2023.Climate Change 2022 –
+Impacts, Adaptation and Vulnerability: Working Group II Contribution to the Sixth
+Assessment Report of the Intergovernmental Panel on Climate Change. Cambridge
+University Press. doi:10.1017/9781009325844
+[23] Dilli Paudel, Hendrik Boogaard, Allard de Wit, Sander Janssen, Sjoukje Osinga,
+Christos Pylianidis, and Ioannis N. Athanasiadis. 2021. Machine learning for
+large-scale crop yield forecasting.Agricultural Systems187 (Feb. 2021), 103016.
+doi:10.1016/j.agsy.2020.103016
+[24] Xiaolei Qin, Haonan Guo, Xin Su, Zhenghui Zhao, Di Wang, and Liangpei
+Zhang. 2025. Spatiotemporal masked pre-training for advancing crop map-
+ping on satellite image time series with limited labels.International Journal
+of Applied Earth Observation and Geoinformation137 (March 2025), 104426.
+doi:10.1016/j.jag.2025.104426
+[25] Marc Rußwurm, Charlotte Pelletier, Maximilian Zollner, Sébastien Lefèvre, and
+Marco Körner. 2020. BreizhCrops: A Time Series Dataset for Crop Type Map-
+ping.International Archives of the Photogrammetry, Remote Sensing and Spatial
+Information Sciences ISPRS (2020)(2020).
+[26] Zhuocheng Shang, Sanmay Das, and Ahmed Eldawy. 2026. Bench-
+marking Geospatial Foundation Models for Agriculture Applications.
+arXiv:2606.29664 [cs.CV] https://arxiv.org/abs/2606.29664
+[27] Naomi Simumba, Nils Lehmann, Paolo Fraccaro, Hamed Alemohammad,
+Geeth De Mel, Salman Khan, Manil Maskey, Nicolas Longepe, Xiao Xiang Zhu,
+Hannah Kerner, Juan Bernabe-Moreno, and Alexandre Lacoste. 2026. GEO-
+Bench-2: From Performance to Capability, Rethinking Evaluation in Geospatial
+AI. arXiv:2511.15658 [cs.CV] https://arxiv.org/abs/2511.15658
+[28] Chenjiao Tan, Qian Cao, Yiwei Li, Jielu Zhang, Xiao Yang, Huaqin Zhao, Zi-
+hao Wu, Zhengliang Liu, Hao Yang, Nemin Wu, Tao Tang, Xinyue Ye, Lilong
+Chai, Ninghao Liu, Changying Li, Lan Mu, Tianming Liu, and Gengchen Mai.
+2023. On the Promises and Challenges of Multimodal Foundation Models for
+Geographical, Environmental, Agricultural, and Urban Planning Applications.
+arXiv:2312.17016 [cs.CV] https://arxiv.org/abs/2312.17016
+[29] Gabriel Tseng, Ruben Cartuyvels, Ivan Zvonkov, Mirali Purohit, David Rolnick,
+and Hannah Kerner. 2024. Lightweight, Pre-trained Transformers for Remote
+Sensing Timeseries. arXiv:2304.14065 [cs.CV] https://arxiv.org/abs/2304.14065
+[30] Gabriel Tseng, Anthony Fuller, Marlena Reil, Henry Herzog, Patrick Beukema,
+Favyen Bastani, James R. Green, Evan Shelhamer, Hannah Kerner, and David
+Rolnick. 2025. Galileo: Learning Global & Local Features of Many Remote Sensing
+Modalities. arXiv:2502.09356 [cs.CV] https://arxiv.org/abs/2502.09356
+[31] Gabriel Tseng, Ivan Zvonkov, Catherine Lilian Nakalembe, and Hannah Kerner.
+2021. CropHarvest: A global dataset for crop-type classification. InThirty-fifth
+Conference on Neural Information Processing Systems Datasets and Benchmarks
+Track (Round 2). https://openreview.net/forum?id=JtjzUXPEaCu
+[32] Ron van Bree, Diego Marcos, and Ioannis N. Athanasiadis. 2026. BloomBench:
+A Multi-Species Benchmark for Evaluating the Generalization of Fruit Tree
+Phenology Models. InThe First International Workshop on AI in Agriculture.
+https://openreview.net/forum?id=WSxIa8fPEX
+[33] Yumiao Wang, Luwei Feng, Zhou Zhang, and Feng Tian. 2023. An unsupervised
+domain adaptation deep learning method for spatial and temporal transferable
+crop type mapping using Sentinel-2 imagery.ISPRS Journal of Photogrammetry
+
+=== PAGE BREAK ===
+
+Preprint Nedungadi et al.
+and Remote Sensing199 (May 2023), 102–117. doi:10.1016/j.isprsjprs.2023.04.002
+[34] Zhitong Xiong, Yi Wang, Fahong Zhang, Adam J. Stewart, Joëlle Hanna, Damian
+Borth, Ioannis Papoutsis, Bertrand Le Saux, Gustau Camps-Valls, and Xiao Xiang
+Zhu. 2025. Neural Plasticity-Inspired Multimodal Foundation Model for Earth
+Observation. arXiv:2403.15356 [cs.CV] https://arxiv.org/abs/2403.15356
+[35] Yijia Xu, Yuchi Ma, and Zhou Zhang. 2024. Self-supervised pre-training for large-
+scale crop mapping using Sentinel-2 time series.ISPRS Journal of Photogrammetry
+and Remote Sensing207 (Jan. 2024), 312–325. doi:10.1016/j.isprsjprs.2023.12.005
+A Granular Modality and Feature Utilization
+To accurately compute the modality coverage percentages, we calcu-
+late the ratio at the granular feature level rather than by high-level
+modality group. Table 2 details the exact variables utilized by each
+downstream task and the native ingestion capabilities of the evalu-
+ated foundation models.
+B Full set of results
+We provide the complete set of results in Table 3. An additional
+experiment was further conducted to run the supervised baselines
+using similar constrainsts as CropFM i.e using the same set of
+modalities available to CropFM. These results are reported in 4.
+C Building CropFM
+C.1 Pretraining Data
+C.1.1 Spatial Sampling.We restrict pretraining to regions with
+active temporary-crop agriculture as identified by the ESA World-
+Cereal Google Earth Engine (GEE) product. For each country in
+the world, we tile the country’s land area into a regular 5km×5km
+grid. A grid cell is then retained if it contains atleast 5km2 of World-
+Cereal temporary cropland; all other cells are discarded. Within
+each retained cell, we choose 10 points per grid via stratified ran-
+dom sampling, restricted to pixels classified as temporary cropland
+(rather than uniformly sampling the whole cell). In total we sample
+≈1locations.
+C.1.2 Modalities.For every sampled point, we query GEE for a
+fixed one-year window (2021-01-01 to 2022-01-01). Nine modalities
+are used, split into temporal and static groups, summarized in Ta-
+ble 6. For each temporal modality, we download all the data within
+the one-year window.
+C.1.3 Temporal Harmonization.Since different sensors revisit at
+very different periods, the temporal modalities are resampled onto
+a common weekly grid (mean aggregation by default), truncated to
+52 weeks. We also encode the coordinates and the calender position
+of the week, month.
+C.1.4 Normalization statistics.Normalization statistics are com-
+puted per variable of every modality separately and using only
+non-Nan entries.
+C.2 Model
+Following Presto [29], CropFM uses a single generic lightweight
+transformer, where every modality, timestep pair is projected to
+one token via a modality-specific linear layer and all tokens share
+one transformer encoder/decoder.
+• Tokenization: each modality has its ownLinear(in_dim→
+model) tokenizer (in_dim = number of variables for that
+modality, e.g. 8 for AgERA5, 12 for Sentinel-2). Static modal-
+ities contribute a single token. Timesteps flagged invalid are
+replaced with a learnable per-modality “missing” token, so
+the model can distinguish a genuine data gap (e.g., no cloud-
+free Sentinel-2 scene that week) from a token deliberately
+withheld by MAE masking.
+• Positional information: every token receives (i) a fixed
+sinusoidal positional encoding by sequence position (zeroed
+out for static tokens), (ii) a fixed sinusoidal week-of-year
+encoding for temporal tokens only, and (iii) a learnable em-
+bedding identifying its modality.
+• Encoder and Decoder: depth 2 standard transformer blocks
+(similar to Presto)
+C.2.1 Masking Strategy.We use a structured masking scheme
+rather than pure random masking. On every forward pass, one
+of four strategies is drawn uniformly at random (equal 25% weight
+each):
+(1) Random: tokens masked independently across the whole
+sequence.
+(2) Modality: entire modalities are masked (∼45% of the 9 modal-
+ities per sample), forcing reconstruction of one modality
+purely from the others.
+(3) Random timesteps: within each modality independently,
+∼75% of timesteps are masked, keeping cross-modality struc-
+ture at each timestep intact.
+(4) Contiguous / seasonal: only timesteps matching a fixed
+calendar pattern are kept (e.g., one sample per month, or
+only the first/second half of the year), forcing longer-range
+temporal interpolation/extrapolation.
+C.2.2 Optimization and Training Configuration.Table 5 summa-
+rizes the optimization and training setup.
+
+=== PAGE BREAK ===
+
+Foundation Models Meet Agriculture: Challenges Beyond PretrainingPreprint
+Table 2: Granular feature breakdown across tasks and foundation model native support. Acronyms: Digital Elevation Model
+(DEM), Average/Maximum/Minimum Temperature (,  ,  ), Precipitation (prec), Climate Water Balance (cwb), Solar
+Radiation (rad), Fraction of Absorbed Photosynthetically Active Radiation (fapar), Normalized Difference Vegetation Index
+(ndvi), Surface Soil Moisture (ssm), Available Water Capacity (awc), Elevation (elev), Cation Exchange Capacity (cec), Coarse
+Fragments Volumetric (cfvo), Soil Organic Carbon (soc).
+Dataset Category Specific Variables (Features) Count Galileo CropFM
+BreizhCrop Satellite Sentinel-2 (10 bands) 10 10 10
+Total 10 10 (100%) 10 (100%)
+Phenology Meteo  1 1 1
+Total 1 1 (100%) 1 (100%)
+CropHarvest
+Satellite Sentinel-1 (2), Sentinel-2 (10) 12 12 12
+Meteo , prec 2 2 2
+DEM elev, slope 2 2 2
+Bio/Hydro ndvi 1 1 0
+Total 17 17 (100%) 16 (94.1%)
+CY-Bench
+Meteo ,  , , prec, cwb, rad 6 2 5
+Bio/Hydro fapar, ndvi, ssm 3 2 1
+Soil awc, bulk_density 2 0 0
+Total 11 4 (36.4%) 6 (54.5%)
+YieldSAT
+Satellite Sentinel-2 (10 bands) 10 10 10
+Meteo ,  , , prec 4 2 4
+DEM elev, slope 2 2 2
+Soil cec, cfvo, clay, nitrogen, phh2o, sand, silt, soc
+(each at 6 depths)
+48 0 12
+Total 64 14 (21.9%) 30 (46.9%)
+Table 3: Main results across all datasets and models, evaluated at each model’s native modality access (i.e., all available features
+for supervised baselines and TabPFN; natively supported modalities for Galileo and CropFM). For EO FMs,Frozendenotes a
+Random Forest trained on frozen embeddings andFTdenotes full fine-tuning. Metrics are 2 for yield estimation, F1-score
+for crop classification, and MAE (days) for phenology; bold values denote the best-performing model per column. Results are
+averaged over three seeds,±one standard deviation.
+Yield Estimation ( 2)↑Crop Classification (F1)↑Phenology (MAE)↓
+Model CY-US CY-SN CY-DE YS-AR BC-FR CH-KE PH-DE
+RF 0.55±0.00 -0.05±0.000.53±0.000.13±0.01 0.50±0.00 0.85±0.01 10.50±0.05
+LSTM 0.49±0.03 0.01±0.04 0.49±0.06 -0.15±0.06 0.58±0.00 0.85±0.03 8.01±0.03
+Transformer 0.51±0.03 -0.20±0.09 0.53±0.02 -0.05±0.210.60±0.00 0.89±0.04 6.71±0.12
+TabPFN0.65±0.00 0.22±0.020.53±0.00 0.31±0.01 0.55±0.00 0.84±0.00 7.15±0.06
+Galileo (Frozen) 0.38±0.00 0.11±0.01 0.46±0.00 0.19±0.00 0.34±0.00 0.70±0.01 8.46±0.05
+Galileo (FT) 0.44±0.01 0.06±0.07 -0.85±0.15 0.30±0.04 0.56±0.00 0.46±0.00 53.42±0.21
+CropFM (Frozen) 0.42±0.00 0.01±0.04 0.49±0.00 -0.08±0.01 0.38±0.00 0.83±0.02 8.76±0.08
+CropFM (FT) 0.42±0.01 -0.08±0.04 0.47±0.030.33±0.040.57±0.01 0.46±0.00 8.56±0.08
+
+=== PAGE BREAK ===
+
+Preprint Nedungadi et al.
+Table 4: CropFM-modality comparison. To isolate the contribution of CropFM’s wider native modality access from its pretrained
+priors, we re-evaluate the supervised baselines restricted to the same modality subset available to CropFM, and compare them
+directly against CropFM’s frozen and fully fine-tuned variants.
+Yield Estimation ( 2)↑Crop Type Mapping (F1)↑Phenology (MAE)↓
+Model CY-US CY-SN CY-DE YS-AR BC-FR CH-KE PH-DE
+RF (CropFM modalities) 0.49±0.00 0.00±0.02 0.13±0.00 0.07±0.01 0.50±0.00 0.81±0.02 10.50±0.05
+LSTM (CropFM modalities) 0.44±0.03 -0.14±0.14 0.35±0.08 0.28±0.04 0.58±0.00 0.68±0.03 8.01±0.03
+Transformer (CropFM modalities)0.52±0.02-0.07±0.12 0.47±0.05 0.08±0.110.60±0.00 0.87±0.02 6.71±0.12
+CropFM (Frozen) 0.42±0.000.01±0.04 0.49±0.00-0.08±0.01 0.38±0.00 0.83±0.02 8.76±0.08
+CropFM (FT) 0.42±0.01 -0.08±0.04 0.47±0.030.33±0.040.57±0.01 0.46±0.00 8.56±0.08
+Table 5: Optimization and training configuration for CropFM pretraining.
+Parameter Value
+Optimizer AdamW ( 1 =0.9, 2 =0.95)
+Weight decay 0.05
+Learning rate1.5×10 −4
+LR schedule Cosine annealing, min =1×10 −6
+Batch size 256
+Gradient accumulation×8(effective batch size 2048)
+Epochs up to 40
+Hardware 1×NVIDIA A100 (80 GB)
+Train/val/test split 80% / 10% / 10%, contiguous index ranges
+Table 6: Data modalities used for CropFM pretraining. All sources are Google Earth Engine (GEE) asset IDs unless noted
+otherwise.
+Temporal
+Modality Source (GEE asset ID) Native res. Variables used
+Sentinel-2 L2ACOPERNICUS/S2_SR_HARMONIZED10 m 12 spectral bands (B1–B9, B11, B12); scenes filtered to <50% cloud
+cover
+Sentinel-1 GRDCOPERNICUS/S1_GRD10 m VV, VH
+AgERA5projects/climate-engine-pro/assets/ce-ag-era5-v2/daily∼10 km precipitation, vapour pressure, min/mean/max 2 m air
+temperature, solar radiation, wind speed, max relative humidity
+(8 vars)
+FAPAR/LAINOAA/CDR/VIIRS/LAI_FAPAR/V1∼5.6 km FAPAR, LAI
+Static
+Modality Source (GEE asset ID) Native res. Variables used
+Soilprojects/soilgrids-isric/{clay,nitrogen,phh2o,soc}_mean250 m clay, nitrogen, pH, SOC; each at 3 depths (0–5, 5–15, 15–30 cm)
+Elevationprojects/sat-io/open-datasets/ASTER/GDEM10 m elevation, slope
+Coordinates — (computed, not a GEE asset) — cyclic sin/cos encoding of lon/lat
+WorldCereal crop maskESA/WorldCereal/AEZ/v100+ AEZ table — AEZ id, crop class (none / maize / winter cereals / spring cereals)
+WorldCereal crop calendarESA/WorldCereal/AEZ/v100— start/end of season for maize, winter cereals, spring cereals

@@ -1,0 +1,2240 @@
+1
+Foundation Models in Remote Sensing: Evolving
+from Unimodality to Multimodality
+Danfeng Hong,Senior Member, IEEE,Chenyu Li, Xuyang Li, Gustau Camps-Valls,Fellow, IEEE,and Jocelyn
+Chanussot,Fellow, IEEE
+Abstract—Remote sensing (RS) techniques are increasingly
+crucial for deepening our understanding of the planet. As the
+volume and diversity of RS data continue to grow exponentially,
+there is an urgent need for advanced data modeling and under-
+standing capabilities to manage and interpret these vast datasets
+effectively. Foundation models present significant new growth
+opportunities and immense potential to revolutionize the RS field.
+In this paper, we conduct a comprehensive technical survey on
+foundation models in RS, offering a brand-new perspective by
+exploring their evolution from unimodality to multimodality. We
+hope this work serves as a valuable entry point for researchers
+interested in both foundation models and RS and helps them
+launch new projects or explore new research topics in this rapidly
+evolving area. This survey addresses the following three key
+questions:
+•What are foundation models in RS?
+•Why are foundation models needed in RS?
+•How can we effectively guide junior researchers in gaining
+a comprehensive and practical understanding of foundation
+models in RS applications?
+More specifically, we begin by outlining the background and
+motivation, emphasizing the importance of foundation models
+in RS. We then review existing foundation models in RS,
+systematically categorizing them into unimodal and multimodal
+approaches. Additionally, we provide a tutorial-like section to
+guide researchers, especially beginners, on how to train foun-
+dation models in RS and apply them to real-world tasks. The
+survey aims to equip researchers in RS with a deeper and
+more efficient understanding of foundation models, enabling them
+to get started easily and effectively apply these models across
+various RS applications.
+Index Terms—Artificial intelligence, foundation models, mul-
+timodal, unimodal, remote sensing, Earth observation.
+I. INTRODUCTION
+This work was supported by the National Natural Science Foundation of
+China under Grant 42271350 and by the International Partnership Program
+of the Chinese Academy of Sciences under Grant No.313GJHZ2023066FN.
+GCV gratefully acknowledges the support from the European Research
+Council (ERC) through the USMILE project (grant agreement 855187) and
+the European Commission through the HORIZON projects ELIAS (grant
+agreement 101120237) and ELLIOT (grant agreement101214398).
+D. Hong is with the School of Automation, Southeast University, Nanjing
+211189, China. (e-mail: danfeng.hong@seu.edu.cn)
+C. Li is with the School of Mathematics, Southeast University, Nanjing
+211189, China. (e-mail: chenyuli.erh@gmail.com)
+X. Li is with the Aerospace Information Research Institute, Chinese
+Academy of Sciences, Beijing 100094, China, and the School of Electronic,
+Electrical and Communication Engineering, University of Chinese Academy
+of Sciences, Beijing 100049, China.
+G. Camps-Valls is with the Image Processing Laboratory (IPL), Universitat
+de Val`encia, Paterna, Val `encia 46980, Spain. (e-mail: gustau.camps@uv.es)
+J. Chanussot is with Univ. Grenoble Alpes, INRIA, CNRS, Grenoble INP,
+LJK, Grenoble 38000, France. (e-mail: jocelyn.chanussot@grenoble-inp.fr)
+R
+ECENT advancements in Earth Observation (EO) tech-
+nologies, particularly Remote Sensing (RS), have revo-
+lutionized our ability to monitor various aspects of the Earth’s
+surface and environment, such as land features, subsurface
+conditions, air and water quality, and the health of living
+organisms [1]. EO technologies are essential tools for gather-
+ing critical information about the Earth’s physical properties,
+environmental conditions, and dynamic changes. Monitoring
+these aspects from space allows for more accurate and timely
+decision-making, improving natural resource management,
+disaster preparedness, and environmental protection.
+These capabilities advance scientific understanding of Earth
+systems and play a crucial role in addressing global challenges,
+including climate change, biodiversity loss, and sustainable
+development. RS data, which offers a unique vantage point
+for studying the Earth at various scales, provides insights that
+are difficult or impossible to obtain through traditional ground-
+based observation methods. The integration of these insights
+can drive actions that improve human well-being, promote
+societal stability, and ensure environmental sustainability.
+A. The Rising Role of Foundation Models in Remote Sensing
+However, the rapid growth in the volume and diversity of
+RS data has outpaced the capabilities of traditional models, ne-
+cessitating the development of more sophisticated approaches
+for processing and analyzing high-dimensional data. As RS
+datasets become more complex, containing satellite imagery,
+spectral data, temporal sequences, and sensor modalities like
+LiDAR, traditional methods struggle to capture the richness
+of information in these data sources. This highlights the
+urgent need for next-generation AI models capable of handling
+multimodal, spatiotemporal, and high-dimensional data.
+The advent of foundation models provides an effective
+solution to this challenge [2]. These large-scale models, which
+can be pre-trained on vast, diverse datasets and fine-tuned for
+specific tasks, offer significant potential for RS applications.
+They can leverage the scale and complexity of RS data
+to develop transferable representations applicable to a wide
+range of geospatial tasks, such as land cover classification,
+climate monitoring, disaster management, and agriculture. The
+versatility of foundation models is particularly valuable in
+scenarios where labeled data are scarce or costly to obtain,
+commonly in RS, where pixel-level annotations for large
+areas are labor-intensive and resource-consuming. The self-
+supervised pretraining and fine-tuning approach of foundation
+models allows large volumes of unlabeled data to learn uni-
+versal features that can be applied across various RS tasks.
+arXiv:2603.00988v1  [cs.CV]  1 Mar 2026
+
+=== PAGE BREAK ===
+
+2
+This framework enhances the scalability and efficiency of RS
+analysis, making it possible to better capture the complex,
+multimodal, and dynamic nature of EO data [3]–[6].
+B. Challenges and Difficulties
+Despite these promising advancements, the application of
+foundation models in RS remains relatively underexplored.
+Although these models hold great potential, several barriers
+hinder their adoption and integration within the field, which
+we outline below, together with currently emerging solutions.
+•The first challenge is the lack of awareness and under-
+standing of foundation models among many researchers
+working in RS, EO, and geosciences. Most researchers
+in these domains are unfamiliar with the underlying
+principles of foundation models, such as self-supervised
+learning and transfer learning, or they lack the exper-
+tise to apply these advanced techniques in their work.
+This knowledge gap creates a significant barrier to the
+successful application of foundation models in practical
+RS tasks, as researchers may struggle to understand how
+these models work and how to adapt them to their specific
+needs. To mitigate this, recent tutorial-style papers and
+benchmark studies (e.g., BigEarthNet [18], SpectralGPT
+[19]) have started to provide hands-on resources that help
+RS researchers understand pretraining and fine-tuning
+strategies in practice.
+•Secondly, although some surveys have attempted to orga-
+nize and categorize RS foundation models from certain
+perspectives (as summarized in Table I), a comprehensive,
+category-clear, and tutorial-oriented taxonomy of these
+models is still lacking. The sheer number of existing
+foundation models, some of which are only incrementally
+different from one another, has led to confusion and
+uncertainty among researchers. Without a standardized
+framework for evaluating and categorizing these models,
+it becomes difficult for researchers to choose the most
+appropriate model for their specific application or to com-
+pare the performance of different models across various
+tasks. This lack of clarity exacerbates the challenges faced
+by the RS community in leveraging the full potential
+of foundation models. In response, community-driven
+efforts have emerged, such as model repositories on
+HuggingFace dedicated to RS and standardized evalu-
+ation datasets, such as SEN12MS [20] or C2Seg [21],
+which provide more transparent benchmarks for model
+comparison.
+•Finally, there is a significant uncertainty among RS
+researchers about the technical usage guidelines for foun-
+dation models. Even if these models are available, many
+researchers remain unclear about how to fine-tune or
+adapt them to their specific applications. Questions about
+model performance, scalability, and robustness in real-
+world RS settings remain largely unanswered. Without
+proper guidelines and evaluation benchmarks, researchers
+may hesitate to adopt these models, fearing that their
+performance may not meet the needs of practical appli-
+cations. Additionally, the absence of standardized proto-
+cols for integrating foundation models with existing RS
+systems complicates their widespread adoption and de-
+ployment. Nonetheless, several recent works demonstrate
+practical adaptation pipelines, e.g., fine-tuning pretrained
+models for crop classification, disaster monitoring, or
+flood mapping. These offer concrete guidance on how
+to integrate foundation models into real-world RS tasks.
+These challenges significantly hinder the development and
+application of foundation models in RS. As the volume and
+complexity of RS data continue to grow, it is crucial to
+address these barriers to unlock the full potential of foundation
+models for EO. To that end, this survey aims to provide a
+comprehensive and accessible resource that clarifies the core
+concepts of foundation models and addresses the key issues
+obstructing their integration into RS.
+C. Comparison with Existing Reviews
+Recently, several reviews have explored foundation models
+in RS, geoscience, and EO, though the field remains relatively
+underexamined. Table I summarizes these works by publica-
+tion year.
+Jiao et al. (2023) present a survey on brain-inspired founda-
+tion models in RS, discussing their unique advantages in han-
+dling complex tasks and analyzing the challenges associated
+with their implementation [7]. Around the same time, Tan et
+al. (2023) explore the promises and challenges of multimodal
+foundation models across geography, environment, agriculture,
+and urban planning, emphasizing their adaptability through
+case studies [8].
+Li et al. (2024) focus on vision-language models (VLMs)
+in RS, providing an overview of their recent advancements,
+applications, and future directions [9]. Meanwhile, Zhu et al.
+(2024) shift attention to Earth and climate foundation models,
+discussing their theoretical foundations and proposing a frame-
+work for their development in Earth sciences [10]. Zhou et al.
+(2024) introduce the concept of geographic vision-language
+foundation models, emphasizing the integration of geospatial
+priors and multimodal learning for geographic information
+processing [11].
+Lu et al. (2024) present a broad survey on AI foundation
+models in RS, systematically analyzing their applications
+and challenges across different RS tasks [12]. Zhang et al.
+(2024) take a different approach by envisioning a universal
+RS foundation model designed for generalist intelligence,
+exploring the “one model, multiple tasks” paradigm and its
+potential to address task fragmentation [13]. Xiao et al. (2024)
+offer a structured review of RS foundation models, covering
+their motivation, key methodologies, existing benchmarks, and
+unresolved challenges [14].
+Zhang et al. (2024) extend the discussion to geoscience
+foundation models, exploring their role in Earth system mod-
+eling and identifying key construction techniques, advance-
+ments, and future research directions [15]. Moving into 2025,
+Tao et al. (2025) delve into recent progress in vision-language
+models for RS, highlighting new multimodal datasets opti-
+mized for RS tasks and shifting the focus of these models
+from descriptive analysis to decision support [16]. Lastly,
+another (2025) survey examines the potential and limitations
+
+=== PAGE BREAK ===
+
+3
+TABLE I
+ALIST OF REVIEW PAPERS ON FOUNDATION MODELS INRS,GEOSCIENCE,ANDEO,DETAILING THEIR TITLES,PUBLICATION YEARS,JOURNALS,
+DESCRIPTIONS,AND REFERENCE LINKS.
+Title Year Journal Description Ref.
+Brain-Inspired Remote Sensing Foundation
+Models and Open Problems: A Comprehensive
+Survey
+2023 IEEE JSTARS This review examines brain-inspired foundational models in RS, highlighting their
+applications, challenges, and advantages in complex tasks. [7]
+On the Promises and Challenges of Multimodal
+Foundation Models for Geographical, Environ-
+mental, Agricultural, and Urban Planning Ap-
+plications
+2023 Arxiv This review highlights the potential, challenges, and flexibility of multimodal foundation
+models in geography, environment, agriculture, and urban planning through case studies. [8]
+Vision-Language Models in Remote Sensing:
+Current Progress and Future Trends 2024 IEEE GRSM This review explores vision-language models in RS, highlighting their progress, appli-
+cations, and future trends. [9]
+On the Foundations of Earth and Climate Foun-
+dation Models 2024 Arxiv This review explores the theory behind Earth and climate models, proposing a founda-
+tional framework for Earth and climate sciences. [10]
+Towards Vision-Language Geo-Foundation
+Model: A Survey 2024 Arxiv This review introduces geographic vision-language models, emphasizing geospatial
+priors and their multimodal fusion capabilities in geographic information processing. [11]
+AI Foundation Models in Remote Sensing: A
+Survey 2024 Arxiv This review summarizes AI foundational models in RS, analyzing their applications and
+challenges across different tasks. [12]
+Foundation model for generalist remote sensing
+intelligence: Potentials and prospects 2024 Science Bulletin
+This review envisions universal RS models with a “one model, multiple tasks”
+architecture to tackle task fragmentation and explores bottlenecks in high-resolution
+image processing.
+[13]
+Foundation Models for Remote Sensing and
+Earth Observation: A Survey 2024 Arxiv This survey reviews RS foundation models, covering their motivation, key concepts,
+existing studies, benchmarks, challenges, and future directions. [14]
+When Geoscience Meets Foundation Models:
+Toward a general geoscience artificial intelli-
+gence system
+2024 IEEE GRSM
+This review explores the potential of geoscience foundation models in advancing
+Earth system modeling, highlighting their advantages, construction techniques, recent
+advancements, and future challenges.
+[15]
+Advancements in Vision-Language Models for
+Remote Sensing: Datasets, Capabilities, and En-
+hancement Techniques
+2025 RS This review covers advancements in vision-language models, introduces RS-optimized
+multimodal datasets, and shifts models from descriptive analysis to decision support. [16]
+When Remote Sensing Meets Foundation
+Model: A Survey and Beyond 2025 RS
+This review examines the potential and challenges of foundation models for RS,
+highlighting recent advancements, open issues, and future directions to bridge the gap
+between natural and RS images.
+[17]
+Foundation Models in Remote Sensing: Evolv-
+ing from Unimodality to Multimodality (ours) 2025 –
+This review provides a comprehensive survey of foundation models in RS, uniquely
+framing their evolution from unimodality to multimodality with emphasis on tutorial-
+style practical guidance for researchers.
+–
+of foundation models in RS, focusing on bridging the gap
+between natural and RS images while identifying key open
+challenges and future research directions [17].
+While these reviews offer valuable insights into foundation
+models in RS, they primarily focus on specific subdomains,
+methodologies, or applications. In contrast, our review work
+takes a broader perspective on the transition from unimodal-
+ity to multimodality. We highlight key challenges and open
+problems in RS, clarify fundamental concepts and learning
+paradigms, explore emerging trends, and provide practical
+guidance with a strong emphasis on the future development
+of RS foundation models.
+D. Goals and Contributions
+The main goal of this paper is to create a clear pathway
+for RS researchers and practitioners to understand and effec-
+tively apply foundation models. We introduce these models,
+explain their unique learning paradigms, and demonstrate their
+practical applications within the context of RS. This survey
+emphasizes an intuitive, user-friendly approach to facilitate
+the broader adoption of foundation models in RS research and
+applications.
+The contributions of this paper can be summarized as three
+main objectives:
+•We aim to provide a detailed and accessible survey
+of foundation models specifically tailored to the RS
+field. While foundation models have gained significant
+attention in various domains, such as natural language
+processing and computer vision, their application and
+potential in RS remain relatively underexplored. This
+survey is designed to bridge that gap, yielding an in-depth
+overview of the core principles behind foundation models,
+how they operate in the context of RS, and how they
+compare to traditional methods of RS data processing and
+analysis. By clearly explaining their learning paradigms,
+we aim to help researchers, students, and engineers in RS
+better understand the fundamental differences between
+foundation models and more conventional approaches.
+•One of the most notable trends in the application of
+foundation models to RS is their evolution from unimodal
+models (which handle one type of data) to multimodal
+models (which integrate and analyze multiple types of
+data, such as optical, LiDAR, and SAR). This evolu-
+tion represents a fundamental shift in how RS data is
+processed and analyzed, moving toward more holistic,
+integrated approaches. In this survey, we systematically
+review the key works in this area, providing a fresh and
+comprehensive perspective on how foundation models
+have evolved to tackle the challenges of multimodal data
+integration in RS. By highlighting this shift, we aim to
+offer readers an accessible, intuitive understanding of
+the increasing complexity and capability of foundation
+models in RS.
+•Despite the growing awareness of foundation models
+within the RS community, many researchers and prac-
+titioners still struggle to understand how to effectively
+apply these models in real-world RS tasks. To address
+this, we provide a dedicated section that serves as a
+practical tutorial for users looking to incorporate pre-
+trained foundation models into their work. This tutorial
+
+=== PAGE BREAK ===
+
+4
+Fig. 1. A general learning paradigm for foundation models in RS: self-supervised pretraining+fine-tuning. For illustration, consider a vision-related example:
+the model is first pretrained on large amounts of unlabeled RS data, using backbone architectures such as MLPs, CNNs, RNNs, or ViTs. Contrastive and
+generative (reconstruction) losses are commonly employed during pretraining. The pretrained weights are then transferred to downstream RS tasks, where they
+can either remain frozen or be fine-tuned (typically with emphasis on decoder weights), enabling applications such as classification, segmentation, detection,
+regression, and generation.
+will walk readers through the necessary steps to apply
+these models, from fine-tuning pretrained models on
+specific RS tasks to integrating them into existing RS
+workflows. By providing tutorial-like guidance, we aim
+to help researchers and practitioners effectively utilize RS
+foundation models in their respective sectors, enabling
+them to address the increasingly complex challenges of
+next-generation EO.
+E. Paper Organization
+The remainder of this paper is organized as follows: Section
+II introduces the concept of foundation models in RS, provid-
+ing a concise overview of how these models function within
+the RS domain. Section III reviews the evolution of foundation
+models in RS, tracing the shift from unimodal to multimodal
+models and highlighting key advancements. In Section IV , we
+offer a tutorial-style guide to applying pretrained foundation
+models in RS, helping users navigate the practical aspects
+of using these models for specific tasks. Finally, Section V
+discusses the remaining challenges facing foundation models
+in RS, explores potential solutions, and outlines future research
+directions to further improve the effectiveness and application
+of these models in the field. By addressing both the theoretical
+and practical aspects of foundation models, this survey aims
+to provide a valuable resource for the RS community, helping
+to accelerate the adoption and application of these powerful
+tools in EO.
+II. FOUNDATION MODELS
+This section provides a concise overview of foundation
+models from a conceptual perspective and introduces their
+new learning paradigm. It addresses the questions, “What are
+foundation models?” and “How does their learning paradigm
+differ from previous ones?”
+A. A Brief Understanding of Foundation Models
+1)A Paradigm Shift in Machine Learning:Foundation
+models are characterized by their large scale and pretraining
+on vast, diverse datasets to learn generalized representations.
+Unlike traditional models that are typically designed for
+specific tasks and require extensive domain-specific training,
+foundation models are built to generalize across a wide range
+of tasks and domains. Their architecture, often based on trans-
+former models or similar deep learning frameworks, enables
+them to capture complex patterns and relationships within
+data. This generalization capability is a result of extensive
+parameterization and the ability to learn from heterogeneous
+data sources, allowing these models to be fine-tuned with
+minimal additional data for specific downstream applications.
+One of the most significant advantages of foundation mod-
+els is their scalability. They are capable of handling large
+datasets and complex data structures, making them suitable
+for a variety of domains, from natural language processing
+(e.g., GPT, BERT) to computer vision (e.g., CLIP, DINO).
+Additionally, their transferability enables them to adapt to
+new tasks with limited domain-specific adaptation, drastically
+reducing the need for large labeled datasets. This is particularly
+beneficial in fields where labeled data is scarce or expensive to
+obtain. Furthermore, their ability to process multimodal data,
+such as text, images, audio, and more, allows for a more
+comprehensive understanding and representation of complex
+phenomena.
+2)Foundation Models in RS Enable Transforming EO:
+Foundation models in RS are transformative tools designed to
+address the unique challenges associated with EO data. RS
+data is inherently complex, encompassing diverse modalities
+such as optical RGB, synthetic aperture radar (SAR), spec-
+tral data, LiDAR, and spatiotemporal sequences. Traditional
+RS models often struggle with integrating these multimodal
+datasets and require extensive labeled data for each specific
+
+=== PAGE BREAK ===
+
+5
+TABLE II
+REPRESENTATIVE PRETRAINING DATASETS FOR REMOTE SENSING FOUNDATION MODELS.
+Name Domain Modality Resolution Image Number
+SeCo General Scenes Spectral 10 m About 1 million
+SSL4EO-S12 Land Cover Spectral, SAR 10–60 m 1,004,316
+fMoW Classification RGB, Spectral 0.3–10 m 1,047,691
+MillionAID Classification RGB 0.5–11.4 m 400,695
+SSL4EO-L General Scenes Spectral 30 m 5 million
+Satlas OD, CD, Class, SemSeg RGB, spectral 1–10 m 856K
+GeoPile (GFM) General Scenes RGB 0.1–30 m 587,954
+DOFA-data General Scenes RGB, SAR, spectral 0.5–30 m 8,081,411
+Prithvi General Scenes Spectral 30 m 4.2 million
+Skysense General Scenes RGB, SAR, Spectral 0.31–20 m 21.5 million
+MMEarth General Scenes RGB, spectral, SAR, DEM 10 m 1.2 million
+application. Foundation models overcome these limitations
+by leveraging large-scale pretraining on diverse RS datasets,
+enabling the models to learn universal representations that
+are applicable across a broad spectrum of geospatial tasks.
+Table II summarizes widely used datasets for pretraining
+RS foundation models, emphasizing key characteristics such
+as domain focus, sensing modality, spatial resolution, data
+scale, and downstream suitability. Specifically,fMoWand
+MillionAIDprovide rich categorical annotations and medium-
+to-high resolution RGB imagery with limited spectral data
+coverage (0.3-11.4 m), making them particularly suitable for
+image- or scene-level classification and object-presence recog-
+nition.SSL4EO-S12(Sentinel-1/2, 10-60 m) [22] andSSL4EO-
+L(Landsat, 30 m) [23] combine broad spectral coverage
+with regular revisit cycles, supporting large-scale semantic
+segmentation and land-cover mapping where moderate res-
+olution is sufficient.Satlasis designed for object detection,
+change detection, classification, and semantic segmentation,
+leveraging NAIP/RGB/Sentinel imagery (1-10 m) to address
+tasks requiring fine spatial detail and cross-source consistency.
+Broad “general-scene” corpora such asSeCo,GeoPile (GFM),
+Prithvi,DOFA-data,Skysense, andMMEarthspan diverse
+modalities (RGB, SAR, spectral, DEM) and resolutions (0.1-
+30 m), promoting robust transferability across downstream
+tasks. In particular,DOFA-data,Skysense, andMMEarthin-
+corporate SAR and/or DEM layers, offering advantages for
+applications that demand weather-robust sensing (SAR) or
+topographic context (DEM).
+These models utilize self-supervised or unsupervised learn-
+ing techniques during the pretraining phase, allowing them to
+extract meaningful patterns and features from vast amounts
+of unlabeled RS data. This approach significantly reduces
+the dependency on labeled datasets, which are often limited
+in RS due to the challenges of pixel-level annotation across
+large and complex geographical areas. By enabling efficient
+transfer learning, foundation models can be fine-tuned with
+minimal labeled data to perform specific tasks, such as land
+cover classification, climate monitoring, disaster response, and
+agricultural assessment.
+The adaptability of foundation models in RS allows them
+to handle varying data resolutions, sensor types, and temporal
+frequencies, making them suitable for dynamic and hetero-
+geneous EO applications. Their scalability ensures that they
+can process large-scale datasets, such as continuous satellite
+imagery streams or global climate data, providing robust and
+timely insights for scientific research and practical applica-
+tions.
+B. Learning Paradigm in RS
+1)Bottlenecks in Traditional RS Methods:The traditional
+learning-based paradigm in RS image processing and analysis
+typically involves two primary approaches. The first focuses
+on manually or automatically extracting feature representations
+from RS images, followed by the application of classification
+or regression algorithms to interpret these features for specific
+tasks such as land cover classification, object detection, or en-
+vironmental monitoring. The second approach leverages end-
+to-end models, which directly map input data to output labels,
+streamlining the learning process by bypassing explicit feature
+extraction. Despite their effectiveness in certain applications,
+these traditional approaches are fundamentally limited by the
+availability of labeled data. In RS, labeling is particularly
+challenging due to the need to annotate vast amounts of data
+at the pixel level, often from a bird’s-eye perspective that
+covers extensive geographic areas. This labor-intensive and
+time-consuming process results in a scarcity of large-scale
+labeled datasets, leaving a significant proportion of RS data
+unlabeled and underutilized.
+2)Revolutionizing RS with Foundation Models:In con-
+trast, the advent of foundation models introduces a transfor-
+mative learning paradigm characterized by“self-supervised
+pretraining + fine-tuning”. This approach has increasingly
+become the dominant framework in RS, offering a solution to
+the limitations posed by traditional methods. Self-supervised
+pretraining enables models to learn rich, generalized represen-
+tations from massive amounts of unlabeled RS data by iden-
+tifying inherent patterns, structures, and relationships within
+the data itself. This process leverages the natural redundancy
+and complexity of RS datasets, such as temporal sequences,
+multimodal inputs (e.g., optical, SAR, LiDAR), and spectral
+variations, to build robust feature representations without the
+need for manual annotations.
+Following the pretraining phase, fine-tuning is employed to
+adapt the pretrained model to specific downstream tasks using
+a relatively small amount of labeled data. This significantly
+
+=== PAGE BREAK ===
+
+6
+Fig. 2. A statistical overview of foundation models in RS-related fields. (a) presents a quantitative comparison of unimodal and multimodal foundation models
+in RS. (b) illustrates the distribution of RS foundation models across different journals using a pie chart. (c) depicts the number of RS foundation models
+developed by different countries. The top three quantities in the two pie charts are highlighted in red, green, and blue.
+reduces the dependency on extensively labeled datasets while
+maintaining high performance across various applications. The
+fine-tuning process refines the model’s representations to align
+with task-specific objectives, such as land cover classification,
+change detection, or object recognition, thereby enhancing
+accuracy and generalization capabilities.
+The foundation model-based paradigm is particularly ad-
+vantageous in RS scenarios due to the vast availability of
+unlabeled data from diverse sensors and platforms. By effec-
+tively utilizing this data, foundation models can overcome the
+data scarcity issue inherent in traditional methods, leading to
+more efficient and scalable solutions. Furthermore, the ability
+to generalize across different RS tasks and datasets makes
+foundation models highly versatile, supporting a wide range of
+applications from environmental monitoring to urban planning.
+Fig. 1 illustrates the general learning paradigm of foundation
+models in RS, highlighting the transition from traditional
+supervised approaches to the more flexible and powerful self-
+supervised pretraining and fine-tuning framework. This shift
+not only enhances the efficiency of RS data utilization but also
+paves the way for more advanced, generalized, and robust RS
+applications.
+III. THE EVOLUTION FROM UNIMODALITY TO
+MULTIMODALITY
+This section provides an intuitive overview of foundation
+models in RS, tracing their evolution from unimodality to
+multimodality. Through this perspective, we explore how these
+models increasingly integrate diverse data types, i.e., both
+unimodal and multimodal data. Fig. 3 illustrates the roadmap
+of foundation models in RS from unimodality to multimodality
+between 2018 and 2025. As shown in the figure, multi-
+modal foundation models have gained increasing attention and
+popularity compared to unimodal models, particularly after
+2024, which marked a significant surge in their development.
+Notably, vision foundation models integrated with large lan-
+guage models (LMMs) have garnered growing interest from
+researchers.
+A. Overview: Statistical Analysis
+We collected 105 papers on foundation models in RS-
+related fields and conducted a statistical analysis to better
+understand their trends and impact. Fig. 2 presents an overview
+of these models from three perspectives: modality distribution,
+publication venues, and country-wise contributions.
+Fig. 2(a) compares unimodal and multimodal RS foundation
+models, showing a clear shift toward multimodal approaches.
+This trend became particularly evident in 2024, as the rapid
+development of RS foundation models led to increased inte-
+gration of diverse data sources, such as optical imagery, SAR,
+and spectral data. The growing interest in multimodal models
+reflects the need for more comprehensive and robust solutions
+in remote sensing applications.
+Regarding publication distribution (see Fig. 2(b)), arXiv
+hosts the largest number of papers, highlighting the early-stage
+dissemination of research findings before formal peer review.
+Among peer-reviewed venues, IEEE TGRS ranks second,
+emphasizing the strong influence of the geoscience and RS
+community, while CVPR, a premier AI and computer vision
+conference, takes third place. This indicates the increasing
+intersection of RS with cutting-edge AI and vision research.
+Fig. 2(c) shows the geographic distribution of the RS foun-
+dation model research. China leads in contributions, followed
+by the USA and Australia, demonstrating strong engagement
+from both traditionally dominant AI research hubs and emerg-
+ing leaders in RS-focused AI. This distribution underscores the
+global nature of the RS foundation model development, driven
+by the need for advanced AI solutions in Earth observation and
+geospatial analysis.
+Overall, these statistics highlight the rapid progress of
+foundation models in RS, the shift toward multimodality,
+and the increasing involvement of AI-driven methodologies.
+This trend reflects a growing commitment from the research
+community to push the boundaries of RS intelligence and
+develop more generalizable, scalable, and high-performance
+models for diverse applications.
+
+=== PAGE BREAK ===
+
+7
+Fig. 3. Roadmap of Foundation Models in RS from 2018 to 2025: The evolution from unimodal to multimodal approaches in RS. Unimodal data includes
+RGB, spectral, and SAR data. Multimodal integration is categorized into homogeneous data (e.g., multi-optical), optical-SAR, and heterogeneous data (e.g.,
+combinations of optical-SAR-spectral-DSM, vision-text, vision-audio, geospatial-vision, time-series, and vision-LMM). Different model categories are color-
+coded to distinguish various data modalities and integration types, with models arranged in chronological order within each time period (vertical orientation).
+B. Unimodal Foundation Models in RS
+Unimodal foundation models in RS are designed to pretrain
+on data from a single source or sensor type, leveraging the
+unique characteristics of a specific data modality. Examples
+include high-resolution RGB imagery, radar data, point clouds,
+spectral data 1, and meteorological data. These models aim to
+extract the most informative features and patterns from their
+respective modalities, optimizing their capabilities to address
+distinct properties and challenges. This targeted approach lays
+a cornerstone for advancing RS tasks within specialized data
+domains.
+1)Optical RGB Images:High-resolution spatial and se-
+mantic information in optical RGB images can be well rep-
+resented via self-supervised and contrastive learning methods
+[24]. For instance, MATTER [25] employs contrastive learn-
+ing to emphasize texture information in RS images, while
+RVSA [26] adopts a masking strategy inspired by MAE
+for pretraining on the MillionAID [27] dataset, followed by
+fine-tuning using its RVSA module. CMID [28] introduces
+a contrastive mask image distillation method by combining
+contrastive learning (CL) with mask image modeling (MIM)
+for global semantic separability and local spatial perceptibility.
+CtxMIM [29] introduces a context-enhanced generative branch
+to provide contextual information via consistency constraints
+for patch-wise reconstruction. The GFM model [30] leverages
+a large-scale public dataset and a teacher-student dual-stream
+network with masked image reconstruction as its objective,
+1We collectively refer to multispectral and hyperspectral data in RS as
+spectral data.
+achieving notable success in scene classification, change de-
+tection, and semantic segmentation tasks.
+Models such as Scale-MAE [31] and SatMAE++ [32] both
+address image size and resolution in RS: Scale-MAE focuses
+on scale-invariant representation learning, while SatMAE++
+enhances resolution-aware feature extraction. Consequently,
+Scale-MAE benefits cross-scale generalization tasks, whereas
+SatMAE++ is advantageous for high-resolution applications
+such as object detection and fine-grained segmentation. Se-
+lectiveMAE [33] dynamically encodes and reconstructs image
+patches selected according to semantic richness, employing
+a progressive semantic token selection module that evolves
+from reconstructing semantically similar tokens to encoding
+complementary semantic dependencies. MA3E [34] proposes
+a mask self-supervised learning framework based on rota-
+tional angle variations, addressing the differences between
+RS images and natural images. RingMo-Aerial [35] incor-
+porates spectral information as an auxiliary, training through
+contrastive learning. Billion PFM [36], and OReole-FM [37]
+extend the pretraining of high-resolution RS images to billion-
+parameter models using the MAE approach. The work in
+[38] proposes a resolution-guided self-cascading generative
+framework, called MetaEarth, which is capable of generating
+images of arbitrary regions with a wide range of geographic
+resolutions. Cross-Scale MAE [39] performs contrastive mask
+modeling on images of different sizes, forming a unified
+optimization framework for pretraining. PIEViT [40] is a novel
+self-supervised learning framework designed for RS images,
+employing a teacher-student architecture to handle both image-
+
+=== PAGE BREAK ===
+
+8
+level and block-level tasks.
+Additionally, the segmentation capabilities of the segment
+anything model (SAM) have garnered widespread attention
+in the RS field. MeSAM [41] designs a new adapter for RS
+optical images, embedding it within the SAM encoder to pro-
+cess images more effectively using multi-scale convolutional
+kernels while preserving high-frequency features. RSAM-Seg
+[42] enhances SAM by incorporating domain knowledge and a
+scaling module, performing tasks such as cloud, building, field,
+and road segmentation. Rsprompter [43] introduces a learnable
+anchor-based prompt and mask decoder, enabling SAM to
+handle class inputs for instance segmentation. UV-SAM [44]
+refines the coarse masks generated by class activation maps
+into pseudo-labels for training semantic segmentation models
+on RS images. ALPS [45] proposes a framework for fully
+automatic dense annotation using SAM without the need for
+prior knowledge or prompts.
+2)Spectral Data:Various models leverage multi-temporal
+and multi-band data to improve spatial and spectral informa-
+tion reconstruction [46]. SatMAE [47] introduces a grouping
+mask strategy tailored for multi-temporal, multichannel data,
+enabling better learning of channel and spatial relationships.
+DINO-MC [48] employs a contrastive learning framework, and
+Prithvi [49] enhances spectral-spatial representation learning
+by masking individual channels. MAF-SAM [50] proposes a
+multi-stage adaptive fine-tuning strategy, compressing spectral
+data into three channels using prefix adapters, applying LoRA
+fine-tuning to inject crop-specific knowledge into the image
+encoder, and generating multi-class segmentation masks with
+precise category information. Beyond previous approaches,
+SpectralGPT [19] is the first foundation model specifically
+tailored for spectral RS data. By explicitly modeling the
+intrinsic spatial-spectral coupling and spectral sequentiality
+of multi/hyper-spectral observations, SpectralGPT introduces
+a 3D masking strategy together with spectral consistency
+constraints. This design enables effective learning of spectral
+sequences and structured spectral representations, thereby sub-
+stantially advancing both the modeling paradigm and practi-
+cal understanding of spectral remote sensing data. MAEST
+[51] and MAESST [52] introduce masked self-supervised
+learning algorithms tailored to spectral characteristics to en-
+hance land cover classification accuracy. Wang et al. [53]
+performed self-supervised mask modeling pre-training on the
+large-scale spectral cube. The SpectralEarth [54] introduces
+a self-supervised learning algorithm, yielding a solid data
+foundation and algorithmic support for pretraining EnMap
+data with a series of fine-tuning downstream applications.
+HyperSIGMA [55] introduced a two-stream framework that
+separately models spatial and spectral information. In this
+approach, input spectral data are unified to a fixed number
+of bands by randomly selecting spectral bands and shuffling
+the spectral sequence. Pang et al. [56] proposed a generation
+foundation model, which is based on a latent diffusion model
+and supports multi-condition control. It also designs a two-
+stage super-resolution framework, generating the realism of
+the generated images.
+3)Synthetic Aperture Radar (SAR):FG-MAE [57] lever-
+ages histograms of oriented gradients (HOGs) as reconstruc-
+tion features, utilizing the spatial information inherent in SAR
+data. SAR-JEPA [58] adopts a joint embedding prediction
+architecture to predict gradient information for pre-training on
+SAR images. CWSAM [59] adapts the SAM framework for
+land cover classification in SAR images by incorporating task-
+specific input modules and a categorized mask decoder while
+injecting SAR low-frequency information for the segmentation
+task. SARATR-X [60] employs a multi-scale masking strategy
+for pre-training on SAR images, achieving object detection and
+classification tasks.
+C. Multimodal Foundation Models in RS
+While unimodal models in RS typically focus on single data
+types, such as optical, radar, or LiDAR, integrating multimodal
+data introduces an additional layer of complexity due to the
+heterogeneous nature of RS data. These data often come from
+different sensors, platforms, and scales, leading to variations
+in spatial, temporal, and spectral characteristics. For example,
+optical, radar, and LiDAR data each offer distinct perspectives
+of the Earth’s surface, but their integration requires addressing
+differences in resolution, data format, and noise characteristics.
+Moreover, combining both structured data (such as time series
+or geospatial coordinates) and unstructured data (such as text
+or images) further complicates the process. One of the main
+challenges of multimodal integration lies in harmonizing these
+diverse data types into a unified model that accurately captures
+the underlying phenomena while preserving the strengths of
+each modality. Furthermore, this integration must account for
+the varying degrees of uncertainty and incompleteness inherent
+in each data type, making it more challenging to develop
+robust and reliable models.
+Multimodal foundation models in RS extend beyond single
+modalities by integrating complementary information from
+diverse data types. These models handle homogeneous and
+heterogeneous data and combine visual data with other modal-
+ities, such as time series, geospatial, text, LMMs, and audio.
+Unlike multi-source data, which emphasizes different sources
+of RS data, multimodality focuses more on the integration
+of diverse data types or forms, enabling a more compre-
+hensive understanding of EO data. This approach enhances
+model performance by capturing the unique characteristics
+and relationships within each modality, ultimately improving
+the accuracy and robustness of RS applications. When work-
+ing with multimodal RS data, it is essential to distinguish
+between homogeneous and heterogeneous sources. Homoge-
+neous data (from the same sources but different sensors,
+such as Sentinel-2, Landsat, EnMap, GF-1/2/5/6) can typically
+be fused directly at the data level using operations such as
+band stacking, resampling, or resolution enhancement [61].
+In contrast, heterogeneous data (e.g., optical and SAR, or
+optical and DEM) generally cannot be combined at the raw
+data level due to differences in sensing principles, resolutions,
+and noise characteristics. In such cases, feature-level fusion is
+preferred, including early feature concatenation, intermediate
+feature interaction, and late decision-level combination. More
+recently, advanced interactive fusion strategies, such as cross-
+modal attention, graph-based reasoning, and co-learning mech-
+
+=== PAGE BREAK ===
+
+9
+anisms, have been introduced to dynamically capture cross-
+modal complementarities and thereby enhance performance on
+complex downstream tasks. For a more detailed discussion of
+best practices, readers may refer to [62].
+1)Heterogeneous Data7→Time-Series:In the fusion of
+visual and temporal data, several models have introduced novel
+strategies to enhance spatiotemporal representation in RS.
+SeCo [63] explicitly accounts for the seasonal characteristics
+of RS data by constructing positive and negative sample pairs
+from different seasonal images, improving the model’s sen-
+sitivity to seasonal variations. However, SeCo struggles with
+recognizing long-term temporal invariances. To address this,
+CACo [64] enhances temporal consistency with a contrastive
+loss function to extract more robust invariant features from
+time-series data.
+Further advancements extend to RS video data. RingMo-
+Sense [65] targets aerial videos by employing multi-strategy
+masking for pretraining. Meanwhile, U-BARN [66] adopts a
+BERT-like generative pretraining task, where masked portions
+of optical satellite image sequences are reconstructed.
+Other models refine spatiotemporal encoding through ad-
+vanced masking strategies. A2-MAE [67] integrates an anchor-
+aware masking strategy with a geo-encoding module, ef-
+fectively capturing spatial, temporal, and spectral variations.
+Finally, Prithvi-EO-2.0 [68] leverages time-series data from
+Landsat and Sentinel-2 via channel-masking pretraining to
+extract temporal features from homogeneous datasets, further
+strengthening time-series modeling in RS.
+2)Heterogeneous Data7→Geospatial-Vision:GeoKR
+[69] utilizes cartographic information as labels, combining
+distillation and contrastive learning for semi-supervised pre-
+training. GASSL [70] applies contrastive learning to uniformly
+augmented image data, incorporating geographic location as
+auxiliary supervision. CSPT [71] proposes a contrastive spatial
+pretraining approach, employing dual encoders to encode
+images and geographic locations separately. Through con-
+trastive objectives, it extracts effective location information
+from images for downstream supervised tasks such as image
+classification. Maiet al.[72] proposed the CSP model by
+introducing a self-supervised contrastive learning framework
+for geospatial-visual representations. GERSP [73] employs a
+teacher-student distillation network, aligning natural and RS
+images geographically to enhance the perception of general
+land cover knowledge in pretraining models. SoftCon [74]
+introduces soft contrastive learning, leveraging multi-label
+supervision signals derived from land cover data to optimize
+cross-scene soft similarity metrics, enhancing the model’s
+generalization in complex RS images.
+3)Homogeneous Data:For homogeneous data, the USat
+[75] model features a unique block projection layer and
+position encoding, enabling it to handle spectral data from
+multiple sensors and adapt to different spatial scales. RSDFM
+[76] employs the BEVFormer architecture to build a unified
+perspective from data across various platforms, angles, and
+altitudes. SenPa-MAE [77] uses spectral wavelength infor-
+mation as a prior embedding for the network and applies
+mask modeling self-supervised learning, allowing the model
+to perform exceptionally well on data from different spectral
+sensors. CrossEarth [78] introduces a domain generalization
+method to perform the semantic segmentation of founda-
+tion models across downstream datasets with different styles.
+AnySat [79] is a multimodal model that explores a resolution-
+adaptive spatial encoder. With the use of a scale-adaptive
+patch encoding module, AnySat can improve the model’s
+sensitivity to resolution effectively, specifically for optical
+RS data with varying resolutions. CSMAE [80] trained a
+cross-sensor MAE model for multisensor RS image retrieval
+to search semantically similar images across different image
+modalities effectively.
+4)Heterogeneous Data7→Optical-SAR:RingMo [81]
+adopts a sparse masking strategy and Transformer architecture
+tailored to the characteristics of heterogeneous RS images.
+These models, e.g., IaI-SimCLR [82], DINO-MM [83], RS-
+BYOL [84], employ the contrastive learning paradigm in
+the context of multimodal, multi-source satellite imagery.
+SatViT [85] directly transfers the MAE framework to learn
+heterogeneous data from optical and SAR sources. RS-BYOL
+[84] learns invariant feature embeddings from spectral and
+SAR data by combining single-channel and three-channel
+feature extraction. MANet [86] introduces two adapters into
+the SAM encoder for extracting single-modal information and
+the other for fusing multimodal information. CROMA [87]
+utilizes the CoCa framework, employing contrastive masked
+pretraining to combine spectral and radar data, thus improving
+the model’s ability to handle data heterogeneity. RS-vHeat [88]
+explores using a heat conduction-based parallel computing
+model to simulate local region correlations in high-resolution
+RS images. Recently, Li et al. [89] proposed a novel multi-
+modal foundation model in RS, called SeaMo, by embedding
+seasonal knowledge to improve the performance on a wide
+range of downstream applications.
+5)Heterogeneous Data7→Optical/SAR/Spectral/DSM:
+In the realm of multimodal RS, several models have been
+developed to integrate diverse data sources effectively. Sky-
+Sense [90] employs a decomposed multimodal spatiotem-
+poral encoder to handle optical and SAR time series data,
+leveraging multi-granularity contrastive learning to enhance
+its understanding of complex RS datasets. Similarly, SatLas
+[91] utilizes the Swin Transformer for large-scale supervised
+pretraining on NAIP, LiDAR, and Sentinel-2 data, improving
+its capacity to process diverse geospatial inputs.
+For segmentation tasks, RingMo-SAM [92] enhances mul-
+timodal segmentation by freezing the SAM encoder and
+applying parameter-efficient fine-tuning (PEFT) with LoRA,
+while incorporating modality-specific decoders for RGB, SAR,
+PolSAR, DSM, and MSI data. Expanding on multimodal
+tokenization, OFA-Net [93] introduces dedicated tokenizers for
+different input types (RGB, spectral, and radar), ensuring the
+model’s sensitivity to diverse spectral and spatial information.
+Meanwhile, DOFA [94] employs a dynamic weight generator
+to adaptively embed features across various spectral bands for
+creating an efficient foundation model that supports flexible
+input from RGB, spectral, and radar data.
+To further enhance cross-sensor learning, msGFM [95]
+adopts a cross-sensor pretraining approach based on masked
+image modeling, enabling joint representations from optical,
+
+=== PAGE BREAK ===
+
+10
+SAR, spectral, and DSM data, thus improving multimodal
+integration. Similarly, MM-VSF [96] combines spectral im-
+agery and weather data within a knowledge-guided framework,
+which uses variable step forecasting as its pretraining objective
+to boost environmental prediction capabilities.
+For multimodal segmentation, MM-SAM [97] extends SAM
+to support cross-modal and multimodal processing, signifi-
+cantly improving segmentation performance in multisensor RS
+applications. Meanwhile, DeCUR [98] introduces a decoupling
+strategy to separate common and unique representations to
+effectively fuse complementary information across modalities,
+such as radar-optical, RGB-elevation, and RGB-depth.
+Several models focus on holistic multimodal fusion and
+data assimilation. MMEarth [99] reconstructsℓ 2 distinct pixel-
+level and region-level modalities and labels during pretrain-
+ing, providing a comprehensive perspective for downstream
+tasks. Finally, OmniSat [100] integrates high-resolution RGB,
+spectral time series, and radar time series data by leveraging
+heterogeneous modules with contrastive masking strategies for
+pretraining, achieving strong performance across a wide range
+of multimodal applications.
+6)Heterogeneous Data7→Vision-LMM:The rapid de-
+velopment of LMMs has expanded RS tasks beyond tradi-
+tional visual models, enabling more sophisticated multimodal
+interactions. A common approach involves leveraging visual-
+language foundation models by aligning visual encoders with
+textual semantics to facilitate integration with LLMs. For
+instance, RSGPT [101] utilizes the EV A-CLIP encoder and
+is trained with advanced techniques in RS tasks. RS-LLaV A
+[102] applies LoRA fine-tuning to significantly boost LLaV A’s
+performance. EarthGPT [103] constructs a vision-enhanced
+perception mechanism that optimizes the fusion of coarse-
+scale semantic understanding with fine-scale detail extraction.
+Beyond static image analysis, interactive and conversational
+models play a crucial role in RS applications. RS-Agent [104]
+positions the LLM as a “central controller”, integrating mul-
+tiple high-performance RS image-processing tools to enable
+multi-tool, multi-turn interactions. GeoChat [105] pioneers
+the first conversational VLGFM supporting visual geolocation
+tasks, introducing a new paradigm for interactive RS image
+analysis. Change-Agent [106] proposes an interactive agent
+capable of performing comprehensive change detection, object
+counting, and causal analysis based on user instructions.
+EarthMarker [107] designs a cross-domain staged learning
+strategy to achieve multi-granular visual perception for image-
+level, region-level, and point-level RS interpretations.
+Several models focus on RS video analysis and temporal
+reasoning. SkyEyeGPT [108] is the VLGFM designed for
+RS video captioning, offering novel solutions for automated
+video content description. TEOChat [109] emerges as a visual
+language model capable of interacting with time-series RS
+data, excelling in various temporal reasoning tasks. UniRS
+[110] is the unified visual-language model for multi-temporal
+RS tasks, supporting single images, image pairs, and videos
+for comprehensive temporal analysis in a unified framework.
+To refine RS image comprehension, LHRS-Bot [111] em-
+ploys hierarchical visual-language alignment strategies and
+curriculum learning methods to provide new perspectives in
+RS analysis. LHRS-Bot-Nova [112] enhances LHRS-Bot with
+a vision encoder strengthened by a mixture of expert models
+and a new bridging module, improving multimodal large
+language model comprehension of RS images for interactive
+natural language dialogue. RingMoGPT [113] addresses key
+issues in RS, such as object-level recognition, localization,
+and multi-temporal change detection, with a location- and
+instruction-aware Q-Former and change detection module for
+target detection and change description. RSUniVLM [114] in-
+troduces a Granularity-oriented Mixture of Experts, enhancing
+the model’s ability to capture visual information at different
+granularities.
+Emerging models emphasize high-resolution and fine-
+grained perception. GeoPix [115] extends the multimodal large
+language model understanding of RS images to the pixel
+level. GeoPixel [116] is an end-to-end high-resolution mul-
+timodal model that supports pixel-level localization, enabling
+fine-grained visual perception through interleaved masks in
+dialogue. It supports high-resolution RS image analysis up to
+4K and is compatible with any aspect ratio. EarthDial [117]
+supports spectral, multi-temporal, and multi-resolution images,
+performing a wide range of RS tasks such as classification,
+detection, description generation, question answering, visual
+reasoning, and visual localization.
+Some models integrate domain-specific AI with Earth ob-
+servation. REO-VLM [118] combines regression capabilities
+with traditional generative functions, using language-driven
+reasoning to incorporate scientific domain knowledge, en-
+abling complex interpretation of Earth observation data and
+supporting tasks like biomass regression and image content
+explanation. SkySenseGPT [119] incorporates principles from
+computer graphics to enhance the model’s ability to perceive
+and reason relationships between RS targets. These develop-
+ments represent a shift toward more interactive, domain-aware,
+and high-resolution AI-driven RS analysis, marking a new era
+in geospatial intelligence.
+7)Heterogeneous Data7→Vision-Text:In the vision-text
+domain, several models have been developed to bridge the
+gap between RS images and textual descriptions. Text2Seg
+[121] integrates the zero-shot segmentation capability of
+SAM with CLIP and Grounding DINO, employing a two-
+stage framework, e.g., PreSAM and PostSAM, to achieve
+text-guided semantic segmentation of RS images. Similarly,
+GeoRSCLIP [122], released alongside the RS5M dataset, is
+a vision-language-pretrained model specifically designed for
+RS imagery. Inspired by CLIP, Li. et al. [123] introduced
+a vision-language model (RS-CLIP) for RS scene classifica-
+tion based on contrastive vision-language supervision, while
+SatCLIP [124] enhances the alignment between images and
+their geographic locations, improving the model’s geospatial
+awareness.
+Beyond direct image-text alignment, other models leverage
+external geospatial information to enrich RS image under-
+standing. SkyScript [125] utilizes OpenStreetMap data to
+annotate RS images based on Ground Sampling Distance
+(GSD), enabling a more structured approach to geospatial
+labeling. Meanwhile, RemoteCLIP [126] is a pretrained model
+for RS image-language tasks, constructing image-text pairs
+
+=== PAGE BREAK ===
+
+11
+TABLE III
+ACONCISE COMPARISON OF EXISTING UNIMODAL FOUNDATION MODELS(E.G., RGB,SPECTRAL DATA, SAR)INRS,DETAILING THEIR
+CORRESPONDING PUBLICATIONS,PRETRAINED ARCHITECTURES,DOWNSTREAM APPLICATIONS,AND CODE AVAILABILITY. CL: CONTRASTIVE
+LEARNING, MAE: MSKEDAUTOENCODERS, MIM: MASKEDIMAGEMODELING, DIFF: DIFFUSIONMODEL, JEPA: JOINTEMBEDDINGPREDICTIVE
+ARCHITECTURE, SC: SCENECLASSIFICATION, SS: SEMANTICSEGMENTATION, CD: CHANGEDETECTION, OD: OBJECTDETECTION, SR:
+SUPER-RESOLUTION, AD: ANOMALYDETECTION, SU: SPECTRALUNMIXING, DN: DENOISING, IG: IMAGEGENERATION.
+Modality Models Publications Architectures Downstreams Codes
+RGB
+Matter [25] CVPR’23 CL SC, SS, CD https://github.com/periakiva/MATTER
+Scale-MAE [31] ICCV’23 MAE SC, SS https://github.com/bair-climate-initiative/scale-mae
+RVSA [26] TGRS’22 MIM SC, SS, OD https://github.com/ViTAE-Transformer/Remote-Sensing-RVSA
+CMID [28] TGRS’23 CL&MIM SC, CD, OD https://github.com/NJU-LHRS/official-CMID
+GFM [30] ICCV’23 MIM SC, SS, CD, SR https://github.com/mmendiet/GFM
+Cross-Scale MAE [39] NeurIPS’23 MAE SC, SS https://github.com/aicip/Cross-Scale-MAE
+MTP [120] JSTARS’24 Supervised SS, CD, OD https://github.com/ViTAE-Transformer/MTP
+Selective MAE [33] Arxiv’24 MAE SC, SS, OD https://github.com/Fengxiang23/SelectiveMAE
+MA3E [34] ECCV’24 MAE SC, SS, OD https://github.com/benesakitam/MA3E
+SatMAE++ [32] CVPR’24 MAE SC https://github.com/techmn/satmae pp
+RS-Prompter [43] TGRS’24 Supervised SS https://github.com/KyanChen/RSPrompter
+UV-SAM [44] AAAI’24 Supervised SS https://github.com/tsinghua-fib-lab/UV-SAM
+RSAM-Seg [42] RS’24 Supervised SS https://github.com/Chief-byte/RSAM-Seg
+ALPS [45] TIP’24 Supervised SS https://github.com/StriveZs/ALPS
+MeSAM [41] TGRS’24 Supervised SS https://github.com/Magic-lem/MeSAM
+MetaEarth [38] TPAMI’24 Diff IG https://jiupinjia.github.io/metaearth/
+Spectral Data
+SatMAE [47] NeurIPS’22 MAE SC,SS https://sustainlab-group.github.io/SatMAE/
+DINO-MC [48] CVPRW’24 CL SC, CD https://github.com/WennyXY/DINO-MC
+SpectralGPT [19] TPAMI’24 MAE SC, SS, CD https://github.com/danfenghong/IEEE TPAMI SpectralGPT
+MAEST [51] TGRS’22 MAE SS https://github.com/ibanezfd/MAEST
+MAESST [52] CVPRW’23 MAE SS https://github.com/HSG-AIML/MaskedSST/
+HyperSIGMA [55] TPAMI’25 MAE SS, AD, OD, CD, SU, SR, DN https://github.com/WHU-Sigma/HyperSIGMA
+HSIMAE [53] JSTARS’24 MAE SS https://github.com/Ryan21wy/HSIMAE
+HSIGene [56] Arxiv’24 Diff IG https://github.com/LiPang/HSIGene
+SAR
+FG-MAE [57] JSTARS’24 MAE SC, SS https://github.com/zhu-xlab/FGMAE
+SAR-JEPA [58] ISPRS’24 JEPA OD https://github.com/waterdisappear/SAR-JEPA
+CWSAM [59] JSTARS’25 Supervised SS https://github.com/xypu98/CWSAM
+SARATR-X [60] TIP’25 MAE SC, OD https://github.com/waterdisappear/SARATR-X
+from existing datasets to enhance retrieval, detection, and
+segmentation capabilities. To address the scarcity of text-
+annotated RS data, GRAFT [127] pairs georeferenced ground-
+level images from Flickr with corresponding RS images and
+captions, effectively augmenting the available training data.
+In the realm of generative modeling, diffusion-based ap-
+proaches have emerged as powerful tools for RS applications.
+DiffusionSat [128] integrates metadata, such as geographic
+location in the diffusion model, tackling tasks like time se-
+ries generation, super-resolution reconstruction from spectral
+inputs, and image restoration on large-scale high-resolution
+datasets. Expanding on this, CRS-Diff [129] introduces a
+multi-condition control mechanism, allowing precise genera-
+tion by supporting text, metadata, and image inputs. GeoText
+[130] further enhances spatial and fine-grained perception by
+aligning land cover targets with text descriptions, improving
+the interpretability of geospatial datasets.
+Several models also explore novel strategies for image-
+location alignment and multimodal data fusion. GeoCLIP
+[131], inspired by image-to-GPS retrieval strategies, aligns RS
+images with their corresponding GPS locations as a continuous
+function by leveraging positional encoding in the Fourier
+domain. MMM-RS [132] advances text-to-image generation
+by training a CycleGAN-based model on large-scale multi-
+modal, multi-resolution RS imagery. Finally, Text2Earth [133],
+a 1.3-billion-parameter generative model built on a diffusion
+framework, is designed specifically for global-scale RS scene
+modeling, further pushing the boundaries of text-conditioned
+RS image synthesis.
+8)Heterogeneous Data7→Vision-Audio:In vision-audio
+fusion, SoundingEarth [134] leverages audio data matched
+with RS images to construct training pairs. Within a contrastive
+learning framework, it aligns audio and image representations
+to enable effective pretraining for tasks requiring multimodal
+understanding.
+D. A Concise Summary of Foundation Models in RS
+We summarize unimodal and multimodal RS foundation
+models, detailing their corresponding publications, pretrained
+architectures, downstream applications, and code availability.
+Tables III and V categorize these models by unimodality and
+multimodality, respectively, providing insights into their archi-
+tectures, practical applications, and available implementations
+to help readers effectively differentiate and utilize existing
+foundation models.
+We further demonstrate the performance gains of multi-
+modal over unimodal foundation models in representative RS
+tasks, as summarized in Table IV. More specifically, multi-
+modal pretrained models consistently achieve superior results
+across classification, segmentation, and change detection tasks.
+To evaluate this improvement, we adopt PANGAEA-Bench,
+a comprehensive benchmark comprising 11 datasets cover-
+ing semantic segmentation, change detection, and regression.
+These datasets span diverse temporal settings (mono-, bi-,
+and multi-temporal), global geographic distributions, spatial
+resolutions from 1.5 to 30 m per pixel, and heterogeneous
+sensor modalities (RGB, spectral, SAR). This benchmark thus
+provides a rigorous and unified framework for assessing RS
+
+=== PAGE BREAK ===
+
+12
+TABLE IV
+PERFORMANCE COMPARISON OF UNIMODAL AND MULTIMODAL MODELS ONPANGAEABENCHMARK. THE BEST-PERFORMING MODEL FOR EACH
+DATASET IS HIGHLIGHTED IN RED,THE SECOND-BEST IN BLUE,AND THE THIRD-BEST IS UNDERLINED.
+Modality Model BurnSr MADOS PASTIS Sen1Fl11 FBP DEN CTM-SS SN7 AI4Farms Xview2 BioMassters
+Wildfire Marine Agriculture Flood Land Land Agriculture CD Agriculture CD Regression
+Unimodal
+SatlasNet 79.96 55.86 17.51 90.30 50.97 36.31 46.97 61.88 25.13 52.23 41.67
+Prithvi 1.0 83.62 49.98 33.93 90.37 46.81 27.86 43.07 56.54 26.86 49.35 39.99
+SpectralGPT 80.47 57.99 35.44 89.07 33.42 37.85 46.95 58.86 26.75 48.40 36.11
+S.-S12-MoCo 81.58 51.76 34.49 89.26 53.02 35.44 48.58 57.64 25.38 51.59 40.21
+S.-S12-DINO 81.72 49.37 36.18 88.61 51.15 34.81 48.66 56.47 25.62 50.56 41.23
+S.-S12-MAE 81.91 49.90 32.03 87.79 51.92 34.08 45.80 57.13 24.69 50.44 41.07
+Multimodal
+RemoteCLIP 76.59 60.00 18.23 74.26 69.19 31.78 52.05 57.76 25.12 57.41 49.79
+CROMA 82.42 67.55 32.32 90.89 51.83 38.29 49.38 59.28 25.65 53.27 36.81
+DOFA 80.63 59.58 30.02 89.37 43.18 39.29 51.33 61.84 27.07 59.64 42.81
+TerraMind 82.42 69.52 40.51 90.62 59.72 37.87 55.80 60.61 28.12 - -
+foundation models. As shown in Table IV, multimodal models
+dominate top-performing positions across nearly all tasks. In
+particular, on datasets such as CTM-SS, they deliver substan-
+tial gains over unimodal models, highlighting their superior
+generalization and effectiveness across RS applications.
+IV. HOW TOUSEPRETRAINEDFOUNDATIONMODELS IN
+RS DOWNSTREAMTASKS: A TUTORIAL
+Pretrained foundation models in RS offer robust capabilities
+for downstream tasks by leveraging extensive pretraining on
+massive datasets. Efficiently applying these models to various
+tasks is a critical focus in RS research and practice. This chap-
+ter provides a step-by-step guide covering model selection, en-
+vironment setup, model loading, fine-tuning, and deployment,
+offering practical methods for utilizing RS foundation models.
+A detailed workflow for these steps is shown in Fig. 4.
+A. Choose Right RS Foundation Models
+Different RS foundation models exhibit unique character-
+istics in terms of pretraining data, network architecture, and
+model features. Therefore, selecting the right model requires
+careful evaluation based on the needs of the downstream task.
+First, consider the source and characteristics of the pre-
+training data, such as the type of sensor used, the satellite
+platform, image dimensions, channel count, and data format
+(e.g., integer or floating-point). These factors help assess the
+alignment between the model’s pretraining data and the data
+requirements of the downstream task.
+Second, model architecture plays a crucial role. Evaluate
+whether the model employs a Transformer, a convolutional
+network, or a hybrid backbone, along with the parameter count
+and computational complexity, to ensure compatibility with
+the task’s resource constraints. Additionally, assess whether
+the architecture meets specific requirements for lightweight
+deployment or real-time performance.
+Finally, one should consider the model’s unique features,
+such as its ability to integrate multimodal data or incorporate
+temporal information. These features can significantly enhance
+performance in specialized tasks.
+B. Model Configuration
+After selecting a foundation model, the next step is con-
+figuring the corresponding runtime environment based on its
+documentation. The core goal is to ensure the libraries and
+frameworks the model requires are correctly set up.
+Most RS foundation models rely on Python and deep
+learning frameworks like PyTorch. Additionally, tools for
+processing RS data, such as rasterio 2 and GDAL, are often
+necessary. When setting up the environment, one should pay
+close attention to installing framework versions compatible
+with the selected model. Ensure that pre-trained weights are
+correctly downloaded and stored in the specified locations.
+Properly configuring the environment is essential to support
+subsequent tasks, such as model loading and fine-tuning, and
+ensures reliable operation throughout the workflow.
+C. Load Pretrained Foundation Models
+The process of loading pretrained models involves more
+than just importing weights; it also requires addressing chal-
+lenges stemming from the unique characteristics of RS data.
+Variations in image dimensions and channel counts can prevent
+pretrained models from functioning correctly if left unad-
+dressed.
+1) Handling Mismatches w.r.t Image Dimension:
+•Issue:Pretrained models are typically designed for fixed
+image sizes (e.g.,224×224×3), whereas the image
+dimensions in downstream tasks may differ (e.g.,128×
+128×3).
+•Solutions:(i) Image Resizing or Interpolation: Adjust the
+dimensions of the input images to match the requirements
+of the pretrained model. (ii) Positional Encoding Inter-
+polation: For models using positional encodings (e.g.,
+transformers), interpolate the encoding values to adapt
+to the new input dimensions while maintaining spatial
+consistency.
+2) Handling Mismatches w.r.t Channel Dimension:
+•Issue:RS data often exhibit significant variability in
+channel counts, such as single-channel SAR images or
+spectral images with dozens or hundreds of channels.
+2https://github. com/mapbox/rasterio
+
+=== PAGE BREAK ===
+
+13
+TABLE V
+ACONCISE COMPARISON OF EXISTING MULTIMODAL FOUNDATION MODELS INRS,CATEGORIZED BY MODALITY TYPE(E.G., TIME-SERIES,
+GEO-VISION, HOMOGENEOUS, OPTICAL-SAR, HETEROGENEOUS, VISION-LLM, VISION-TEXT,ANDVISION-AUDIO). THE TABLE DETAILS THEIR
+CORRESPONDING PUBLICATIONS,PRETRAINED ARCHITECTURES,DOWNSTREAM APPLICATIONS,AND CODE AVAILABILITY. CL: CONTRASTIVE
+LEARNING, MAE: MSKEDAUTOENCODERS, MIM: MASKEDIMAGEMODELING, DIFF: DIFFUSIONMODEL, JEPA: JOINTEMBEDDINGPREDICTIVE
+ARCHITECTURE, SC: SCENECLASSIFICATION, SS: SEMANTICSEGMENTATION, RE: REGRESSION, CD: CHANGEDETECTION, OD: OBJECT
+DETECTION, SR: SUPER-RESOLUTION, IG: IMAGEGENERATION, VP: VISUALPREDICTION, VG: VISUALGROUNDING, OT: OBJECTTRACKING, IR:
+IMAGERETRIEVAL, GM: GEOMETRICMEASUREMENT, PS: PAN-SHARPENING, REC: REFERRINGEXPRESSIONCOMPREHENSION, TRE: TEMPORAL
+REFERRINGEXPRESSION, RES: REFERRINGEXPRESSIONSEGMENTATION, VQA: VISUALQUESTIONANSWERING, CR: CLOUDREMOVAL
+Modality Models Publications Architectures Downstreams Codes
+Time-series
+SeCo [63] ICCV’21 CL SC, CD https://github.com/ServiceNow/seasonal-contrast
+CaCo [64] CVPR’23 CL SC,SS, CD https://github.com/utkarshmall13/CACo
+RingMo-Sense [65] TGRS’23 MAE OD,VP,OT https://github.com/
+U-BARN [66] JSTARS’24 MAE SS https://src.koda.cnrs.fr/iris.dumeur/ssl ubarn
+Prithvi2.0 [68] Arxiv’24 MAE SC, SS, VP, GM https://github.com/NASA-IMPACT/Prithvi-EO-2.0
+Geo-Vision
+GASSL [70] ICCV’21 CL SC, SS, OD https://github.com/sustainlab-group/geography-aware-ssl
+GeoKR [69] TGRS’21 CL SC,SS, OD https://ieeexplore.ieee.org/abstract/document/9559903
+CSPT [71] RS’22 MAE SC, OD https://github.com/ZhAnGToNG1/transfer learning cspt
+GERSP [73] TGRS’24 CL SS, IC, OD https://github.com/floatingstarZ/GeRSP
+SoftCon [74] TGRS’24 CL SC, SS, CD https://github.com/zhu-xlab/softcon?tab=readme-ov-file
+Homogeneous
+Usat [75] Arxiv’23 MAE SC https://github.com/stanfordmlgroup/USat
+SenPa-MAE [77] GCPR’25 MAE SS https://github.com/JonathanPrexl/SenPa-MAE
+CrossEarth [78] Arxiv’24 Supervised SS https://github.com/Cuzyoung/CrossEarth
+AnySat [79] CVPR’25 JEPA SC, SS https://github.com/gastruc/AnySat
+Optical-SAR
+RingMo [81] TGRS’22 MIM SC, SS, CD, OD https://github.com/comeony/RingMo
+SatViT [85] GRSL’22 MAE SC https://github.com/antofuller/SatViT
+DINO-MM [83] IGARSS’22 CL SC https://github.com/zhu-xlab/DINO-MM
+RS-BYOL [84] JSTARS’22 CL SC, SS https://github.com/
+CROMA [87] NeurIPS’23 CL&MAE SC, SS https://github.com/antofuller/CROMA
+MANet [86] Arxiv’24 Supervised SS https://github.com/sstary/SSRS
+CSMAE [80] TGRS’25 MAE IR https://github.com/jakhac/CSMAE
+Heterogeneous
+SatLas [91] ICCV’23 Supervised SC, SS, OD, RE, GM https://github.com/allenai/satlaspretrain models
+DeCUR [98] ECCV’24 CL SC, SS https://github.com/zhu-xlab/DeCUR
+DOFA [94] Arxiv’24 MAE SC, SS https://github.com/zhu-xlab/DOFA
+msGFM [95] CVPR’24 MAE SC, SS, PS, CR https://github.com/boranhan/Geospatial Foundation Models
+OmniSat [100] ECCV’24 CL&MAE SC,SS https://github.com/gastruc/OmniSat?tab=readme-ov-file
+MMEarth [99] ECCV’24 MAE SC, SS https://github.com/vishalned/MMEarth-train
+MM-SAM [97] Arxiv’24 Supervised SS https://xiaoaoran.github.io/projects/MM-SAM
+Vision-LLM
+RSGPT [101] ISPRS’25 Supervised VQA, IC https://github.com/Lavender105/RSGPT
+GeoChat [105] CVPR’24 Supervised VQA, IC, SC, REC, VG, OC https://github.com/mbzuai-oryx/GeoChat
+SkyEyeGPT [108] ISPRS’25 Supervised VQA, IC, REC, REG https://github.com/ZhanYang-nwpu/SkyEyeGPT
+VHM [135] AAAI’25 Supervised SC, VQA, IC, REC, REG, OC, GM https://github.com/opendatalab/VHM
+RS-LLaV A [102] RS’24 Supervised VQA, IC https://github.com/BigData-KSU/RS-LLaV A?tab=readme-ov-file
+LHRS-Bot [111] ECCV’24 Supervised SC, VQA, IC, REC https://github.com/NJU-LHRS/LHRS-Bot
+EarthGPT [103] TGRS’24 Supervised SC, VQA, IC, REC, REG https://github.com/wivizhang/EarthGPT
+SkysenseGPT [119] Arxiv’24 Supervised VQA, IC, REC, REG https://github.com/Luo-Z13/SkySenseGPT
+RS-Agent [104] Arxiv’24 Agent VQA, OC, REG https://github.com/IntelliSensing/IntelliSensing.github.io
+EarthMarker [107] TGRS’24 Supervised VQA, SC, IC, VG, REC https://github.com/wivizhang/earthmarker
+LHRS-Bot-Nova [112] ISPRS’25 Supervised SC, VQA, IC, OD, VG, REG https://github.com/NJU-LHRS/LHRS-Bot/tree/nova
+UniRS [110] Arxiv’24 Supervised VQA, IC, SC, TRE https://github.com/IntelliSensing/UniRS
+ChangeAgent [106] TGRS’24 Supervised CD, TRE https://github.com/Chen-Yang-Liu/Change-Agent
+RSUniVLM [114] Arxiv’24 Supervised VQA, SC, VG, CD, RES, TRE https://github.com/xuliu-cyber/RSUniVLM
+TEOChat [136] ICLR’25 Supervised VQA,REC,TRE https://github.com/ermongroup/TEOChat
+GeoPixel [116] ICML’25 Supervised RES, VQA, VG, OC https://github.com/mbzuai-oryx/GeoPixel
+Vision-Text
+RS-CLIP [123] JAG’23 CL SC https://github.com/lx709/RS-CLIP
+RemoteCLIP [126] TGRS’24 CL SC, IR, OC https://github.com/ChenDelong1999/RemoteCLIP
+GeoRSCLIP [122] TGRS’24 CL SC, IR https://github.com/om-ai-lab/RS5M
+GeoCLIP [131] NeurIPS’23 CL SC, GM, IR https://vicentevivan.github.io/GeoCLIP/
+SatCLIP [124] AAAI’25 CL SC, GM, IR https://github.com/microsoft/satclip
+SkyScript [125] AAAI’24 CL SC, IR https://github.com/wangzhecheng/SkyScript
+GeoText [130] ECCV’24 Supervised IR, VG, OC https://multimodalgeo.github.io/GeoText/
+Text2Seg [121] SIGSPATIAL-W’24 CL SS https://github.com/Douglas2Code/Text2Seg
+DiffusionSat [128] ICLR’24 Diff IG, SR https://github.com/samar-khanna/DiffusionSat
+CRS-Diff [129] TGRS’24 Diff IG https://github.com/Sonettoo/CRS-Diff
+Text2Earth [133] GRSM’25 Diff IG, IR https://chen-yang-liu.github.io/Text2Earth
+Vision-Audio Sounding Earth [134] JAG’23 CL SC, SS, IR https://github.com/khdlr/SoundingEarth
+
+=== PAGE BREAK ===
+
+14
+•Solutions:(i) Channel Duplication or principal compo-
+nent analysis (PCA) Dimensionality Reduction: Repli-
+cate channels or reduce the input dimensionality using
+PCA to align with the model’s requirements. (ii) Adding
+Convolutional Layers: Introduce a convolutional layer at
+the input stage to transform the channel count to match
+the pretrained model. (iii) Modifying the Input Layer:
+Directly adjust the model’s input layer to accommodate
+the new channel count, ensuring compatibility with the
+specific data characteristics.
+D. Fine-tune and Deploy Foundation Models
+After loading the model, fine-tuning is necessary to adapt it
+to specific tasks. Fine-tuning strategies can range from freezing
+certain parameters and training only particular modules, such
+as the input or output layers, to fully fine-tuning the entire
+model.
+1) Choosing a Fine-tuning Strategy:
+•Resource-aware Fine-tuning:For scenarios with limited
+computational resources, freeze the pretrained parameters
+and adjust only task-specific modules to reduce compu-
+tational overhead.
+•Comprehensive Fine-tuning:For tasks requiring high
+precision or when resources are abundant, fine-tune the
+entire model to optimize it fully for the downstream task.
+2) Deploying the Fine-tuned Model:Once fine-tuning is
+complete, the model can be deployed to make predictions on
+new data. The fine-tuned model leverages the generalization
+capabilities from the pretraining phase and the task-specific
+optimizations from fine-tuning, often achieving superior accu-
+racy and robustness in practical applications.
+E. Tutorial Extension: Vision-Language Foundation Models
+for RS
+Why this extension?The above tutorial focuses on vision-
+only foundation models. However, many real-world RS ap-
+plications require joint reasoning over imagery and textu-
+al/metadata information (e.g., scene descriptions, sensor meta-
+data, temporal or geospatial attributes). To address the re-
+viewer’s concern, we provide a practical, step-by-step guide
+for adoptingvision-language foundation models(VLFMs) in
+RS workflows. This section mirrors the previous pipeline while
+emphasizing multimodal specifics.
+1) Step 1: Clarify Task Type and Data Pairing:
+•Task taxonomy:Identify whether the downstream task
+isimage-to-text(captioning, report generation),text-to-
+image retrieval,visual question answering (VQA),in-
+struction following / dialogue, ormultimodal classifica-
+tion/detectionwith textual prompts.
+•Paired data construction:RS corpora rarely come with
+rich human-written captions. Consider (i) leveraging ex-
+isting metadata (sensor name, acquisition time, geoloca-
+tion, land-cover labels) to auto-generate weak captions;
+(ii) using large language models (LLMs) to refine noisy
+metadata into natural language; and (iii) adopting teacher
+models (e.g., generic VLFMs) to pseudo-caption images,
+followed by human filtering for critical datasets.
+•Granularity of text:Decide if you need per-image, per-
+tile, or per-object text. Fine-grained supervision often
+improves VQA/grounding, but increases annotation cost.
+2) Step 2: Choose/Configure an RS Vision–Language FM:
+•Model families:
+1)Encoder-decoder style(e.g., BLIP-2-like): a frozen
+vision encoder, a lightweight connector (Q-Former /
+MLP / cross-attn), and a frozen or partially tunable
+LLM.
+2)Unified transformers(single backbone for both
+modalities) that jointly encode tokens from vision
+and text.
+3)RS-specific VLFMs(e.g., GeoChat-like), already
+adapted to geographic semantics and RS vocabulary.
+•Connector design:Ensure the connector can handle RS-
+specific vision tokens (e.g., many bands, large tiles). For
+spectrum-rich data, prepend bandtext tokens(“Band-11
+(SWIR 1.61 µm)”) or wavelength descriptors to help the
+language side understand spectral semantics.
+•Tokenizer and vocabulary:Confirm that sensor names,
+land-cover classes, and geospatial terms exist in the
+tokenizer; if not, extend the vocabulary or map to existing
+tokens via aliases.
+3) Step 3: Load and Align Multimodal Weights:
+•Vision side mismatches:Reuse the image-
+dimension/channel strategies from Section IV (resizing,
+positional encoding interpolation, input adapters). For
+spectral inputs, consider (i) spectral grouping or 1×1
+conv,and simultaneously(ii) pass textual descriptors
+of dropped/merged bands to the language side to
+compensate for lost information.
+•Text side initialization:Load the LLM tokenizer and
+weights first; then initialize or map the connector param-
+eters. If the connector expects a fixed number of visual
+tokens, interpolate or sparsely sample patch tokens to
+match.
+•Cross-modal alignment heads:Some checkpoints with
+image–text contrastive or matching heads. Verify dimen-
+sion consistency when swapping encoders or tokenizers.
+4) Step 4: Multimodal Fine-tuning Strategies:
+•Lightweight adaptation (resource-aware):Freeze both
+the vision encoder and LLM, and fine-tune only (i) the
+connector (e.g., Q-Former), (ii) LoRA/adapter layers in
+the LLM, and/or (iii) a shallow projection for spectral
+channels. This is often enough for retrieval and caption-
+ing.
+•Instruction tuning:For VQA or dialogue-style tasks,
+curate instruction–response pairs (questions about RS
+scenes, answers grounded in imagery). Apply supervised
+fine-tuning (SFT), then optionally preference optimiza-
+tion (DPO/RLHF) if human preference data is available.
+•Multi-task schedules:Combine image–text contrastive
+loss, image-conditioned language modeling, and multi-
+lingual targets (e.g., English/Chinese) to bolster general-
+ization.
+
+=== PAGE BREAK ===
+
+15
+Fig. 4. A step-by-step workflow for applying pretrained foundation models in RS downstream tasks. This tutorial-like process begins with model selection,
+followed by environment configuration and model loading, and concludes with fine-tuning and deploying the chosen foundation models for specific RS
+applications.
+5) Step 5: Deployment and Prompting:
+•Prompt design:Provide structured prompts that expose
+RS context: “You are an RS analyst. Given a Sentinel-2
+image (10 m GSD, bands: B2, B3, B4, B8), answer the
+question.”. Such explicit cues reduce hallucination.
+•Inference efficiency:For large LLMs, distill to smaller
+language heads or cache key-value states for repeated
+queries. On the vision side, precompute image embed-
+dings and index them for retrieval tasks.
+•Evaluation:Beyond standard NLP metrics (BLEU,
+CIDEr), adopt RS-aware measures (land-cover accuracy,
+geospatial grounding accuracy) and human expert evalu-
+ation for safety-critical tasks.
+Takeaway.Integrating VLFMs into RS pipelines requires (1)
+constructing or curating reliable image-text pairs, (2) choosing
+an appropriate multimodal architecture/connector, (3) care-
+fully aligning spectral/spatial tokens with textual descriptors,
+and (4) adopting resource-sensitive fine-tuning and prompt
+strategies. Following these steps enables robust cross-modal
+understanding and interaction in practical RS applications.
+F . Computational Resources for Foundation Models
+To help readers or potential researchers in selecting ap-
+propriate foundation models based on their computational re-
+sources, we summarize representative backbone architectures
+for remote sensing foundation models in Table VI. Unless
+otherwise noted, all values are computed (or re-computed)
+under the following consistent assumptions:(i)a single for-
+ward pass,(ii)FP32 precision,(iii)batch size of 1, and(iv)
+an input resolution of3×224×224for CNN-, ViT-, and
+Swin-based models. For SAM variants, FLOPs are reported
+using their original input setting (1024×1024) as specified in
+the SAM paper. FLOPs denote floating-point operations per
+forward pass; when multiply-accumulate operations (MACs)
+are reported, we convert them to FLOPs by multiplying by
+two. Parameter counts (“Params”) refer to the total number of
+learnable weights, while “Inference Memory” indicates an em-
+pirical range measured on NVIDIA GPUs, subject to variation
+across drivers, PyTorch versions, and activation checkpointing.
+For widely studied models (e.g., ResNet-50, ViT-B/L/H, Swin-
+T/B/L), we adopt official or commonly accepted reference
+implementations.
+We also report the computational profiles of mainstream
+open-source foundation models in RS to complement the
+backbone-level summary, as listed in Table VI. Moreover,
+Table VII presents each model’s complexity (in GMacs), num-
+ber of trainable parameters, and total parameters, as provided
+by the PANGAEA-Bench release. Unless otherwise noted,
+all GMacs are measured as multiply-accumulate operations
+per single forward pass (1 MAC = 2 FLOPs) under the
+benchmark’s default input configuration. “Trainable Params”
+denote the subset of weights updated during fine-tuning for
+downstream tasks. This table is intended to help readers
+balance potential accuracy gains against computational costs
+when selecting among current mainstream foundation models
+in RS.
+V. CONCLUSION
+Foundation models have revolutionized the field of remote
+sensing (RS) by enabling scalable and transferable learning
+from large, heterogeneous data sources. Early RS foundation
+models predominantly focused on unimodal representations,
+learning generic features within individual sensing modalities.
+More recently, this paradigm has evolved toward multimodal
+foundation models that jointly exploit complementary in-
+formation across optical RGB, SAR, spectral, LiDAR, and
+auxiliary data sources. Leveraging large-scale pretraining and
+task-adaptive fine-tuning, these models establish a unified and
+robust framework for a wide range of downstream tasks,
+including image classification, object detection, semantic seg-
+mentation, change detection, and beyond.
+In addition, this review incorporates a tutorial-oriented
+perspective, systematically outlining the essential steps for
+effectively utilizing pretrained foundation models in RS ap-
+plications, including model selection, environment configura-
+tion, model loading, fine-tuning, and deployment. Each step
+requires careful consideration of the unique characteristics of
+RS data, computational constraints, and domain-specific chal-
+lenges to ensure robust performance and practical adaptability.
+VI. FUTUREDIRECTIONS ANDCHALLENGES
+Despite significant progress, the development of foundation
+models in RS presents several open challenges that warrant
+further investigation:
+•Scaling Laws and Model Growth:Understanding
+whether scaling laws hold for foundation models in RS is
+crucial for guiding model development, optimizing data
+requirements, and balancing computational efficiency
+with performance.
+
+=== PAGE BREAK ===
+
+16
+TABLE VI
+COMPUTATIONAL RESOURCES OF REPRESENTATIVE BACKBONE ARCHITECTURES FOR FOUNDATION MODELS INRS.
+Model Architecture Params (M) FLOPs (G) Inference Memory (GB)
+ResNet-50 ResNet-50 25.6 4.1 1–2
+ViT-Base ViT-B/16 86.0 17.6 2–4
+ViT-Large ViT-L/16 304.0 61.6 4–8
+ViT-Huge ViT-H/14 632.0 190.7 8–12
+SAM-B ViT-B/16 (SAM) 91.0 22.0 2–4
+SAM-L ViT-L/16 (SAM) 308.0 62.0 4–8
+SAM-H ViT-H/14 (SAM) 641.0 200.0 8–12
+Swin-T Swin-T 28.3 4.5 1–2
+Swin-B Swin-B 87.8 15.4 2–4
+Swin-L Swin-L 197.3 34.5 4–6
+TABLE VII
+COMPUTATIONAL STATISTICS OF REPRESENTATIVE FOUNDATION MODELS INRS.
+Model FLOPs (G) Trainable Params (M) Total Params (M)
+CROMA 278.46 46.95 350.0
+DOFA 130.04 39.35 150.9
+GFM-Swin 38.10 33.71 120.4
+Prithvi 129.70 39.34 125.7
+RemoteCLIP 35.14 39.35 16.8
+SatlasNet 33.40 33.25 121.2
+Scale-MAE 207.54 46.95 350.1
+SpectralGPT 761.38 164.40 249.8
+S12-MoCo 93.80 30.89 53.5
+S12-DINO 95.86 30.89 53.5
+S12-MAE 93.80 30.89 53.5
+S12-Data2Vec 93.78 30.89 53.5
+•Defining Generality and Model Criteria:Future re-
+search should establish clear criteria for what constitutes
+a general or sufficiently large RS foundation model and
+clarify whether such models must be self-supervised.
+•Comparative Analysis of Pretrained Models:A deeper
+investigation is needed into why, in many cases, random
+weights or models pretrained on other domains yield
+results comparable to existing RS-specific foundation
+models.
+•Catastrophic Forgetting and Knowledge Retention:
+Addressing the issue of catastrophic forgetting in trained
+RS foundation models is essential for ensuring long-term
+adaptability and efficient continuous learning.
+•Data Management and Scalability:Managing large-
+scale RS data, including preprocessing, annotation, and
+efficient storage, remains a bottleneck. Future research
+should explore standardized frameworks and strategies to
+facilitate scalable development of RS foundation models.
+•Multimodal Adaptability and Open Collaboration:
+Enhancing model adaptability to diverse RS data modal-
+ities and fostering collaborative efforts in sharing pre-
+trained models, datasets, and benchmarks will accelerate
+innovation across the community.
+•Robustness and Uncertainty:Future RS foundation
+models should move beyond post-hoc robustness eval-
+uation (e.g., REOBench [137]) toward robustness-aware
+and uncertainty-aware pretraining, explicitly modeling
+sensor noise, domain shifts, and extreme conditions.
+Integrating uncertainty quantification (e.g., probabilistic
+representations or Bayesian-inspired learning) will be
+crucial to enable reliable decision-making and risk-aware
+deployment in real-world EO applications.
+By tackling these challenges, foundation models will con-
+tinue to drive advancements in RS, enabling more accurate
+environmental monitoring, sustainable resource management,
+and deeper insights into the Earth’s dynamic processes.
+VII. MAINABBREVIATION
+For clarity, we have compiled all abbreviations used
+throughout the paper as follows. We hope this list helps readers
+locate and understand them more easily.
+CNNs: convolutional neural networks
+CROMA: contrastive radar-optical masked autoencoders
+CSPT: consecutive pretraining
+CWSAM: class-wise SAM
+DOFA: dynamic one for all
+EO: Earth observation
+FG-MAE: feature guided masked autoencoders
+GASSL: geography-aware self-supervised learning
+GDAL: geospatial data abstraction library
+GeoKR: geographical knowledge-driven representation
+learning
+GFM: geospatial foundation models
+
+=== PAGE BREAK ===
+
+17
+GRAFT: ground remote alignment for training
+GSD: ground sampling distance
+HOGs: histograms of oriented gradients
+LoRA: low-rank adaptation
+LMM: large language models
+MAE: masked autoencoders
+MAF-SAM: multistage adaptation fine-tuning segment
+anything model
+MANet: multimodal adapter-based network
+MATTER: material and texture representation learning
+MLP: multilayer perception
+msGFM: multisensor geospatial foundation model
+omniSat: omni satellite
+OFA-Net: one for all network
+RingMo: remote sensing foundation model
+RNNs: recurrent neural networks
+RS: remote sensing
+RS-BYOL: remote sensing bootstrap your own latent
+RS-DFM: remote sensing distributed foundation model
+RVSA: rotated varied-size attention
+S2MAE: spatial-spectral masked autoencoders
+SatMAE: satellite masked autoencoders
+SatViT: satellite vision transformer
+SpectralGPT: spectral generative pretrained transformer
+SAM: segment anything model
+SAR: synthetic aperture radar
+SARATR-X: SAR automatic target recognition
+SAR-JEPA: SAR joint-embedding predictive architecture
+SeaMo: seasonal and multimodal foundation model
+SenPa-MAE: sensor parameter masked autoencoders
+SoftCon: soft contrastive learning
+ViTs: vision transformers
+VIII. ACKNOWLEDGEMENTS
+This work was supported by the National Natural Science
+Foundation of China under Grant 42271350 and by the In-
+ternational Partnership Program of the Chinese Academy of
+Sciences under Grant No.313GJHZ2023066FN. GCV grate-
+fully acknowledges the support from the European Research
+Council (ERC) through the USMILE project (grant agree-
+ment 855187) and the European Commission through the
+HORIZON projects ELIAS (grant agreement 101120237) and
+ELLIOT (grant agreement101214398).
+REFERENCES
+[1] D. Hong, C. Li, B. Zhang, N. Yokoya, J. A. Benediktsson, and
+J. Chanussot, “Multimodal artificial intelligence foundation models:
+Unleashing the power of remote sensing big data in earth observation,”
+The Innovation Geoscience, vol. 2, no. 1, p. 100055, 2024.
+[2] C. Li, D. Hong, B. Zhang, T. Liao, N. Yokoya, P. Ghamisi, M. Chen,
+L. Wang, J. A. Benediktsson, and J. Chanussot, “Interpretable foun-
+dation models as decryptors peering into the earth system,”The
+Innovation, vol. 5, no. 5, 2024.
+[3] C. Bodnar, W. P. Bruinsma, A. Lucic, M. Stanley, A. Vaughan,
+J. Brandstetter, P. Garvan, M. Riechert, J. A. Weyn, H. Dong, J. K.
+Gupta, K. Thambiratnam, A. T. Archibald, C.-C. Wu, E. Heider,
+M. Welling, R. E. Turner, and P. Perdikaris, “A foundation model for
+the earth system,”arXiv preprint arXiv:2405.13063, 2024.
+[4] S. Chen, G. Long, J. Jiang, D. Liu, and C. Zhang, “Foundation models
+for weather and climate data understanding: A comprehensive survey,”
+arXiv preprint arXiv:2312.03014, 2023.
+[5] E. Rolf, K. Klemmer, C. Robinson, and H. Kerner, “Mission critical–
+satellite data is a distinct modality in machine learning,” inInterna-
+tional Conference on Machine Learning, PMLR, 2024.
+[6] C. Li, D. Hong, B. Zhang, Y . Li, G. Camps-Valls, X. X. Zhu,
+and J. Chanussot, “Urbansam: Learning invariance-inspired adapters
+for segment anything models in urban construction,”arXiv preprint
+arXiv:2502.15199, 2025.
+[7] L. Jiao, Z. Huang, X. Lu, X. Liu, Y . Yang, J. Zhao, J. Zhang, B. Hou,
+S. Yang, F. Liu,et al., “Brain-inspired remote sensing foundation
+models and open problems: A comprehensive survey,”IEEE Journal
+of Selected Topics in Applied Earth Observations and Remote Sensing,
+vol. 16, pp. 10084–10120, 2023.
+[8] C. Tan, Q. Cao, Y . Li, J. Zhang, X. Yang, H. Zhao, Z. Wu, Z. Liu,
+H. Yang, N. Wu,et al., “On the promises and challenges of multimodal
+foundation models for geographical, environmental, agricultural, and
+urban planning applications,”arXiv preprint arXiv:2312.17016, 2023.
+[9] X. Li, C. Wen, Y . Hu, Z. Yuan, and X. X. Zhu, “Vision-language
+models in remote sensing: Current progress and future trends,”IEEE
+Geoscience and Remote Sensing Magazine, 2024.
+[10] X. X. Zhu, Z. Xiong, Y . Wang, A. J. Stewart, K. Heidler, Y . Wang,
+Z. Yuan, T. Dujardin, Q. Xu, and Y . Shi, “On the foundations of earth
+and climate foundation models,”arXiv preprint arXiv:2405.04285,
+2024.
+[11] Y . Zhou, L. Feng, Y . Ke, X. Jiang, J. Yan, X. Yang, and W. Zhang,
+“Towards vision-language geo-foundation model: A survey,”arXiv
+preprint arXiv:2406.09385, 2024.
+[12] S. Lu, J. Guo, J. R. Zimmer-Dauphinee, J. M. Nieusma, X. Wang,
+P. VanValkenburgh, S. A. Wernke, and Y . Huo, “Ai foundation models
+in remote sensing: A survey,”arXiv preprint arXiv:2408.03464, 2024.
+[13] M. Zhang, B. Yang, X. Hu, J. Gong, and Z. Zhang, “Foundation model
+for generalist remote sensing intelligence: Potentials and prospects,”
+Science Bulletin, vol. 69, no. 23, pp. 3652–3656, 2024.
+[14] A. Xiao, W. Xuan, J. Wang, J. Huang, D. Tao, S. Lu, and N. Yokoya,
+“Foundation models for remote sensing and earth observation: A
+survey,”arXiv preprint arXiv:2410.16602, 2024.
+[15] H. Zhang, J.-J. Xu, H.-W. Cui, L. Li, Y . Yang, C.-S. Tang, and
+N. Boers, “When geoscience meets foundation models: Toward a
+general geoscience artificial intelligence system,”IEEE Geoscience and
+Remote Sensing Magazine, 2024.
+[16] L. Tao, H. Zhang, H. Jing, Y . Liu, D. Yan, G. Wei, and X. Xue, “Ad-
+vancements in vision–language models for remote sensing: Datasets,
+capabilities, and enhancement techniques,”Remote Sensing, vol. 17,
+no. 1, p. 162, 2025.
+[17] C. Huo, K. Chen, S. Zhang, Z. Wang, H. Yan, J. Shen, Y . Hong, G. Qi,
+H. Fang, and Z. Wang, “When remote sensing meets foundation model:
+A survey and beyond,”remote sensing, vol. 17, no. 2, 2025.
+[18] G. Sumbul, M. Charfuelan, B. Demir, and V . Markl, “Bigearthnet: A
+large-scale benchmark archive for remote sensing image understand-
+ing,” inIGARSS 2019-2019 IEEE international geoscience and remote
+sensing symposium, pp. 5901–5904, IEEE, 2019.
+[19] D. Hong, B. Zhang, X. Li, Y . Li, C. Li, J. Yao, N. Yokoya, H. Li,
+P. Ghamisi, X. Jia,et al., “Spectralgpt: Spectral remote sensing foun-
+dation model,”IEEE Transactions on Pattern Analysis and Machine
+Intelligence, vol. 46, no. 8, pp. 5227–5244, 2024.
+[20] M. Schmitt, L. H. Hughes, C. Qiu, and X. X. Zhu, “Sen12ms–a curated
+dataset of georeferenced multi-spectral sentinel-1/2 imagery for deep
+learning and data fusion,”arXiv preprint arXiv:1906.07789, 2019.
+[21] D. Hong, B. Zhang, H. Li, Y . Li, J. Yao, C. Li, M. Werner, J. Chanussot,
+A. Zipf, and X. X. Zhu, “Cross-city matters: A multimodal remote
+sensing benchmark dataset for cross-city semantic segmentation using
+high-resolution domain adaptation networks,”Remote Sensing of En-
+vironment, vol. 299, p. 113856, 2023.
+[22] Y . Wang, N. A. A. Braham, Z. Xiong, C. Liu, C. M. Albrecht, and X. X.
+Zhu, “Ssl4eo-s12: A large-scale multimodal, multitemporal dataset for
+self-supervised learning in earth observation [software and data sets],”
+IEEE Geoscience and Remote Sensing Magazine, vol. 11, no. 3, pp. 98–
+106, 2023.
+[23] A. Stewart, N. Lehmann, I. Corley, Y . Wang, Y .-C. Chang, N. A.
+Ait Ali Braham, S. Sehgal, C. Robinson, and A. Banerjee, “Ssl4eo-
+l: Datasets and foundation models for landsat imagery,”Advances in
+Neural Information Processing Systems, vol. 36, pp. 59787–59807,
+2023.
+[24] S. Dou, Y . Wu, H. Jia, Y . Zhou, Y . Liu, and Y . Liu, “Cc2vec:
+Combining typed tokens with contrastive learning for effective code
+clone detection,”Proceedings of the ACM on Software Engineering,
+vol. 1, no. FSE, pp. 1564–1584, 2024.
+
+=== PAGE BREAK ===
+
+18
+[25] P. Akiva, M. Purri, and M. Leotta, “Self-supervised material and texture
+representation learning for remote sensing tasks,” inProc. CVPR,
+pp. 8203–8215, 2022.
+[26] D. Wang, Q. Zhang, Y . Xu, J. Zhang, B. Du, D. Tao, and L. Zhang,
+“Advancing plain vision transformer toward remote sensing founda-
+tion model,”IEEE Transactions on Geoscience and Remote Sensing,
+vol. 61, pp. 1–15, 2022.
+[27] Y . Long, G.-S. Xia, S. Li, W. Yang, M. Y . Yang, X. X. Zhu,
+L. Zhang, and D. Li, “On creating benchmark dataset for aerial image
+interpretation: Reviews, guidances, and million-aid,”IEEE Journal of
+Selected Topics in Applied Earth Observations and Remote Sensing,
+vol. 14, pp. 4205–4230, 2021.
+[28] D. Muhtar, X. Zhang, P. Xiao, Z. Li, and F. Gu, “Cmid: A unified self-
+supervised learning framework for remote sensing image understand-
+ing,”IEEE Transactions on Geoscience and Remote Sensing, vol. 61,
+pp. 1–17, 2023.
+[29] M. Zhang, Q. Liu, and Y . Wang, “Ctxmim: Context-enhanced masked
+image modeling for remote sensing image understanding,”arXiv
+preprint arXiv:2310.00022, 2023.
+[30] M. Mendieta, B. Han, X. Shi, Y . Zhu, and C. Chen, “Towards geospatial
+foundation models via continual pretraining,” inPro. ICCV, pp. 16806–
+16816, 2023.
+[31] C. J. Reed, R. Gupta, S. Li, S. Brockman, C. Funk, B. Clipp,
+K. Keutzer, S. Candido, M. Uyttendaele, and T. Darrell, “Scale-
+mae: A scale-aware masked autoencoder for multiscale geospatial
+representation learning,” inProceedings of the IEEE/CVF International
+Conference on Computer Vision, pp. 4088–4099, 2023.
+[32] M. Noman, M. Naseer, H. Cholakkal, R. M. Anwer, S. Khan, and F. S.
+Khan, “Rethinking transformers pre-training for multi-spectral satellite
+imagery,” inProceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition, pp. 27811–27819, 2024.
+[33] F. Wang, H. Wang, D. Wang, Z. Guo, Z. Zhong, L. Lan, J. Zhang,
+Z. Liu, and M. Sun, “Scaling efficient masked autoencoder learning on
+large remote sensing dataset,”arXiv e-prints, pp. arXiv–2406, 2024.
+[34] Z. Li, B. Hou, S. Ma, Z. Wu, X. Guo, B. Ren, and L. Jiao, “Masked
+angle-aware autoencoder for remote sensing images,” inEuropean
+Conference on Computer Vision, pp. 260–278, Springer, 2024.
+[35] W. Diao, H. Yu, K. Kang, T. Ling, D. Liu, Y . Feng, H. Bi, L. Ren, X. Li,
+Y . Mao,et al., “Ringmo-aerial: An aerial remote sensing foundation
+model with a affine transformation contrastive learning,”arXiv preprint
+arXiv:2409.13366, 2024.
+[36] K. Cha, J. Seo, and T. Lee, “A billion-scale foundation model for
+remote sensing images,”IEEE Journal of Selected Topics in Applied
+Earth Observations and Remote Sensing, 2024.
+[37] P. Dias, A. Tsaris, J. Bowman, A. Potnis, J. Arndt, H. L. Yang,
+and D. Lunga, “Oreole-fm: successes and challenges toward billion-
+parameter foundation models for high-resolution satellite imagery,” in
+Proceedings of the 32nd ACM International Conference on Advances
+in Geographic Information Systems, pp. 597–600, 2024.
+[38] Z. Yu, C. Liu, L. Liu, Z. Shi, and Z. Zou, “Metaearth: A generative
+foundation model for global-scale remote sensing image generation,”
+IEEE Transactions on Pattern Analysis and Machine Intelligence, 2024.
+[39] M. Tang, A. Cozma, K. Georgiou, and H. Qi, “Cross-scale mae: A
+tale of multiscale exploitation in remote sensing,”Advances in Neural
+Information Processing Systems, vol. 36, pp. 20054–20066, 2023.
+[40] K. Lu, R. Zhang, X. Huang, Y . Xie, X. Ning, H. Zhang, M. Yuan,
+P. Zhang, T. Wang, and T. Liao, “Pattern integration and enhancement
+vision transformer for self-supervised learning in remote sensing,”
+IEEE Transactions on Geoscience and Remote Sensing, 2025.
+[41] X. Zhou, F. Liang, L. Chen, H. Liu, Q. Song, G. Vivone, and
+J. Chanussot, “Mesam: Multiscale enhanced segment anything model
+for optical remote sensing images,”IEEE Transactions on Geoscience
+and Remote Sensing, 2024.
+[42] J. Zhang, X. Yang, R. Jiang, W. Shao, and L. Zhang, “Rsam-seg: A
+sam-based approach with prior knowledge integration for remote sens-
+ing image semantic segmentation,”arXiv preprint arXiv:2402.19004,
+2024.
+[43] K. Chen, C. Liu, H. Chen, H. Zhang, W. Li, Z. Zou, and Z. Shi,
+“Rsprompter: Learning to prompt for remote sensing instance seg-
+mentation based on visual foundation model,”IEEE Transactions on
+Geoscience and Remote Sensing, vol. 62, pp. 1–17, 2024.
+[44] X. Zhang, Y . Liu, Y . Lin, Q. Liao, and Y . Li, “Uv-sam: Adapting seg-
+ment anything model for urban village identification,” inProceedings
+of the AAAI Conference on Artificial Intelligence, vol. 38, pp. 22520–
+22528, 2024.
+[45] S. Zhang, Q. Wang, J. Liu, and H. Xiong, “Alps: An auto-labeling
+and pre-training scheme for remote sensing segmentation with segment
+anything model,”arXiv preprint arXiv:2406.10855, 2024.
+[46] D. Hong, C. Li, N. Yokoya, B. Zhang, X. Jia, A. Plaza, P. Gamba,
+J. A. Benediktsson, and J. Chanussot, “Hyperspectral imaging,”Nature
+Reviews Methods Primers, 2026.
+[47] Y . Cong, S. Khanna, C. Meng, P. Liu, E. Rozi, Y . He, M. Burke,
+D. Lobell, and S. Ermon, “Satmae: Pre-training transformers for
+temporal and multi-spectral satellite imagery,”Proc. NeurIPS, vol. 35,
+pp. 197–211, 2022.
+[48] X. Wanyan, S. Seneviratne, S. Shen, and M. Kirley, “Extending global-
+local view alignment for self-supervised learning with remote sensing
+imagery,” inProceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition, pp. 2443–2453, 2024.
+[49] C.-Y . Hsu, W. Li, and S. Wang, “Geospatial foundation models for
+image analysis: evaluating and enhancing nasa-ibm prithvi’s domain
+adaptability,”International Journal of Geographical Information Sci-
+ence, pp. 1–30, 2024.
+[50] B. Song, H. Yang, Y . Wu, P. Zhang, B. Wang, and G. Han, “A
+multispectral remote sensing crop segmentation method based on
+segment anything model using multi-stage adaptation fine-tuning,”
+IEEE Transactions on Geoscience and Remote Sensing, 2024.
+[51] D. Ibanez, R. Fernandez-Beltran, F. Pla, and N. Yokoya, “Masked
+auto-encoding spectral–spatial transformer for hyperspectral image
+classification,”IEEE Transactions on Geoscience and Remote Sensing,
+vol. 60, pp. 1–14, 2022.
+[52] L. Scheibenreif, M. Mommert, and D. Borth, “Masked vision trans-
+formers for hyperspectral image classification,” inProceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition
+Workshops (CVPRW), pp. 2166–2176, 2023.
+[53] Y . Wang, M. Wen, H. Zhang, J. Sun, Q. Yang, Z. Zhang, and H. Lu,
+“Hsimae: A unified masked autoencoder with large-scale pre-training
+for hyperspectral image classification,”IEEE Journal of Selected Topics
+in Applied Earth Observations and Remote Sensing, 2024.
+[54] N. A. A. Braham, C. M. Albrecht, J. Mairal, J. Chanussot, Y . Wang, and
+X. X. Zhu, “Spectralearth: Training hyperspectral foundation models
+at scale,”arXiv preprint arXiv:2408.08447, 2024.
+[55] D. Wang, M. Hu, Y . Jin, Y . Miao, J. Yang, Y . Xu, X. Qin, J. Ma, L. Sun,
+C. Li,et al., “Hypersigma: Hyperspectral intelligence comprehension
+foundation model,”arXiv preprint arXiv:2406.11519, 2024.
+[56] L. Pang, X. Cao, D. Tang, S. Xu, X. Bai, F. Zhou, and D. Meng,
+“Hsigene: A foundation model for hyperspectral image generation,”
+arXiv preprint arXiv:2409.12470, 2024.
+[57] Y . Wang, H. H. Hernandez, C. M. Albrecht, and X. X. Zhu, “Feature
+guided masked autoencoder for self-supervised learning in remote sens-
+ing,”IEEE Journal of Selected Topics in Applied Earth Observations
+and Remote Sensing, 2024.
+[58] W. Li, W. Yang, T. Liu, Y . Hou, Y . Li, Z. Liu, Y . Liu, and L. Liu,
+“Predicting gradient is better: Exploring self-supervised learning for
+sar atr with a joint-embedding predictive architecture,”ISPRS Journal
+of Photogrammetry and Remote Sensing, vol. 218, pp. 326–338, 2024.
+[59] X. Pu, H. Jia, L. Zheng, F. Wang, and F. Xu, “Classwise-sam-adapter:
+Parameter efficient fine-tuning adapts segment anything to sar domain
+for semantic segmentation,”arXiv preprint arXiv:2401.02326, 2024.
+[60] W. Li, W. Yang, Y . Hou, L. Liu, Y . Liu, and X. Li, “Saratr-x:
+Towards building a foundation model for sar target recognition,”IEEE
+Transactions on Image Processing, 2025.
+[61] G. Vivone, L.-J. Deng, S. Deng, D. Hong, M. Jiang, C. Li, W. Li,
+H. Shen, X. Wu, J.-L. Xiao,et al., “Deep learning in remote sensing
+image fusion: Methods, protocols, data, and future perspectives,”IEEE
+Geoscience and Remote Sensing Magazine, 2024.
+[62] D. Hong, L. Gao, N. Yokoya, J. Yao, J. Chanussot, Q. Du, and
+B. Zhang, “More diverse means better: Multimodal deep learning
+meets remote-sensing imagery classification,”IEEE Transactions on
+Geoscience and Remote Sensing, vol. 59, no. 5, pp. 4340–4354, 2020.
+[63] O. Manas, A. Lacoste, X. Gir ´o-i Nieto, D. Vazquez, and P. Rodriguez,
+“Seasonal contrast: Unsupervised pre-training from uncurated remote
+sensing data,” inProceedings of the IEEE/CVF International Confer-
+ence on Computer Vision, pp. 9414–9423, 2021.
+[64] U. Mall, B. Hariharan, and K. Bala, “Change-aware sampling and con-
+trastive learning for satellite images,” inProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition, pp. 5261–
+5270, 2023.
+[65] F. Yao, W. Lu, H. Yang, L. Xu, C. Liu, L. Hu, H. Yu, N. Liu, C. Deng,
+D. Tang,et al., “Ringmo-sense: Remote sensing foundation model for
+spatiotemporal prediction via spatiotemporal evolution disentangling,”
+IEEE Transactions on Geoscience and Remote Sensing, 2023.
+
+=== PAGE BREAK ===
+
+19
+[66] I. Dumeur, S. Valero, and J. Inglada, “Self-supervised spatio-temporal
+representation learning of satellite image time series,”IEEE Journal of
+Selected Topics in Applied Earth Observations and Remote Sensing,
+2024.
+[67] L. Zhang, Y . Zhao, R. Dong, J. Zhang, S. Yuan, S. Cao, M. Chen,
+J. Zheng, W. Li, W. Liu,et al., “A 2-mae: A spatial-temporal-spectral
+unified remote sensing pre-training method based on anchor-aware
+masked autoencoder,”arXiv preprint arXiv:2406.08079, 2024.
+[68] D. Szwarcman, S. Roy, P. Fraccaro, O. E. Gislason, B. Blumenstiel,
+R. Ghosal, P. H. de Oliveira, J. L. d. S. Almeida, R. Sedona, Y . Kang,
+et al., “Prithvi-eo-2.0: A versatile multi-temporal foundation model
+for earth observation applications,”arXiv preprint arXiv:2412.02732,
+2024.
+[69] W. Li, K. Chen, H. Chen, and Z. Shi, “Geographical knowledge-driven
+representation learning for remote sensing images,”IEEE Transactions
+on Geoscience and Remote Sensing, vol. 60, pp. 1–16, 2021.
+[70] K. Ayush, B. Uzkent, C. Meng, K. Tanmay, M. Burke, D. Lobell, and
+S. Ermon, “Geography-aware self-supervised learning,” inProc. ICCV,
+pp. 10181–10190, 2021.
+[71] T. Zhang, P. Gao, H. Dong, Y . Zhuang, G. Wang, W. Zhang, and
+H. Chen, “Consecutive pre-training: A knowledge transfer learning
+strategy with relevant unlabeled data for remote sensing domain,”
+Remote Sensing, vol. 14, no. 22, p. 5675, 2022.
+[72] G. Mai, N. Lao, Y . He, J. Song, and S. Ermon, “Csp: Self-supervised
+contrastive spatial pre-training for geospatial-visual representations,”
+inInternational Conference on Machine Learning, pp. 23498–23515,
+PMLR, 2023.
+[73] Z. Huang, M. Zhang, Y . Gong, Q. Liu, and Y . Wang, “Generic
+knowledge boosted pretraining for remote sensing images,”IEEE
+Transactions on Geoscience and Remote Sensing, vol. 62, pp. 1–13,
+2024.
+[74] Y . Wang, C. M. Albrecht, and X. X. Zhu, “Multi-label guided soft
+contrastive learning for efficient earth observation pretraining,”arXiv
+preprint arXiv:2405.20462, 2024.
+[75] J. Irvin, L. Tao, J. Zhou, Y . Ma, L. Nashold, B. Liu, and A. Y .
+Ng, “Usat: A unified self-supervised encoder for multi-sensor satellite
+imagery,”arXiv preprint arXiv:2312.02199, 2023.
+[76] Z. Wang, P. Cheng, P. Tian, Y . Wang, M. Chen, S. Duan, Z. Wang,
+X. Li, and X. Sun, “Rs-dfm: A remote sensing distributed foundation
+model for diverse downstream tasks,”arXiv preprint arXiv:2406.07032,
+2024.
+[77] J. Prexl and M. Schmitt, “Senpa-mae: Sensor parameter aware
+masked autoencoder for multi-satellite self-supervised pretraining,”
+arXiv preprint arXiv:2408.11000, 2024.
+[78] Z. Gong, Z. Wei, D. Wang, X. Ma, H. Chen, Y . Jia, Y . Deng,
+Z. Ji, X. Zhu, N. Yokoya,et al., “Crossearth: Geospatial vision
+foundation model for domain generalizable remote sensing semantic
+segmentation,”arXiv preprint arXiv:2410.22629, 2024.
+[79] G. Astruc, N. Gonthier, C. Mallet, and L. Landrieu, “Anysat: An earth
+observation model for any resolutions, scales, and modalities,”arXiv
+preprint arXiv:2412.14123, 2024.
+[80] J. Hackstein, G. Sumbul, K. N. Clasen, and B. Demir, “Exploring
+masked autoencoders for sensor-agnostic image retrieval in remote
+sensing,”IEEE Transactions on Geoscience and Remote Sensing, 2024.
+[81] X. Sun, P. Wang, W. Lu, Z. Zhu, X. Lu, Q. He, J. Li, X. Rong, Z. Yang,
+H. Chang,et al., “Ringmo: A remote sensing foundation model
+with masked image modeling,”IEEE Transactions on Geoscience and
+Remote Sensing, vol. 61, pp. 1–22, 2022.
+[82] J. Prexl and M. Schmitt, “Multi-modal multi-objective contrastive
+learning for sentinel-1/2 imagery,” inProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition, pp. 2136–
+2144, 2023.
+[83] Y . Wang, C. M. Albrecht, and X. X. Zhu, “Self-supervised vision trans-
+formers for joint sar-optical representation learning,” inIGARSS 2022-
+2022 IEEE International Geoscience and Remote Sensing Symposium,
+pp. 139–142, IEEE, 2022.
+[84] P. Jain, B. Schoen-Phelan, and R. Ross, “Self-supervised learning for
+invariant representations from multi-spectral and sar images,”IEEE
+Journal of Selected Topics in Applied Earth Observations and Remote
+Sensing, vol. 15, pp. 7797–7808, 2022.
+[85] A. Fuller, K. Millard, and J. R. Green, “Satvit: Pretraining transformers
+for earth observation,”IEEE Geoscience and Remote Sensing Letters,
+vol. 19, pp. 1–5, 2022.
+[86] X. Ma, X. Zhang, M.-O. Pun, and B. Huang, “Manet: Fine-tuning
+segment anything model for multimodal remote sensing semantic
+segmentation,”arXiv preprint arXiv:2410.11160, 2024.
+[87] A. Fuller, K. Millard, and J. Green, “Croma: Remote sensing repre-
+sentations with contrastive radar-optical masked autoencoders,”Proc.
+NeurIPS, vol. 36, 2024.
+[88] H. Hu, P. Wang, H. Bi, B. Tong, Z. Wang, W. Diao, H. Chang, Y . Feng,
+Z. Zhang, Q. Ye,et al., “Rs-vheat: Heat conduction guided efficient
+remote sensing foundation model,”arXiv preprint arXiv:2411.17984,
+2024.
+[89] X. Li, C. Li, G. Vivone, and D. Hong, “Seamo: A season-aware
+multimodal foundation model for remote sensing,”Information Fusion,
+vol. 125, p. 103334, 2026.
+[90] X. Guo, J. Lao, B. Dang, Y . Zhang, L. Yu, L. Ru, L. Zhong, Z. Huang,
+K. Wu, D. Hu,et al., “Skysense: A multi-modal remote sensing
+foundation model towards universal interpretation for earth observation
+imagery,” inProceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition, pp. 27672–27683, 2024.
+[91] F. Bastani, P. Wolters, R. Gupta, J. Ferdinando, and A. Kembhavi,
+“Satlaspretrain: A large-scale dataset for remote sensing image under-
+standing,” inProceedings of the IEEE/CVF International Conference
+on Computer Vision, pp. 16772–16782, 2023.
+[92] Z. Yan, J. Li, X. Li, R. Zhou, W. Zhang, Y . Feng, W. Diao, K. Fu, and
+X. Sun, “Ringmo-sam: A foundation model for segment anything in
+multimodal remote-sensing images,”IEEE Transactions on Geoscience
+and Remote Sensing, vol. 61, pp. 1–16, 2023.
+[93] Z. Xiong, Y . Wang, F. Zhang, and X. X. Zhu, “One for all: To-
+ward unified foundation models for earth vision,”arXiv preprint
+arXiv:2401.07527, 2024.
+[94] Z. Xiong, Y . Wang, F. Zhang, A. J. Stewart, J. Hanna, D. Borth,
+I. Papoutsis, B. Le Saux, G. Camps-Valls, and X. X. Zhu, “Neural
+plasticity-inspired foundation model for observing the earth crossing
+modalities,”arXiv e-prints, pp. arXiv–2403, 2024.
+[95] B. Han, S. Zhang, X. Shi, and M. Reichstein, “Bridging remote sen-
+sors with multisensor geospatial foundation models,” inProc. CVPR,
+pp. 27852–27862, 2024.
+[96] P. Ravirathinam, A. Khandelwal, R. Ghosh, and V . Kumar, “Towards
+a knowledge guided multimodal foundation model for spatio-temporal
+remote sensing applications,”arXiv preprint arXiv:2407.19660, 2024.
+[97] A. Xiao, W. Xuan, H. Qi, Y . Xing, N. Yokoya, and S. Lu, “Segment
+anything with multiple modalities,”arXiv preprint arXiv:2408.09085,
+2024.
+[98] Y . Wang, C. M. Albrecht, N. A. A. Braham, C. Liu, Z. Xiong, and X. X.
+Zhu, “Decoupling common and unique representations for multimodal
+self-supervised learning,” inEuropean Conference on Computer Vision,
+pp. 286–303, Springer, 2024.
+[99] V . Nedungadi, A. Kariryaa, S. Oehmcke, S. Belongie, C. Igel, and
+N. Lang, “Mmearth: Exploring multi-modal pretext tasks for geospatial
+representation learning,” inEuropean Conference on Computer Vision,
+pp. 164–182, Springer, 2024.
+[100] G. Astruc, N. Gonthier, C. Mallet, and L. Landrieu, “Omnisat: Self-
+supervised modality fusion for earth observation,” inEuropean Con-
+ference on Computer Vision, pp. 409–427, Springer, 2025.
+[101] Y . Hu, J. Yuan, C. Wen, X. Lu, Y . Liu, and X. Li, “Rsgpt: A remote
+sensing vision language model and benchmark,”ISPRS Journal of
+Photogrammetry and Remote Sensing, vol. 224, pp. 272–286, 2025.
+[102] Y . Bazi, L. Bashmal, M. M. Al Rahhal, R. Ricci, and F. Melgani, “Rs-
+llava: A large vision-language model for joint captioning and question
+answering in remote sensing imagery,”Remote Sensing, vol. 16, no. 9,
+p. 1477, 2024.
+[103] W. Zhang, M. Cai, T. Zhang, Y . Zhuang, and X. Mao, “Earthgpt: A
+universal multi-modal large language model for multi-sensor image
+comprehension in remote sensing domain,”IEEE Transactions on
+Geoscience and Remote Sensing, 2024.
+[104] W. Xu, Z. Yu, Y . Wang, J. Wang, and M. Peng, “Rs-agent: Automat-
+ing remote sensing tasks through intelligent agents,”arXiv preprint
+arXiv:2406.07089, 2024.
+[105] K. Kuckreja, M. S. Danish, M. Naseer, A. Das, S. Khan, and F. S. Khan,
+“Geochat: Grounded large vision-language model for remote sensing,”
+inProceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition, pp. 27831–27840, 2024.
+[106] C. Liu, K. Chen, H. Zhang, Z. Qi, Z. Zou, and Z. Shi, “Change-agent:
+Towards interactive comprehensive remote sensing change interpre-
+tation and analysis,”IEEE Transactions on Geoscience and Remote
+Sensing, 2024.
+[107] W. Zhang, M. Cai, T. Zhang, J. Li, Y . Zhuang, and X. Mao, “Earth-
+marker: Visual prompt learning for region-level and point-level remote
+sensing imagery comprehension,”arXiv preprint arXiv:2407.13596,
+2024.
+
+=== PAGE BREAK ===
+
+20
+[108] Y . Zhan, Z. Xiong, and Y . Yuan, “Skyeyegpt: Unifying remote sens-
+ing vision-language tasks via instruction tuning with large language
+model,”ISPRS Journal of Photogrammetry and Remote Sensing,
+vol. 221, pp. 64–77, 2025.
+[109] J. A. Irvin, E. R. Liu, J. C. Chen, I. Dormoy, J. Kim, S. Khanna,
+Z. Zheng, and S. Ermon, “Teochat: A large vision-language assistant
+for temporal earth observation data,” inThe Thirteenth International
+Conference on Learning Representations, 2025.
+[110] Y . Li, W. Xu, G. Li, Z. Yu, Z. Wei, J. Wang, and M. Peng, “Unirs:
+Unifying multi-temporal remote sensing tasks through vision language
+models,”arXiv preprint arXiv:2412.20742, 2024.
+[111] D. Muhtar, Z. Li, F. Gu, X. Zhang, and P. Xiao, “Lhrs-bot: Empowering
+remote sensing with vgi-enhanced large multimodal language model,”
+inEuropean Conference on Computer Vision, pp. 440–457, Springer,
+2024.
+[112] Z. Li, D. Muhtar, F. Gu, X. Zhang, P. Xiao, G. He, and X. Zhu, “Lhrs-
+bot-nova: Improved multimodal large language model for remote sens-
+ing vision-language interpretation,”arXiv preprint arXiv:2411.09301,
+2024.
+[113] P. Wang, H. Hu, B. Tong, Z. Zhang, F. Yao, Y . Feng, Z. Zhu,
+H. Chang, W. Diao, Q. Ye,et al., “Ringmogpt: A unified remote
+sensing foundation model for vision, language, and grounded tasks,”
+IEEE Transactions on Geoscience and Remote Sensing, 2024.
+[114] X. Liu and Z. Lian, “Rsunivlm: A unified vision language model
+for remote sensing via granularity-oriented mixture of experts,”arXiv
+preprint arXiv:2412.05679, 2024.
+[115] R. Ou, Y . Hu, F. Zhang, J. Chen, and Y . Liu, “Geopix: Multi-modal
+large language model for pixel-level image understanding in remote
+sensing,”arXiv preprint arXiv:2501.06828, 2025.
+[116] A. Shabbir, M. Zumri, M. Bennamoun, F. S. Khan, and S. Khan,
+“Geopixel: Pixel grounding large multimodal model in remote sensing,”
+arXiv preprint arXiv:2501.13925, 2025.
+[117] S. Soni, A. Dudhane, H. Debary, M. Fiaz, M. A. Munir, M. S. Danish,
+P. Fraccaro, C. D. Watson, L. J. Klein, F. S. Khan,et al., “Earthdial:
+Turning multi-sensory earth observations to interactive dialogues,”
+arXiv preprint arXiv:2412.15190, 2024.
+[118] X. Xue, G. Wei, H. Chen, H. Zhang, F. Lin, C. Shen, and X. X. Zhu,
+“Reo-vlm: Transforming vlm to meet regression challenges in earth
+observation,”arXiv preprint arXiv:2412.16583, 2024.
+[119] J. Luo, Z. Pang, Y . Zhang, T. Wang, L. Wang, B. Dang, J. Lao, J. Wang,
+J. Chen, Y . Tan,et al., “Skysensegpt: A fine-grained instruction tuning
+dataset and model for remote sensing vision-language understanding,”
+arXiv preprint arXiv:2406.10100, 2024.
+[120] D. Wang, J. Zhang, M. Xu, L. Liu, D. Wang, E. Gao, C. Han, H. Guo,
+B. Du, D. Tao,et al., “Mtp: Advancing remote sensing foundation
+model via multi-task pretraining,”IEEE Journal of Selected Topics in
+Applied Earth Observations and Remote Sensing, 2024.
+[121] J. Zhang, Z. Zhou, G. Mai, M. Hu, Z. Guan, S. Li, and L. Mu,
+“Text2seg: Zero-shot remote sensing image semantic segmentation via
+text-guided visual foundation models,” inProc. ACM SIGSPATIAL
+International Workshop on AI for Geographic Knowledge Discovery,
+pp. 63–66, 2024.
+[122] Z. Zhang, T. Zhao, Y . Guo, and J. Yin, “Rs5m and georsclip: A
+large scale vision-language dataset and a large vision-language model
+for remote sensing,”IEEE Transactions on Geoscience and Remote
+Sensing, 2024.
+[123] X. Li, C. Wen, Y . Hu, and N. Zhou, “Rs-clip: Zero shot remote sensing
+scene classification via contrastive vision-language supervision,”Inter-
+national Journal of Applied Earth Observation and Geoinformation,
+vol. 124, p. 103497, 2023.
+[124] K. Klemmer, E. Rolf, C. Robinson, L. Mackey, and M. Rußwurm,
+“Satclip: Global, general-purpose location embeddings with satellite
+imagery,”arXiv preprint arXiv:2311.17179, 2023.
+[125] Z. Wang, R. Prabha, T. Huang, J. Wu, and R. Rajagopal, “Skyscript:
+A large and semantically diverse vision-language dataset for remote
+sensing,” inProc. AAAI, vol. 38, pp. 5805–5813, 2024.
+[126] F. Liu, D. Chen, Z. Guan, X. Zhou, J. Zhu, Q. Ye, L. Fu, and J. Zhou,
+“Remoteclip: A vision language foundation model for remote sensing,”
+IEEE Transactions on Geoscience and Remote Sensing, 2024.
+[127] U. Mall, C. P. Phoo, M. K. Liu, C. V ondrick, B. Hariharan, and K. Bala,
+“Remote sensing vision-language foundation models without annota-
+tions via ground remote alignment,”arXiv preprint arXiv:2312.06960,
+2023.
+[128] S. Khanna, P. Liu, L. Zhou, C. Meng, R. Rombach, M. Burke, D. B.
+Lobell, and S. Ermon, “Diffusionsat: A generative foundation model for
+satellite imagery,” inThe Twelfth International Conference on Learning
+Representations, 2024.
+[129] D. Tang, X. Cao, X. Hou, Z. Jiang, and D. Meng, “Crs-diff: Control-
+lable generative remote sensing foundation model. arxiv 2024,”arXiv
+preprint arXiv:2403.11614.
+[130] M. Chu, Z. Zheng, W. Ji, T. Wang, and T.-S. Chua, “Towards natural
+language-guided drones: Geotext-1652 benchmark with spatial relation
+matching,” inEuropean Conference on Computer Vision, pp. 213–231,
+Springer, 2024.
+[131] V . Vivanco Cepeda, G. K. Nayak, and M. Shah, “Geoclip: Clip-inspired
+alignment between locations and images for effective worldwide geo-
+localization,”Advances in Neural Information Processing Systems,
+vol. 36, pp. 8690–8701, 2023.
+[132] J. Luo, Y . Wang, Z. Gu, Y . Qiu, S. Yao, F. Wang, C. Xu, W. Zhang,
+D. Wang, and Z. Cui, “Mmm-rs: A multi-modal, multi-gsd, multi-scene
+remote sensing dataset and benchmark for text-to-image generation,”
+arXiv preprint arXiv:2410.22362, 2024.
+[133] C. Liu, K. Chen, R. Zhao, Z. Zou, and Z. Shi, “Text2earth: Unlocking
+text-driven remote sensing image generation with a global-scale dataset
+and a foundation model,”arXiv preprint arXiv:2501.00895, 2025.
+[134] K. Heidler, L. Mou, D. Hu, P. Jin, G. Li, C. Gan, J.-R. Wen, and X. X.
+Zhu, “Self-supervised audiovisual representation learning for remote
+sensing data,”International Journal of Applied Earth Observation and
+Geoinformation, vol. 116, p. 103130, 2023.
+[135] C. Pang, X. Weng, J. Wu, J. Li, Y . Liu, J. Sun, W. Li, S. Wang, L. Feng,
+G.-S. Xia,et al., “Vhm: Versatile and honest vision language model
+for remote sensing image analysis,”arXiv preprint arXiv:2403.20213,
+2024.
+[136] J. A. Irvin, E. R. Liu, J. C. Chen, I. Dormoy, J. Kim, S. Khanna,
+Z. Zheng, and S. Ermon, “TEOChat: A large vision-language assistant
+for temporal earth observation data,” inThe Thirteenth International
+Conference on Learning Representations, 2025.
+[137] X. Li, Y . Tao, S. Zhang, S. Liu, Z. Xiong, C. Luo, L. Liu, M. Pech-
+enizkiy, X. X. Zhu, and T. Huang, “Reobench: Benchmarking robust-
+ness of earth observation foundation models,” inNeruIPS 2025 D&B
+Track, 2025.
+Danfeng Hong(IEEE Senior Member) received the
+Dr. -Ing degree (summa cum laude) from the Signal
+Processing in Earth Observation (SiPEO), Technical
+University of Munich (TUM), Munich, Germany, in
+2019. He is currently a Full Professor at Southeast
+University, Nanjing, China, and previously served
+as a Full Professor at the Aerospace Information
+Research Institute, Chinese Academy of Sciences,
+Beijing, China. His research interests include artifi-
+cial intelligence, multimodal perception, foundation
+models, hyperspectral remote sensing, and Earth
+science.
+Dr. Hong serves as an Associate Editor for the IEEE Transactions on Pattern
+Analysis and Machine Intelligence (TPAMI), IEEE Transactions on Image
+Processing (TIP), and IEEE Transactions on Geoscience and Remote Sensing
+(TGRS). He has been recognized as a Highly Cited Researcher by Clarivate
+Analytics since 2022.
+Chenyu Lireceived the B.S., M.S., and Ph.D.
+degrees from Southeast University, Nanjing, China,
+in 2018, 2021, and 2025, respectively. Her research
+interests include interpretable artificial intelligence,
+big Earth data forecasting, foundation models, and
+hyperspectral imaging.
+Dr. Li received the outstanding Student Paper
+(Paul Gader) award at WHISPERS2025 and the
+Best Reviewer Award from IEEE Transactions on
+Geoscience and Remote Sensing (TGRS).
+
+=== PAGE BREAK ===
+
+21
+Xuyang Lireceived the B.S. degree from the School
+of Optoelectronic Science and Engineering, Uni-
+versity of Electronic Science and Technology of
+China (UESTC), Chengdu, China, in 2023. He is
+currently pursuing his Ph.D. degree at the Aerospace
+Information Research Institute, Chinese Academy
+of Sciences, Beijing, China. His research interests
+include machine learning, remote sensing foundation
+models, and multimodal interpretation.
+Gustau Camps-Valls (IEEE Fellow) is a Full Pro-
+fessor of Electrical Engineering at Universitat de
+Val`encia, Spain. He specializes in AI and machine
+learning for environmental and climate challenges.
+He heads the Image and Signal Processing (ISP)
+group, focusing on AI for Earth and climate sci-
+ences. His research encompasses AI for predicting
+extreme events, enhancing Earth models, and under-
+standing climate impacts on society, such as climate-
+induced migration. He is a Highly Cited Researcher
+(2011, 2021-2024) and has received notable recog-
+nitions, including the Google Classic Paper Award (2019). He has been the
+Program Chair for IEEE IGARSS 2018 and AISTATS 2022, an Associate
+Editor for five IEEE journals, and an IEEE Distinguished Lecturer (2017-
+2019). He is a Fellow of IEEE, ELLIS, EurASc, Academia Europaea, and
+AAIA. His leadership extends to advisory roles, including at ESA PhiLab and
+EUMETSAT, and he coordinates ELLIS’s AI program for Earth and climate
+sciences. He received two ERC grants (consolidator and synergy) to advance
+AI for Earth and climate sciences.
+Jocelyn Chanussot(IEEE Fellow) received the
+M.Sc. degree in electrical engineering from the
+Grenoble Institute of Technology (Grenoble INP),
+Grenoble, France, in 1995, and the Ph.D. degree
+from the Universit ´e de Savoie, Annecy, France, in
+1998. From 1999 to 2023, he was with Grenoble
+INP, where he was a Professor of signal and image
+processing. He is currently a Research Director
+with INRIA, Grenoble. His research interests include
+image analysis, hyperspectral remote sensing, data
+fusion, machine learning, and artificial intelligence.
+Dr. Chanussot is the founding President of the IEEE Geoscience and
+Remote Sensing French chapter. He was the vice president of the IEEE Geo-
+science and Remote Sensing Society, in charge of meetings and symposia. He
+is an Associate Editor for the IEEE Transactions on Geoscience and Remote
+Sensing, the IEEE Transactions on Image Processing, and the Proceedings of
+the IEEE. He was the Editor-in-Chief of the IEEE Journal of Selected Topics
+in Applied Earth Observations and Remote Sensing (2011-2015). He is a
+Fellow of the IEEE, an ELLIS Fellow, a Fellow of AAIA, a member of the
+Institut Universitaire de France (2012-2017), and a Highly Cited Researcher
+(Clarivate Analytics/Thomson Reuters, since 2018).

@@ -1,0 +1,1161 @@
+Mitigating data Constraints in crop mapping: A self-supervised framework 
+integrating adaptive clustering, graph convolution and global 
+spatiotemporal attention
+Lijian Xie a,b, Shucheng You c, Aixia Liu c, Yun He c, Chenhao Huang a,b, Jinsong Deng a,b,*
+a State Key Laboratory of Soil Pollution Control and Safety, Zhejiang University, Hangzhou 310058 Zhejiang, China
+b College of Environmental and Resource Sciences, Zhejiang University, Hangzhou 310058 Zhejiang, China
+c Land Satellite Remote Sensing Application Center, Ministry of Natural Resources (MNR), Beijing 100048, China
+ARTICLE INFO
+Keywords:
+Crop mapping
+Self-supervised learning
+Graph convolution
+Pre-training
+Clustering
+Contrastive Learning
+ABSTRACT
+Correct classification of crop layers is crucial for crop growth tracking and estimating yields, but existing 
+methods depends heavily on the completeness of data and ground truth labels. Self-supervised learning (SSL) 
+enables crop mapping when data is limited. However, current SSL approaches fail to fully integrate information 
+across spatiotemporal dimensions and lack the ability to learn and represent consistent ground object features. 
+To this end, a self-supervised crop mapping framework is proposed, which integrates adaptive k-means clus-
+tering, graph convolution, and global spatiotemporal attention (SAKG). This framework reduces reliance on 
+labeled data through contrastive learning and achieves implicit semantic grouping of crop spatiotemporal fea-
+tures using adaptive K-means clustering, graph convolution, and self-attention mechanisms, enhancing model 
+robustness and representation of complex data while mitigating sample imbalance issues. Three experiments 
+(cross spatial, cross temporal, cross Spatiotemporal) demonstrate that SAKG outperforms existing models in most 
+transfer scenarios. Furthermore, t-distributed Stochastic Neighbor Embedding(t-SNE) visualization verifies its 
+effective reduction of spectral differences between the source and target domains, achieving consistent repre-
+sentation of crop features. Overall, this method can effectively utilize existing satellite data and labels to achieve 
+large-scale crop mapping. The code can be obtained here: https://github.com/LijianXie/SAKG-net.
+1. Introduction
+Under the twin pressures of a growing global population and 
+frequent extreme weather events, food security is facing significant 
+challenges (Yang et al. 2023b). According to the 2024 World Population 
+Outlook, the world’s population will continue to growing and may even 
+exceed 10.2 billion by the end of this century. (https://news.un.org/zh 
+/story/2024/07/1129876). This exponential population growth will 
+lead to a surge in global food demand, posing a severe threat to the 
+sustainability of 21st-century agricultural systems. For this reason, there 
+is an urgent requirement to build a precise and trustworthy agricultural 
+monitoring system to secure global food security and achieve sustain-
+able development goals (Wang et al. 2025).
+It is noteworthy that, due to diverse planting and management 
+practices across different regions, land cover can undergo drastic 
+changes from bare soil to full vegetation cover within hours, posing 
+difficulties for traditional survey methods (Huang et al. 2022).Under 
+these circumstances, remote sensing technologies, with their ability to 
+conduct large-scale, high-frequency observations, can effectively 
+monitor crop growth status and areas across different stages, progres-
+sively supplanting conventional survey methods as the main technique 
+for crop type investigations (Wen et al. 2025).
+However, most crop mapping efforts are still affected by the avail-
+ability of effective observational data and interpretation methods. For 
+instance, optical remote sensing data is highly susceptible to weather 
+conditions, making it difficult to obtain complete observational data for 
+describing crop phenological characteristics, thus limiting the ability of 
+the model to acquire crop feature (You et al. 2023). Many studies 
+indicate that diverse source data can relatively comprehensively reveal 
+crop growth cycles and their spectral response characteristics, enabling 
+classification tasks (Shen et al. 2022). However, due to feature redun-
+dancy and the large volume of diverse source data, existing model 
+* Corresponding author at: State Key Laboratory of Soil Pollution Control and Safety, Zhejiang University, Hangzhou 310058, Zhejiang, China.
+E-mail address: jsong_deng@zju.edu.cn (J. Deng). 
+Contents lists available at ScienceDirect
+International Journal of Applied Earth  
+Observation and Geoinformation
+journal homepage: www.elsevier.com/locate/jag
+https://doi.org/10.1016/j.jag.2025.104951
+Received 3 August 2025; Received in revised form 24 September 2025; Accepted 30 October 2025  
+International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+Available online 6 November 2025 
+1569-8432/© 2025 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY-NC-ND license ( http://creativecommons.org/licenses/by- 
+nc-nd/4.0/ ). 
+algorithms struggle to accurately extract and interpret crop spatial, 
+spectral, and phenological features, limiting the capacity of the model to 
+describe the intrinsic and extrinsic properties of crops (Alami Machichi 
+et al. 2023). This is particularly challenging in regions with a variety of 
+crop types, uneven farmland areas, and diverse farming methods, 
+especially when it comes to identifying specific crops such as soybeans 
+and corn (Qiu et al. 2025).
+Compared to traditional approaches, deep learning demonstrates 
+notable strengths in feature representation and learning (Zhang et al. 
+2020). For instance, Gao et al. proposed the Phenological Horizon 
+Attention Transformer (PHAT) model based on the transformer to ach-
+ieve rapid and accurate extraction of multiple crops over large areas, 
+yielding an overall accuracy of 0.90 (Gao et al. 2025). Wang et al. 
+proposed a lightweight multi-level CNN-Transformer network (MCTNet) 
+that maintains high accuracy with minimal parameters and memory 
+usage(Wang et al. 2024).The primary reason is that the Transformer 
+architecture abandons traditional recurrent computations, achieving 
+global context modeling through self-attention mechanisms while 
+maintaining the advantages of parallel computing and improving the 
+ability of the model to identify long-term spatiotemporal dependencies 
+(Vaswani et al. 2017).
+However, existing Transformer-based studies often focus on tempo-
+ral feature extraction, neglecting the synergistic evolutionary patterns of 
+crop types across spatial–temporal dimensions. To address this issue, 
+existing studies have integrated CNN with Vision Transformer (ViT), 
+achieving the extraction and representation of spatiotemporal features, 
+and triggering a wave of research enthusiasm in remote sensing (Yan 
+et al. 2023). For instance, Jamali and others who put forward a CNN-ViT 
+that effectively achieved monitoring and mapping of Blueberry scorch 
+virus (Jamali et al. 2025). Notably, ViT and its derivative models 
+commonly face challenges in remote sensing scenarios, such as the 
+inability to extract spatiotemporal feature relationships from optical 
+remote sensing data with missing values and issues related to high 
+computational complexity. Although Liu et al. proposed the Swin 
+Transformer, which significantly improves model computational effi-
+ciency through a hierarchical window-based self-attention mechanism, 
+the aforementioned core challenges remain unresolved (Liu et al. 2021).
+Given the complex spatial–temporal correlations and dynamics of 
+time-series data, exploring spatial–temporal missing values and their 
+inter-representation relationships to achieve primary feature charac-
+terization has become an important and challenging research direction 
+(Feng et al. 2024; Pelletier et al. 2019). Even though supervised deep 
+learning approaches have addressed some of the aforementioned chal-
+lenges and demonstrated outstanding performance in crop mapping, 
+they remain limited by the availability of image data quantity and 
+quality. unsupervised methods can operate without labels, they often 
+fail to effectively capture the intricate spatial–temporal dependencies 
+within the data (Wang et al. 2022c). Unlike supervised learning that 
+depends on annotation data and complete time series data, as well as 
+unsupervised methods that may ignore these complex relationships, SSL 
+starts from the intrinsic structure of the data itself and learns its feature 
+representation forms (Gui et al. 2024). Specifically, SSL primarily ex-
+tracts intrinsic supervisory information from massive unlabeled data 
+through subsidiary task, and utilizes this constructed supervised infor-
+mation to train the net, thereby learning feature representations that are 
+valuable for downstream tasks (Xu et al. 2024b). Contrastive and 
+generative approaches are the two most prevalent paradigms in current 
+image self-supervised methods (Wang et al. 2022b). Contrastive 
+learning approaches learn representation by minimize the distances 
+among sample pairs in the embedded space, whereas generative ap-
+proaches learn representation by rebuilding inputs or generating data 
+distributions (Ohri and Kumar 2021). This technique has garnered 
+increasing attention in remote sensing temporal processing tasks, as 
+exemplified by Qin, who introduce a Spatiotemporal Collaborative 
+Learning Network (STCLN) to spatiotemporal expressions, achieving 
+outstanding crop type mapping capabilities under label-scarce 
+conditions (Qin et al. 2025).
+Although current research has demonstrated that self-supervised 
+learning can be effectively applied to representation learning for 
+various data types, those approaches often overlook the latent graph 
+structures and latent space distance relationships in multivariate time- 
+series data, limiting their representation capabilities (Jin et al. 2024).
+In contrast, Graph Neural Networks (GNN), as a learning architec-
+ture designed specifically for graph representation, can more effectively 
+capture complex spatial–temporal features in multivariate time-series 
+data by generating random subgraphs as samples and constructing 
+corresponding adjacency matrices for each sample (Yang et al. 2023a). 
+For example, Ding et. al. Based on the self-training strategy, by intro-
+ducing spectral-space transformation and designing a local maintain 
+graph embedded encoder and autocorrelation learning smoothing 
+module, the robustness of remote sensing data clustering is greatly 
+improved (Ding et al. 2022a). In addition, some studies, while 
+addressing this issue, have achieved high clustering accuracy and low 
+complexity in hyperspectral images by introducing a low-pass graph 
+denoising mechanism and a dual-branch graph contrastive learning 
+module; however, when handling highly dynamic time-series data, due 
+to their graph feature construction methods, they may still face signifi-
+cant computational burdens, necessitating further enhancement of joint 
+spatiotemporal modeling capabilities to improve prediction accuracy 
+and computational efficiency (Ding et al. 2025b; Wang et al. 2019). As 
+an unsupervised method, K-means can automatically cluster pixels 
+based on spectral features without prior labels and segment images into 
+different categories. Combining it with graph networks not only enables 
+deep exploration of dynamic spectral and spatial differences in crops 
+across various growth stages but also reduces the computational 
+complexity of graph networks, improving computational efficiency. As 
+proposed by Ding et al., an Adaptive Homomorphic Structure Graph 
+Clustering (AHSGC) method effectively encodes spatial structure infor-
+mation and represents latent features while reducing complexity (Ding 
+et al. 2025a).
+Although the aforementioned studies have demonstrated that the 
+introduction of clustering and graph convolution can learn super pixel- 
+level spectral-spatial features, reduce the number of graph nodes pro-
+cessed by subsequent networks, and significantly enhance feature rep-
+resentation and computational efficiency through self-training strategies 
+and spectral-spatial transformations, challenges in crop mapping persist 
+due to the lack of prior knowledge, high spectral variability, and high 
+data dimensionality (Ding et al. 2022b).
+Therefore, this study integrates the strengths of the aforementioned 
+methods, constructing a self-supervised learning crop mapping frame-
+work based on Sentinel-2 time-series imagery, utilizing graph convolu-
+tion, k-means clustering, and the self-attention mechanism of the 
+transformer model. The key contribution to our research is: 
+1) Established a contrastive SSL framework for crop feature represen-
+tation, addressing the strong dependence of traditional supervised 
+learning on the completeness of remote sensing data and labeled 
+data, reducing feature redundancy in high-dimensional time-series 
+data, and enhancing model generalization capability.
+2) The K-means algorithm is improved to enable adaptive clustering. 
+Integrated it with graph networks to achieve implicit semantic 
+grouping of crop features, enhancing the model’s robustness in 
+identifying small-sample categories.
+3) Through the combination of the self-attention module and an 
+adaptive feature fusion mechanism, the capacity to capture long- 
+term spatiotemporal dependencies of crop features and express 
+complex data is improved.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+2 
+2. Study area and datasets
+2.1. Study area
+The research spans multiple regions in China and the United States of 
+America (USA), with site selection fully considering the importance of 
+corn and soybean production as well as the diversity of climate and 
+agricultural conditions (Fig. 1). China selected Kedong (KD) County, 
+Heilongjiang (HLJ) (temperate continental monsoon climatic region, 
+yearly average 0–3 ◦C, precipitation 400–600 mm) and Si(S) County, 
+Anhui (AH) (warm temperate semi-humid monsoon climate zone, yearly 
+average 14–15 ◦C, precipitation 700–900 mm). The USA selected six 
+counties in the Corn Belt: Grant and Stevens Counties in Minnesota 
+(MN), Kossuth County in Iowa (IA), Iroquois County in Illinois (IL), and 
+Jay and Randolph Counties in Indiana (IN), with temperate continental 
+climate, yearly average 8–12 ◦C, precipitation 700–1000 mm, and flat 
+terrain. Since some areas belong to the same state, they are abbreviated 
+in the following text (MN_Grant_Stevens → MN).
+2.2. Data source
+2.2.1. Satellite data
+Sentinel-2, a multispectral remote sensing satellite developed by the 
+European Space Agency. The bands from the visible to short-wave 
+infrared, with a swath width of 290 km, delivering high-resolution im-
+agery suitable for applications including land cover and environmental 
+Fig. 1. Study regions in (I) USA, (II) China.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+3 
+monitoring (Zhang et al. 2021). The study used 10 spectral bands from 
+Sentinel-2, excluding Band 1 (Coastal aerosol), Band 9 (Water vapor), 
+and Band 10 (SWIR-Cirrus). In addition, the Normalized difference 
+vegetation index (NDVI) and Normalized difference moisture index 
+(NDMI) are supplemented as index features (Wang et al. 2023). 
+NDVI= NIR  Red
+NIR+ Red (1) 
+NDMI= NIR  SWIR
+NIR+ SWIR (2) 
+2.2.2. Ground truth
+The labeled data for the USA region is the Cropland Data Layer 
+(CDL), which has annually provided products of over 100 crops in the 
+United States at a 30-meter resolution since 2008. Currently, the CDL is 
+widely employed in various studies as a source of training and validation 
+labels for crop mapping tasks (Yaramasu et al. 2020). Since China has 
+not released an official CDL, the mapping product covering corn and 
+soybean in China by Li et al. was used as the reference data (Li et al. 
+2023).
+2.2.3. Data preprocess
+Fig. 2 shows the phenological calendar for corn and soybeans. We 
+selected all Sentinel-2 sequence image data collected between April to 
+October between 2019 and 2021. Subsequently, we applied a cloud 
+masking algorithm to remove pixels affected by clouds and calculated 
+Fig. 2. Crop calendar for the study area.
+Fig. 3. Self-supervised crop extraction framework.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+4 
+the medians of the remaining observed values at 15-day intervals, 
+generating 14 time series per year. In order to preserve complete 
+nonlinear crop phenological information, we did not apply linear 
+interpolation in the time dimension, but instead marked missing data 
+with 0. To guarantee the reliability of ground reference data, only pixels 
+with a confidence level higher than 95 % were retained to form the 
+training set and test set (Xu et al. 2024b). Additionally, to ensure better 
+matching with remote sensing images, we used the nearest neighbor 
+method to resample CDL data to a spatial resolution of 10 m (Li et al. 
+2022). All processing steps were performed using Google Earth Engine.
+3. Method
+Although self-supervised learning can be effectively applied to rep-
+resentation learning for various data types, the limitations of custom- 
+trained feature extraction hinder the model’s ability to explore feature 
+dependencies across different dimensions. Thus, this study enhances the 
+K-means clustering and integrates it with graph convolution into a self- 
+supervised framework, while incorporating a spatiotemporal self- 
+attention mechanism to achieve robust feature extraction and repre-
+sentation, tackling the model’s dependence on data completeness and 
+feature redundancy in high-dimensional time-series data. The process is 
+show in Fig. 3.
+3.1. SAKG for pre-training
+In this phase, due to the significant influence of factors such as 
+illumination, cloud cover, and seasonal variations on time-series optical 
+data, we employed data augmentation strategies to simulate these 
+changes. This approach increases data diversity, enhancing the ability of 
+the model to learn invariant inherent features of data (Maharana et al. 
+2022). Furthermore, to achieve effective feature extraction, we designed 
+a feature encoder branch with a self-attention mechanism and a clus-
+tering graph convolution branch. By leveraging diagonal and off- 
+diagonal loss terms, robust feature support is provided for down-
+stream tasks (Zbontar et al. 2021). Our pre-training framework is illus-
+trated in Fig. 4.
+Fig. 4. Self-supervised pre-training framework.
+Fig. 5. Adaptive clustering graph convolution branch.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+5 
+3.1.1. Self-attention mechanism encoder feature extraction branch
+The feature encoder with a self-attention mechanism is designed to 
+comprehensively captures the dynamic changes in sequence data, 
+overcoming the limitations of missing contextual information and 
+enhancing global expression capabilities of features. The encoder and 
+self-attention mechanism serve as the primary branch for feature 
+extraction in our approach, where the encoder comprises four conv 
+layers. Each conv layer has a kernel size of 3 × 3, a step size of 1, padding 
+of 1, and includes max-pooling and ReLU activation functions. As shown 
+in Fig. 4, the encoder initially applies convolution operations to the data- 
+augmented images [X1, X2, … XN], producing the feature ca1; Then, the 
+computed features undergo pooling operations and ReLU activation 
+functions. Subsequently, these features are fused with the features ga1 
+generated by the clustering graph convolution through an adaptive 
+feature fusion (ADF) module, and processed by the self-attention module 
+to obtain the feature input ca2 to the next convolutional layer. After four 
+convolutional processes, the features are projected and mapped to the 
+feature Za. To enhance self-supervised feature extraction, the computed 
+feature Za is subjected to a consistency constraint with the feature Zb 
+derived from another augmented image, resulting in the loss L oss1. 
+Then, through gradient backpropagation, the model parameters are 
+updated, achieving the training of model parameters.
+3.1.2. Adaptive clustering graph convolution branch
+The clustering graph convolution branch primarily consists of 
+adaptive K-means clustering and a graph convolution module (Fig. 5). 
+This branch is designed to enhance crop feature representation, mitigate 
+the interference of complex pixel relationships on feature extraction, 
+and ensure stable representations in self-supervised learning. Due to the 
+inherent nature of graph convolution, computational cost increases 
+sharply with the node count (Tang et al. 2021). To address this, we 
+adopted a process of first applying clustering to reduce computational 
+load, followed by graph convolution for feature extraction. Additionally, 
+since the pixel value distribution of raw time-series optical data may be 
+highly dispersed or correlated (e.g., redundancy across multiple bands), 
+and K-means relies on Euclidean distance, noise and low discrimina-
+bility in the raw data can disrupt the convergence of cluster centers, 
+potentially leading to inaccurate cluster assignments or excessive 
+computational complexity. To mitigate this, we first pass the data- 
+augmented images [X1, X2, … XN] through a 3 × 3 convolutional layer 
+to transform the low-level pixel values of the raw data into higher-level 
+feature representations before adaptive clustering, enhancing the se-
+mantic expressiveness of the data. The results of clustering are subse-
+quently subjected to graph convolution to derive the feature g. 
+Furthermore, to ensure multi-scale information extraction and syner-
+gistic integration with the features extracted by the encoder, we applied 
+four graph convolution operations during the graph convolution 
+process, yielding [g1,g2,g3,g4].
+3.1.3. Self-attention mechanism
+In the crop classification task employing time-series multispectral 
+remote sensing imagery, the spatial relationships between pixels and the 
+spectral features across different time steps are critical to classification 
+performance (Wang et al. 2022a). Therefore, a self-attention mechanism 
+(Fig. 6) was designed in our model to enhance the crop classification task 
+utilizing time-series multispectral remote sensing imagery. This mech-
+anism generated Key(K), Query(Q), and Value(V) through 1 × 1 
+convolution and uses scaled dot-product attention to compute dynamic 
+weights between pixels, thereby capturing long-range spatial 
+dependencies. 
+Attention(Q, K, V)= Softmax
+(QKT
+̅̅̅̅̅dk
+√
+)
+V (3) 
+In the above equation, Q is generated through a 1 × 1 convolution 
+from the input feature map F∈ RB×C×H×W, with a shape of B×(C/8) 
+×(HW), whereby B represents the batch size, C represents the input 
+channel number. H and W represent the heights and widths of the 
+feature map. K is similarly generated through a 1 × 1 convolution from 
+X, with the same shape as Q. dk is the scaling factor, and since the 
+magnitude of the dot product is closely linked to the size of dimensions 
+involved in calculations, it is represented here by the reduced channel 
+number C/8.
+3.1.4. K-means adaptive clustering
+To further extract spatial structure information from time-series 
+multispectral remote sensing imagery, the K-means clustering was 
+employed to improve feature representation and decrease the compu-
+tational burden of subsequent graph convolution (Likas et al. 2003). K- 
+means performs unsupervised clustering in the feature space, grouping 
+pixels into clusters with similar spectral-temporal characteristics, 
+generating cluster labels. These labels are multiplied with the original 
+features to generate cluster-enhanced features, providing more 
+discriminative input for the graph convolutional network, thereby 
+improving the spatial segmentation performance for corn and soybean. 
+This study improves the K-means algorithm to achieve adaptive clus-
+tering in the feature space, with the object function and iterative process 
+described as follows: 
+argmin{C(b)}
+B
+b=1
+∑B
+b=1
+⎡
+⎢⎣
+∑Kb
+k=1
+∑
+xi∈C(b)
+k
+‖xi  C(b)
+k ‖
+2
++ α(Kb  ̂Kb)2
+⎤
+⎥⎦ (4) 
+̂Kb =
+⌊
+Kmin+(Kmax  Kmin)• Var(Xb)  Varmin
+Varmax  Varmin
+⌋
+(5) 
+Fig. 6. Self-attention mechanism module.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+6 
+In the above equation, B represents the quantity of sampled batches, 
+Kb is the dynamic count of clusters for the b-th sample, Kb ∈[Kmin,Kmax], 
+and ̂Kb is the reference number of clusters estimated based on feature 
+variance. We set Kmin = 2 to exclude trivial solutions with a single cluster 
+and ensure that the clustering process produces meaningful partitions. 
+We set an upper bound of Kmax ≤ ̅̅̅n√ , which allows the algorithm to 
+flexibly adapt to complex data structures. The reference settings of 
+Kmin = 2 and Kmax ≤ ̅̅̅n√ are based on empirical measurements and are 
+used in many papers. For example, Li et al. employed a dimensionality 
+reduction-based clustering fusion approach to optimize algorithm, using 
+a rule of thumb to select k, setting Kmin to 2 and Kmax to ̅̅̅n√ (Li et al. 
+2025). In addition, Yu and Zhou also adopted this empirical rule when 
+determining the optimal number of clusters based on hierarchical clus-
+tering, setting Kmin set to 2 and Kmax to ̅̅̅n√ (Yu and Cheng 2002; Zhou 
+et al. 2017). α= 0.1 are the regularization coefficient, balancing cluster 
+quality and quantity. Var(Xb)= 1
+HW
+∑HW
+i=1‖xi  μb‖2, where μb is the 
+feature mean of the b-th sample, and Varmin/Varmax represent the mini-
+mum/maximum feature variance of the current batch.C(b)
+k = xπ(k),
+π(k) u{1,HW}, where π(k) is the random sampling index. Additionally, 
+the output employs a weighted sum of one-hot vectors rather than hard 
+labels, preserving membership information.
+3.1.5. Graph convolution
+Remote sensing imagery contains complex data with spatial and 
+temporal correlations, which traditional convolutional networks strug-
+gle to capture. To address this, this study leverages the ability of graph 
+convolution to handle non-Euclidean data structures, tackling the 
+complex spatial adjacency relationships of pixels in remote sensing 
+imagery and capturing spatial and temporal features at different scales, 
+effectively addressing the incompleteness issues caused by cloud cover 
+or missing data in remote sensing data (Ding et al. 2022c; Liu et al. 
+2024).
+It is defined as:G=(V, E),V=(v1,v2,⋯,vN), E denotes the vertex and 
+edge sets, respectively. The adjacency matrix is A∈ RN×N,N is the 
+sample size. D is the degree matrix Dii = ∑N
+j Aij. and the Laplacian 
+matrix is L= D  A. Let the dimension of the original nodes be P, the 
+input node matrix is X∈ RN×P. The graph convolution process is 
+described below (Kipf and Welling 2016). 
+H=
+⎛
+⎝IN+ D  1
+2AD  1
+2
+⎞
+⎠=
+⎛
+⎝̂D
+  1
+2̂ÂD
+  1
+2
+⎞
+⎠XW (6) 
+Where H∈ RN×P is the convolved data matrix,IN is the unit 
+matrix.W∈ RN×P is the matrix of parameters.̂A= A+ IN, and ̂Dii =
+∑
+j
+̂Aij, the propagation rule of GCN is: 
+Hl+1 = σ
+⎛
+⎝̂D
+  1
+2̂ÂD
+  1
+2HlWl
+⎞
+⎠ (7) 
+The activation function is σ.l is the lth layer of the GCN. Wl is the 
+weight matrix learned in the lth layer, Hl is the embedded deep node 
+features of the lth layer, and H0 = X.
+3.1.6. Adaptive feature fusion
+Since important features in time-series imagery may vary across 
+different regions, directly fixing the fusion of two features may fail to 
+fully utilize the diversity and differences in the data. As shown in Fig. 7, 
+we designed a dual-branch adaptive feature fusion mechanism, enabling 
+the model to adaptively adjust the reliance on the two features based on 
+specific inputs, achieving feature enhancement (Xu et al. 2024a). 
+Ffused = W1⊙ Fc+ W2⊙ Fg (8) 
+In the above equation, ⊙ denotes element-wise multiplication, where 
+W1 + W2 = 1, to prevent unreasonable amplification or attenuation of 
+feature intensity due to weight allocation. The encoder features are 
+Fc ∈ RC×H×W, the clustering-graph convolution branch features are 
+Fg ∈ RC×H×W, and the attention weights are W=
+Softmax(Conv1×1(Fcombined)), Fcombined is composed of Fc and Fg concate-
+nated together.
+3.1.7. Loss1 function
+To constrain the representation capability of ground object features 
+during self-supervised learning, we learn representations invariant to 
+data perturbations by comparing different augmented views (y1, y2)
+with the same inputs (Zbontar et al. 2021). The loss function has two 
+objectives: feature consistency (diagonal constraint) and feature 
+Fig. 7. Adaptive feature fusion module.
+Fig. 8. Supervised training framework.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+7 
+Fig. 9. NDVI time series curve in (a)2019, (b)2020 and (c)2021, (1) MN, (2) IA, (3) IL, (4) IN, (5) HLJ_KD, (6) AH_S.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+8 
+redundancy elimination (off-diagonal constraint). The diagonal loss 
+ensures the stability of features for the same band across different times 
+and data augmentations. The off-diagonal loss eliminates redundant 
+information between different bands, forcing the network to learn 
+unique response patterns for each band, enhancing sensitivity to subtle 
+crop spectral differences. Its constraint form is as follows: 
+L oss1 =
+∑
+i
+(1  Cii)2+ λ
+∑
+i
+∑
+j∕=i
+C2
+ij (9) 
+Here, λ is a key parameter for the importance of the equilibrium loss 
+term. C is the cross-correlation matrix, computed along the batch 
+dimension between the outputs of two similar nets. 
+Cij =
+∑
+bzA
+b,izB
+b,j̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+∑
+b
+(
+zA
+b,i
+)2
+√ ̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+∑
+b
+(
+zB
+b,j
+)2
+√ (10) 
+where b denotes batch size. i, j denotes the dimensions of the network 
+output vector. C is a square matrix with the same dimensions as the 
+network output, whose element values range from   1 to 1.
+3.2. Supervised fine-tuning
+The supervised image classification training step (Fig. 8), we 
+removed the pre-training loss function L oss1 and data augmentation, 
+while keeping the remaining components consistent with the self- 
+supervised encoder feature extraction phase. Additionally, we intro-
+duced a decoder and a cross-entropy loss function L oss2, enabling the 
+model to perform the corresponding crop classification task after fine- 
+tuning.
+3.2.1. Decoder
+In the image classification task, the decoder is made up of four 
+upsampling layers, each incorporating a self-attention mechanism, skip 
+connections, and a ReLU activation function. Initially, the encoder’s 
+features are upsampled, then combined with the encoder-extracted 
+features through skip connections to maintain information complete-
+ness. Thereafter, normalization operations and the self-attention 
+mechanism are applied to gradually recover resolution while preser-
+ving global contextual integrity.
+3.2.2. Loss2 function
+During this phase, cross-entropy loss function is utilized. 
+L oss2 =  1
+N
+∑N
+n=1
+∑M
+m=1
+Ym
+n loĝY
+m
+n (11) 
+Where N denotes the size of the batch. M denotes number of cate-
+gories. Ym
+n denotes the label of each category m on the nth patch in the 
+batch, and ̂Y
+m
+n is the prediction probabilities of each category m at nth 
+patches. The learning process is detailed in Algorithm 1 (Appendix A). In 
+addition, the evolution of the algorithm’s input dimensions and feature 
+shapes within the network, as well as the scalability and computational 
+requirements of the architecture, are described in Appendix B.
+4. Experiments result
+This section, the study conducted experiments to compare with 
+mainstream methods in crop type mapping. The model incorporating 
+pre-training is referred to as SAKG, whereas the version trained from 
+scratch without pre-training is denoted as AKG.
+4.1. Implementation details
+For data arrangement, the ratio is approximately 7:2:1 (training, 
+validation, and test) (Joshi et al. 2023). A randomly assigned method 
+was employed to prevent data imbalances and enhance the model’s 
+generalizability. For parameters, the learning rate was kept at 0.001, 
+batch size was set to four. All experiments utilized the Adam optimizer. 
+The experiment applied the same settings to STCLN and SAKG. For SVM, 
+RF, ViT, and Swin-Unet, the models were trained from scratch using the 
+same parameter settings employed during the fine-tuning stage (Cao 
+et al. 2022; Zafar et al. 2024). The experiment was conducted on a 
+workstation configured with an Intel Core Ultra 9 285 K CPU, 96 GB 
+RAM, and an ASUS GeForce RTX 5080 TUF OC 16 GB GPU, with the 
+number of epochs set to 100 during training. To evaluate the perfor-
+mance of the models, the Overall Accuracy (OA), mean F1 score (mF1), 
+the mean Intersection over Union (mIoU), and Kappa coefficient as 
+evaluation metrics. In addition, our final accuracy metrics are averaged 
+over five trials to avoid unreliable results. 
+OA= TP+ TN
+TP+ TN+ FP+ FN (12) 
+F1= 2× Precision× Recall
+Precision+ Recall , mF1= 1
+K
+∑K
+i=1
+F1i (13) 
+Precision= TP
+TP+ FP, Recall= TP
+TP+ FN (14) 
+Kappa= OA  Pe
+1  Pe
+(15) 
+Pe =(TP+ FP)(TP+ FN)+(TN+ FP)(TN+ FN)
+(TP+ TN+ FP+ FN)2 (16) 
+mIoU= 1
+K
+∑K
+i=1
+Pi∩ Gi
+Pi∪ Gi
+(17) 
+Here, TP refers to pixels corrected classified as belonging to the 
+target class, while FP (false positives) indicates background or negative 
+pixels that were incorrectly predicted as positive. TN (true negatives) 
+denotes correctly identified background pixels, and FN (false negatives) 
+represents target class pixels that were mistakenly classified as back-
+ground. The variable K is the total count of sample categories, including 
+the background. Pi and Gi indicate the predicted and truth pixel sets for 
+category i, respectively.
+4.2. Normalized difference vegetation index comparison at study area
+To illustrate the impact of spectral feature differences of crops across 
+different regions and times on the model, we plotted the temporal NDVI 
+curves for corn, soybeans, and other crops (Fig. 9.). Specifically, around 
+100 days into the growing period, spectral features begin to emerge, but 
+the differences are not yet pronounced; between 150 and 300 days, 
+NDVI curves display more distinct crop-specific characteristics, while 
+after 300 days, the spectra of different crops start to overlap, and 
+spectral feature differences diminish. Spectral feature overlap is pri-
+marily due to similar leaf structures and photosynthetic characteristics 
+among crops of the same family, particularly during early crop growth 
+and senescence periods, where consistent patterns of higher near- 
+infrared reflection and lower red reflection are observed. The differ-
+ences in spectral features are attributed to the heterogeneity of pheno-
+logical development stages, seasonal variations, short-term disturbance 
+events in the temporal dimension, and environmental factors such as 
+climate, soil, crop type/variety, and field management in the spatial 
+dimension. The NDVI curves indicate that variations in crop phenolog-
+ical stages across locations and years may affect the model’s feature 
+extraction capabilities. Therefore, developing models to learn the pri-
+mary feature representations of ground objects is highly important.
+4.3. Crop mapping results
+The proposed method was evaluated using data from six counties in 
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+9 
+the United States for the year 2021. Quantitative evaluation results 
+comparing the proposed method with other existing methods are sum-
+marized in Table 1. Compared to methods such as SVM, RF, ViT, Swin- 
+Unet, STCLN, and AKG, SAKG achieved leading performance in all re-
+gions. For instance, it achieved 0.9203 in the MN region, 0.9381 in the 
+IA region, 0.9184 in the IL region, and 0.9012 in the IN region, indi-
+cating its superior accuracy in crop classification. In terms of mIoU, 
+although SAKG scored 0.8516 in the MN region, slightly lower than 
+other methods, our method generally exhibits better advantages, with 
+superior precision in crop region delineation. The Kappa coefficient was 
+0.8796 in the MN region, 0.9010 in the IA region, 0.8703 in the IL 
+region, and 0.8507 in the IN region, reflecting stronger consistency 
+between classification results and ground truth. Notably, SAKG out-
+performed AKG in OA, mF1, and Kappa, highlighting the performance 
+enhancement from SSL pre-training. Furthermore, in terms of individual 
+classification accuracy for corn and soybean, SAKG frequently achieved 
+leading positions, fully demonstrating its significant advantages in crop 
+classification tasks across different regions, with higher classification 
+accuracy and better stability compared to other methods.
+As depicted in Fig. 10, when multiple models exhibit classification 
+errors, SAKG outperforms others, especially in regions characterized by 
+complex spectral properties of crops like corn and soybean (Fig. 9.), 
+Table 1 
+Crop classification performance on the 2021 US test set.
+Region Metrics SVM RF ViT Swin-Unet STCLN AKG SAKG
+MN Corn 0.9008 0.8948 0.8529 0.9249 0.9288 0.9230 0.9401
+Soybean 0.8841 0.8892 0.5300 0.8855 0.8688 0.8866 0.9019
+OA 0.8927 0.8941 0.7458 0.8945 0.9067 0.9112 0.9203
+mF1 0.8929 0.8944 0.7295 0.8940 0.9067 0.9108 0.9197
+mIoU 0.8066 0.8090 0.5815 0.8086 0.8926 0.8344 0.8516
+KAPPA 0.8379 0.8400 0.6132 0.8406 0.8588 0.8658 0.8796
+IA Corn 0.9338 0.9210 0.8663 0.9355 0.9404 0.9350 0.9489
+Soybean 0.9367 0.9351 0.8313 0.9603 0.9424 0.9194 0.9542
+OA 0.9266 0.9233 0.8068 0.9220 0.9327 0.9227 0.9381
+mF1 0.9114 0.9085 0.7779 0.9045 0.9185 0.9216 0.9240
+mIoU 0.8406 0.8359 0.6422 0.8295 0.8523 0.8540 0.8616
+KAPPA 0.8832 0.8784 0.6856 0.8747 0.8928 0.8870 0.9010
+IL Corn 0.8967 0.9024 0.8238 0.8758 0.9293 0.9182 0.9373
+Soybean 0.9165 0.9043 0.8412 0.9354 0.9302 0.9216 0.9322
+OA 0.8965 0.8910 0.8032 0.8887 0.8954 0.9101 0.9184
+mF1 0.8798 0.8735 0.7822 0.8717 0.8726 0.8941 0.9039
+mIoU 0.7894 0.7797 0.6461 0.7762 0.7797 0.8122 0.8274
+KAPPA 0.8370 0.8278 0.6854 0.8237 0.8323 0.8580 0.8703
+IN Corn 0.9152 0.9222 0.5997 0.9079 0.9211 0.9100 0.9265
+Soybean 0.9031 0.8327 0.8614 0.9174 0.8722 0.8927 0.9086
+OA 0.8926 0.8796 0.7374 0.8889 0.8963 0.8833 0.9012
+mF1 0.8907 0.8789 0.7315 0.8868 0.8952 0.8816 0.8985
+mIoU 0.8039 0.7842 0.5778 0.7974 0.8112 0.7893 0.8169
+KAPPA 0.8375 0.8189 0.5973 0.8316 0.8437 0.8233 0.8507
+Fig. 10. Qualitative evaluation results of the 2021 dataset, site: A(MN), site: B(IA), site: C(IL), site: D(IN).
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+10 
+where our method maintains superior performance.
+4.4. Spatiotemporal transferability assessment
+4.4.1. Transfer cross spatial
+To assess the cross-regional transferability of the model, we assessed 
+models trained in four states (MN, IA, IL, IN) and two Chinese provinces 
+(HLJ and AH). As shown in Fig. 11, in domestic transfer scenarios (e.g., 
+2019IL → 2019IN, 2019IN → 2019MN, among U.S. regions), SAKG 
+performed excellently across OA, Kappa coefficient, and mF1 metrics. 
+Specifically, in the 2019IN → 2019MN transfer, SAKG achieved Kappa 
+coefficient of 0.8108, OA of 0.8753, and mF1 of 0.8727, showing sig-
+nificant improvements over other models such as SVM and RF. In cross- 
+country transfer scenarios (e.g.,2019MN → 2019HLJ,2019IA → 
+2019AH, 2019HLJ → 2019IL, 2019AH → 2019IA, between USA. and 
+Chinese regions), SAKG also demonstrated excellent performance, out-
+performing other approaches. For example, in the 2019MN → 2019HLJ 
+transfer, SAKG achieved Kappa coefficient of 0.6657, OA of 0.7804, and 
+an mF1 of 0.7721; in the 2019HLJ → 2019IL transfer, the OA was 
+approximately 0.7406, the Kappa coefficient was 0.6163, and the mF1 
+was 0.7315. These results indicate that SAKG maintains high classifi-
+cation performance in transfer learning tasks across data from different 
+countries, demonstrating strong cross-domain adaptability.
+Furthermore, the confusion matrix was computed to provide a 
+detailed representation of the prediction distribution across each cate-
+gory (Fig. 12). By integrating the confusion matrix and qualitative 
+evaluation results, SAKG exhibits superior accuracy and stability in 
+distinguishing three classes among the six models. Notably, SAKG 
+consistently achieved satisfactory performance in cross-country transfer 
+scenarios, markedly enhancing the efficiency of cross-country transfers. 
+Furthermore, Fig. 13 illustrates the qualitative outcomes of all models in 
+spatial transfer, which can be seen that SAKG produced better classifi-
+cation results. Moreover, misclassifications in AKG were significantly 
+reduced in SAKG. The results indicate that our method can generate 
+high-quality crop type maps.
+4.4.2. Transfer across temporal
+This experiment aims to evaluate the efficacy of the model in cross- 
+temporal transfer. Specifically, models established in four states were 
+transferred to different years within the same regions. As shown in 
+Table 2, SAKG gained the highest values in key metrics such as OA, mF1, 
+mIoU and Kappa coefficient in temporal transfer scenarios, indicating its 
+superior stability and adaptability in temporal transfer. In contrast, 
+other models performed lower than SAKG on these metrics, further 
+confirming the temporal transferability of the SAKG model. Addition-
+ally, all models demonstrated strong performance in cross-year trans-
+fers, suggesting that minimal regional climate variations and 
+comparable planting schedules between 2019 and 2020 led to negligible 
+differences in the time–frequency spectrum characteristics of corn 
+growing areas, thereby reducing the impact of domain transfer, thus the 
+impact of domain transfer was not significant. Additionally, confusion 
+matrices are.
+Fig. 11. Results of quantitative assessment of model spatial transfer performance.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+11 
+utilized to show the classification capabilities of the model (Fig. 14). 
+The SAKG model performed best, with a stable prediction accuracy rate 
+of over 80 % for all cases and for each crop type. The AKG and STCLN 
+models ranked second and third, respectively.
+4.4.3. Transfer cross spatiotemporal
+This experiment aims to assess the effectiveness of the method in 
+cross spatiotemporal transfer. As shown in Table 3, in domestic transfer 
+scenarios, SAKG OA for 2019MN → 2020IA and 2019IA → 2020IL was 
+0.8338 and 0.8515, respectively, with mF1 scores of 0.8170 and 0.8298, 
+and Kappa coefficients of 0.7386 and 0.7653, all significantly out-
+performing other models. In cross-country transfer scenarios, SAKG also 
+performed exceptionally well. In the 2019HLJ → 2020MN transfer, 
+SAKG achieved an OA of 0.8592, an mF1 of 0.8568, and a Kappa coef-
+ficient of 0.7864; in the 2019AH → 2020IN transfer, the Kappa was 
+0.5375, the mF1 was 0.6874, and the OA was 0.6860. Despite the 
+greater challenges of international transfer tasks, SAKG still out-
+performed other models in these metrics due to its strong cross-domain 
+adaptability. Overall, SAKG maintained high classification accuracy and 
+stability in both domestic and international transfer learning tasks, 
+demonstrating its strong generalization and adaptability.
+The confusion matrix displays the distributed prediction responses of 
+the seven methods (Fig. 15). The accurate and robust performance of 
+SAKG further demonstrate a high proportion of correctly predicted re-
+sults for all three types in all cases. The other three methods performed 
+less effectively than SAKG in all transfer scenarios, highlighting the 
+necessity of incorporating a pre-training mechanism.
+4.4.4. Analysis of mapping results
+In this study, implicit semantic grouping refers to the process during 
+training where the model automatically organizes data points based on 
+semantic similarity in a high-dimensional feature space by learning the 
+data’s latent representations (features), without explicitly specifying 
+grouping rules or labels. t-SNE can visualize clustering patterns in high- 
+dimensional data based on the model’s output features, effectively 
+demonstrating the model’s implicit semantic grouping capabilities. 
+Therefore, in order to clearly demonstrate the implicit semantic 
+grouping in our method, and evaluate the efficacy of feature represen-
+tation and learning in the SAKG method, the t-SNE was utilized to 
+visualized the spectral feature space distribution of the original data 
+(Ding et al. 2025a; Maaten and Hinton 2008).
+This feature distribution is represented by the feature output from 
+the final fully connected layer of the SAKG model. From the Fig. 16, we 
+can observe that corn and soybeans exhibit clear feature separation in 
+the original data, while other categories show a mixed feature distri-
+bution. This is primarily due to the heterogeneity caused by phenolog-
+ical development stages, seasonal variations, short-term disturbance 
+events in the temporal dimension, and field management and environ-
+mental factors in the spatial dimension.
+Furthermore, in the spatiotemporal transfer process discussed in 
+Section 4.4.3, we compare the feature distribution of each region after 
+and before the application of the model (Fig. 17). The results show that 
+after feature extraction and representation by the model, the features 
+achieved significant separation. Moreover, the extracted features show 
+similar distributions in the target and application regions, indicating 
+Fig. 12. Confusion matrix for spatial transfer of models.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+12 
+that the proposed SAKG can effectively reduce distribution differences. 
+This outcome further validates the advantages of the method proposed 
+in feature learning, representation, and recognition.
+Fig. 13. Qualitative evaluation results of model spatial transfer (site: A(MN), site: B(IA), site: C(IL), site: D(IN), site: E(HLJ), site: F(AH)).
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+13 
+5. Discussion
+5.1. Ablation study
+To assess the efficacy of adaptive clustering graph, adaptive feature 
+fusion, self-attention mechanism, and pre-training methods, we con-
+ducted ablative tests on different sets of components using a collection of 
+data from two counties in Iowa in 2021. As shown in Table 4, By com-
+parison of Ablation 1,3, it is found that adding the adaptive clustering 
+graph convolution module improved mF1 by 1.89 %. Compared to only 
+adding the self-attention mechanism (Ablation 2), the improvement was 
+greater, with mIoU increasing by 3.09 %. Compared with Ablation 6, the 
+poor performance of the self-attention mechanism (Ablation 3) is mainly 
+due to the inability to dynamically weight features from different 
+sources or scales, resulting in unreliable features being overweighted or 
+important features being overweighted, which affects model perfor-
+mance. By comparison of Ablation 1,5, the overall performance 
+improved significantly due to consistency training enhancing the 
+representation capability of ground object features. Overall, the joint 
+addition of the adaptive clustering graph convolution module and pre- 
+training steps showed significant performance improvements, with 
+mIoU improving by 3.79 % (comparing Ablation 1 and 5). We further 
+compare with simpler baseline models (e.g., standard ResNet or ViT) 
+that do not contain any of the proposed modules to better understand 
+the absolute performance improvement brought by the entire SAKG 
+framework. The relevant results and discussions are detailed in Appen-
+dix C.
+5.2. Robustness Analysis
+To compare with other methods, we evaluated performance using 
+varying proportions of labeled samples, training or fine-tuning each 
+model with sample sizes from 10 % to 70 % of the raw train set. The 
+validation set size remained consistent with the train set, whereas the 
+test set size was kept constant across all configurations to accommodate 
+variations in sample size while ensuring consistent performance 
+Table 2 
+Results of the quantitative assessment of model cross-temporal transfer.
+2019 2020 Metrics SVM RF ViT Swin-Unet STCLN AKG SAKG
+Source Target
+MN MN OA 0.7931 0.7836 0.6762 0.8245 0.8368 0.8315 0.8570
+mF1 0.7884 0.7772 0.6609 0.8189 0.8311 0.8253 0.8499
+mIoU 0.6554 0.6376 0.4961 0.6942 0.7136 0.7064 0.7415
+KAPPA 0.6854 0.6716 0.4965 0.7306 0.7513 0.7445 0.7816
+IA IA OA 0.8905 0.8610 0.6579 0.8750 0.8910 0.8917 0.9015
+mF1 0.8755 0.8445 0.6393 0.8612 0.8762 0.8754 0.8829
+mIoU 0.7815 0.7346 0.4779 0.7586 0.7826 0.7823 0.7942
+KAPPA 0.8255 0.7789 0.4298 0.8004 0.8252 0.8272 0.8408
+IL IL OA 0.8070 0.7983 0.7068 0.8470 0.8382 0.8726 0.8832
+mF1 0.7891 0.7736 0.6957 0.8241 0.8232 0.8512 0.8677
+mIoU 0.6569 0.6391 0.5343 0.7079 0.7023 0.7472 0.7690
+KAPPA 0.7004 0.6857 0.5327 0.7602 0.7459 0.7998 0.8135
+IN IN OA 0.7650 0.7293 0.6526 0.7816 0.7606 0.7978 0.8210
+mF1 0.7638 0.7290 0.6487 0.7816 0.7599 0.7876 0.8197
+mIoU 0.6181 0.5737 0.4822 0.6417 0.6133 0.6635 0.6954
+KAPPA 0.6479 0.5957 0.4772 0.6713 0.6430 0.6978 0.7308
+Fig. 14. Confusion matrix for temporal transfer of models.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+14 
+evaluation. Illustrated in Fig. 18, as the number of samples increases, all 
+methods display a consistent rise in accuracy, highlighting the direct 
+relationship between training sample quantity and method efficacy. 
+Significantly, the use of pre-trained methods (i.e., STCLN, SAKG) out-
+performed other methods across different training sample sizes and in 
+cross spatiotemporal transfer mapping. Moreover, compared to super-
+vised training, when the training set ratio is 10 %, SAKG improved 
+performance by 1–3 % in OA and 2 % in mIoU compared to AKG. This 
+emphasizes the effectiveness of pre-training in improving model per-
+formance when samples are extremely limited.
+5.3. Advantages and limitations
+Although the proposed SAKG demonstrates good performance in 
+crop type classification, performance degradation persists in cross- 
+regional and cross-temporal transfers. As shown in Table 3 and 
+Fig. 13, the model trained in the Anhui region exhibits significantly 
+reduced performance after transfer validation. The primary reasons are 
+twofold: first, there are substantial differences in cultivation practices 
+between the U.S. and Chinese regions; second, the large latitudinal span 
+during model application leads to significant differences in crop 
+phenological information that are difficult to align, resulting in perfor-
+mance decline.
+To address this, future research will select regions with similar crop 
+growing seasons and closer latitudes for model transfer. Moreover, 
+future work will further integrate the use of multi-source and multi- 
+modal data to improve the robustness of the model in different Agro-
+ecological zones (Boehm and Liesenberg 2024).Refine the scope of the 
+“other” category to achieve accurate feature representation and classi-
+fication. These enhancements align with the growing need for scalable, 
+adaptable models in precision agriculture, particularly as global agri-
+cultural systems face increasing pressures from climate change and land- 
+use shifts. Additionally, incorporating emerging technologies, such as 
+advanced remote sensing or AI-driven decision support systems, could 
+further strengthen model generalizability and support sustainable agri-
+cultural policies worldwide. These improvements are critical for 
+Table 3 
+Results of the quantitative assessment of model cross spatiotemporal transfer.
+2019 2020 Metrics SVM RF ViT Swin-Unet STCLN AKG SAKG
+Source Target
+MN IA OA 0.7605 0.7832 0.5290 0.7455 0.8223 0.8016 0.8338
+mF1 0.7459 0.7710 0.5212 0.7349 0.8080 0.7882 0.8170
+mIoU 0.6064 0.6310 0.3529 0.5901 0.6816 0.6570 0.6958
+KAPPA 0.6387 0.663 0.2912 0.6168 0.7207 0.6945 0.7386
+IA IL OA 0.8373 0.8241 0.6325 0.8342 0.8345 0.8454 0.8515
+mF1 0.8162 0.8042 0.6267 0.8112 0.8126 0.8239 0.8298
+mIoU 0.6946 0.6785 0.4585 0.6890 0.6908 0.7069 0.7148
+KAPPA 0.7424 0.7261 0.4128 0.7394 0.7403 0.7575 0.7653
+HLJ MN OA 0.8490 0.8412 0.6309 0.8400 0.8454 0.8550 0.8592
+mF1 0.8444 0.8268 0.6137 0.8366 0.8355 0.8518 0.8568
+mIoU 0.7330 0.7103 0.4519 0.7205 0.7217 0.7433 0.7507
+KAPPA 0.7690 0.7570 0.4408 0.7578 0.7636 0.7799 0.7864
+AH IN OA 0.6463 0.4959 0.3852 0.6438 0.6582 0.6467 0.6860
+mF1 0.6441 0.4680 0.3452 0.6420 0.6573 0.6446 0.6874
+mIoU 0.4764 0.3110 0.2213 0.4730 0.4897 0.4797 0.5229
+KAPPA 0.4814 0.2731 0.1138 0.4779 0.4984 0.4821 0.5375
+Fig. 15. Confusion matrix for model cross spatiotemporal transfer (2019 → 2020).
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+15 
+Fig. 16. Feature space distribution of the raw data.
+Fig. 17. Distribution of feature in source(S_) domains and the transfer(T_) domains in model.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+16 
+advancing precision agriculture and supporting global food security in 
+the context of climate variability and changing agricultural practices.
+6. Conclusion
+To mitigate the reliance of existing crop mapping approaches on 
+extensive labeling data and complete image sequences, and the effi-
+ciency decline caused by environmental differences in cross-regional 
+and cross-temporal applications, this paper presents the SSL frame-
+work SAKG. This method has the following advantages: first, it improves 
+the ability of the model to learn and represent consistent characteristics 
+of ground objects through self-supervised learning of the data’s intrinsic 
+representation forms; second, it achieves spatiotemporal feature asso-
+ciation of ground objects via adaptive clustering graph convolution, 
+learning the distributions differences among the target domain and the 
+source domain to reduce the need for labels. Additionally, to thoroughly 
+validate the superiority of this method, we conducted transfer experi-
+ments across spatial, temporal, and spatiotemporal dimensions. In most 
+experiments, this model’s performance surpassed that of other models. 
+Furthermore, by using t-SNE to visualize, the distribution of the feature 
+distributions before and after domain transfer, we confirmed that this 
+method effectively learns spectral feature distribution differences and 
+enhances crop separability.
+CRediT authorship contribution statement
+Lijian Xie: Writing – review & editing, Writing – original draft, 
+Visualization, Methodology, Conceptualization. Shucheng You: Fund-
+ing acquisition, Data curation. Aixia Liu: Funding acquisition, Data 
+curation. Yun He: Investigation, Funding acquisition. Chenhao Huang: 
+Validation. Jinsong Deng: Writing – review & editing, Supervision, 
+Resources.
+Funding
+This research was funded by the Basic Investigation Program of the 
+Ministry of Science and Technology of the People’s Republic of China 
+(2023FY100102), “Pioneer and Leading Goose + X” S&T Program of 
+Zhejiang(2025C02016), Land Satellite Remote Sensing Application 
+Center Preferred Program (2025YWHT065,2025YWHT087).
+Table 4 
+Ablation experiment results.
+Method Baseline Self-attention K-means_GCN ADF SSL OA mF1 mIoU Kappa
+Ablation1 √ ​ ​ ​ ​ 0.9042 0.9023 0.8237 0.8547
+Ablation2 √ √ ​ ​ ​ 0.9094 0.9082 0.8325 0.8631
+Ablation3 √ √ √ ​ ​ 0.9223 0.9212 0.8546 0.8825
+Ablation4 √ √ √ √ ​ 0.9227 0.9216 0.8540 0.8870
+Ablation5 √ √ √ √ √ 0.9381 0.9240 0.8616 0.9010
+Ablation6 √ ​ √ √ ​ 0.9136 0.9120 0.8450 0.8768
+Fig. 18. Quantitative results of comparative methods using different sizes of training samples, (a) not cross spatiotemporal, (b) cross spatiotemporal.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+17 
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Appendix A. Supplementary data
+Supplementary data to this article can be found online at https://doi. 
+org/10.1016/j.jag.2025.104951.
+Data availability
+The Sentinel-2 data used in this study can be accessed through the 
+Google Earth Engine cloud computing platform (https://earthengine. 
+google.com/). The Cropland Data Layer (CDL) were available at 
+(https:// nassgeodata.gmu.edu/CropScape/). Li’s maize and soybean 
+map can be downloaded from (https://glad.earthengine. 
+app/view/china-crop-map). The code can be obtained here: 
+https://github.com/LijianXie/SAKG-net.
+References
+Alami Machichi, M., mansouri, l.E., imani, y., Bourja, O., Lahlou, O., Zennayi, Y., 
+Bourzeix, F., Hanad´e Houmma, I., & Hadria, R. (2023). Crop mapping using 
+supervised machine learning and deep learning: a systematic literature review. 
+International Journal of Remote Sensing, 44, 2717-2753.
+Boehm, H.-D.V., & Liesenberg, V. (2024). Appraisal of LiDAR Measurements for 
+Monitoring Tropical Peatlands. Tropical Peatland Eco-evaluation (pp. 235-251): 
+Springer.
+Cao, H., Wang, Y., Chen, J., Jiang, D., Zhang, X., Tian, Q., Wang, M., 2022. In: Swin- 
+Unet: Unet-like Pure Transformer for Medical Image Segmentation. Springer, 
+pp. 205–218.
+Ding, Y., Zhang, Z., Kang, W., Yang, A., Zhao, J., Feng, J., Hong, D., Zheng, Q., 2025a. 
+Adaptive homophily clustering: structure homophily graph learning with adaptive 
+filter for hyperspectral image. IEEE Trans. Geosci. Remote Sens. 63, 1–13.
+Ding, Y., Zhang, Z., Yang, A., Cai, Y., Xiao, X., Hong, D., Yuan, J., 2025b. SLCGC: a 
+lightweight self-supervised low-pass contrastive graph clustering network for 
+hyperspectral images. IEEE Trans. Multimedia 1–12.
+Ding, Y., Zhang, Z., Zhao, X., Cai, W., Yang, N., Hu, H., Huang, X., Cao, Y., Cai, W., 
+2022a. Unsupervised self-correlated learning smoothy enhanced locality preserving 
+graph convolution embedding clustering for hyperspectral images. IEEE Trans. 
+Geosci. Remote Sens. 60, 1–16.
+Ding, Y., Zhang, Z., Zhao, X., Cai, Y., Li, S., Deng, B., Cai, W., 2022b. Self-supervised 
+locality preserving low-pass graph convolutional embedding for large-scale 
+hyperspectral image clustering. IEEE Trans. Geosci. Remote Sens. 60, 1–16.
+Ding, Y., Zhao, X., Zhang, Z., Cai, W., Yang, N., 2022c. Graph sample and aggregate- 
+attention network for hyperspectral image classification. IEEE Geosci. Remote Sens. 
+Lett. 19, 1–5.
+Feng, L., Gui, D., Han, S., Qiu, T., Wang, Y., 2024. Integrating optical and SAR time series 
+images for unsupervised domain adaptive crop mapping. Remote Sens. (Basel) 16.
+Gao, Q., Wu, T., Tang, H., Yang, J., Wang, S., 2025. Large area crops mapping by 
+phenological horizon attention transformer (PHAT) method using MODIS time-series 
+imagery. IEEE J. Sel. Top. Appl. Earth Obs. Remote Sens. 18, 10995–11013.
+Gui, J., Chen, T., Zhang, J., Cao, Q., Sun, Z., Luo, H., Tao, D., 2024. A survey on self- 
+supervised learning: algorithms, applications, and future trends. IEEE Trans. Pattern 
+Anal. Mach. Intell. 46, 9052–9071.
+Huang, Y., Qiu, B., Chen, C., Zhu, X., Wu, W., Jiang, F., Lin, D., Peng, Y., 2022. 
+Automated soybean mapping based on canopy water content and chlorophyll 
+content using Sentinel-2 images. Int. J. Appl. Earth Obs. Geoinf. 109.
+Jamali, A., Lu, B., Gerbrandt, E.M., Teasdale, C., Burlakoti, R.R., Sabaratnam, S., 
+McIntyre, J., Yang, L., Schmidt, M., McCaffrey, D., Ghamisi, P., 2025. High- 
+resolution UAV-based blueberry scorch virus mapping utilizing a deep vision 
+transformer algorithm. Comput. Electron. Agric. 229.
+Jin, M., Koh, H.Y., Wen, Q., Zambon, D., Alippi, C., Webb, G.I., King, I., Pan, S.J.I.T.o.P. 
+A., & Intelligence, M. (2024). A survey on graph neural networks for time series: 
+Forecasting, classification, imputation, and anomaly detection.
+Joshi, A., Pradhan, B., Gite, S., & Chakraborty, S.J.R.S. (2023). Remote-sensing data and 
+deep-learning techniques in crop mapping and yield prediction: A systematic review, 
+15, 2014.
+Kipf, T.N., & Welling, M.J.a.p.a. (2016). Semi-supervised classification with graph 
+convolutional networks.
+Li, C., Du, X., Hou, X., & Mai, Y. (2025). An indoor positioning optimization method 
+based on dimensionality reduction and clustering fusion. Journal of King Saud 
+University Computer and Information Sciences, 37.
+Li, H., Song, X.-P., Hansen, M.C., Becker-Reshef, I., Adusei, B., Pickering, J., Wang, L., 
+Wang, L., Lin, Z., Zalles, V., Potapov, P., Stehman, S.V., Justice, C., 2023. 
+Development of a 10-m resolution maize and soybean map over China: matching 
+satellite-based crop classification with sample-based area estimation. Remote Sens. 
+Environ. 294.
+Li, K., Zhao, W., Peng, R., Ye, T., 2022. Multi-branch self-learning Vision Transformer 
+(MSViT) for crop type mapping with Optical-SAR time-series. Comput. Electron. 
+Agric. 203.
+Likas, A., Vlassis, N., & Verbeek, J.J.J.P.r. (2003). The global k-means clustering 
+algorithm, 36, 451-461.
+Liu, J., Li, T., Zhao, F., Liu, Y., 2024. Dual graph convolutional network for hyperspectral 
+images with spatial graph and spectral multigraph. IEEE Geosci. Remote Sens. Lett. 
+21, 1–5.
+Liu, Z., Lin, Y., Cao, Y., Hu, H., Wei, Y., Zhang, Z., Lin, S., Guo, B., 2021. Swin 
+transformer: Hierarchical vision transformer using shifted windows. In: In, 
+Proceedings of the IEEE/CVF International Conference on Computer Vision, 
+pp. 10012–10022.
+Maaten, L.V.D, Hinton, G., 2008. Visualizing data using t-SNE. J. Mach. Learn. Res. 9, 
+2579–2605.
+Maharana, K., Mondal, S., & Nemade, B.J.G.T.P. (2022). A review: Data pre-processing 
+and data augmentation techniques, 3, 91-99.
+Ohri, K., & Kumar, M.J.K.-B.S. (2021). Review on self-supervised image recognition 
+using deep neural networks, 224, 107090.
+Pelletier, C., Webb, G., Petitjean, F., 2019. Temporal convolutional neural network for 
+the classification of satellite image time series. Remote Sens. (Basel) 11.
+Qin, X., Guo, H., Su, X., Zhao, Z., Wang, D., Zhang, L., 2025. Spatiotemporal masked pre- 
+training for advancing crop mapping on satellite image time series with limited 
+labels. Int. J. Appl. Earth Obs. Geoinf. 137.
+Qiu, B., Wu, F., Hu, X., Yang, P., Wu, W., Chen, J., Chen, X., He, L., Joe, B., Tubiello, F.N., 
+Qian, J., Wang, L., 2025. A robust framework for mapping complex cropping 
+patterns: the first national-scale 10 m map with 10 crops in China using Sentinel 1/2 
+images. ISPRS J. Photogramm. Remote Sens. 224, 361–381.
+Shen, Y., Zhang, X., Yang, Z., 2022. Mapping corn and soybean phenometrics at field 
+scales over the United States Corn Belt by fusing time series of Landsat 8 and 
+Sentinel-2 data with VIIRS data. ISPRS J. Photogramm. Remote Sens. 186, 55–69.
+Tang, X., Zhang, H., Mou, L., Liu, F., Zhang, X., Zhu, X.X., Jiao, L.J.I.T.o.G., & Sensing, R. 
+(2021). An unsupervised remote sensing change detection method based on 
+multiscale graph convolutional network and metric learning, 60, 1-15.
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, Ł., & 
+Polosukhin, I.J.A.i.n.i.p.s. (2017). Attention is all you need, 30.
+Wang, D., Zhang, Q., Xu, Y., Zhang, J., Du, B., Tao, D., Zhang, L.J.I.T.o.G., & Sensing, R. 
+(2022a). Advancing plain vision transformer toward remote sensing foundation 
+model, 61, 1-15.
+Wang, H., Zhao, Y., Li, S., Liu, Z., Zhang, X., 2025. DeepCropClustering: a deep 
+unsupervised clustering approach by adopting nearest and farthest neighbors for 
+crop mapping. ISPRS J. Photogramm. Remote Sens. 224, 187–201.
+Wang, S., Azzari, G., & Lobell, D.B.J.R.s.o.e. (2019). Crop type mapping without field- 
+level labels: Random forest transfer and unsupervised clustering techniques, 222, 
+303-317.
+Wang, Y., Albrecht, C.M., Braham, N.A.A., Mou, L., Zhu, X.X.J.I.G., Magazine, R.S., 
+2022b. Self-supervised learning in remote sensing. A Review 10, 213–247.
+Wang, Y., Feng, L., Sun, W., Wang, L., Yang, G., Chen, B., 2024. A lightweight CNN- 
+Transformer network for pixel-based crop mapping using time-series Sentinel-2 
+imagery. Comput. Electron. Agric. 226.
+Wang, Y., Feng, L., Sun, W., Zhang, Z., Zhang, H., Yang, G., Meng, X., 2022c. Exploring 
+the potential of multi-source unsupervised domain adaptation in crop mapping using 
+Sentinel-2 images. Gisci. Remote Sens. 59, 2247–2265.
+Wang, Y., Feng, L., Zhang, Z., Tian, F., 2023. An unsupervised domain adaptation deep 
+learning method for spatial and temporal transferable crop type mapping using 
+Sentinel-2 imagery. ISPRS J. Photogramm. Remote Sens. 199, 102–117.
+Wen, C., Lu, M., Bi, Y., Xia, L., Sun, J., Shi, Y., Wei, Y., Wu, W., 2025. Customized crop 
+feature construction using genetic programming for early- and in-season crop 
+mapping. Comput. Electron. Agric. 231.
+Xu, S., Chen, X., Li, H., Liu, T., Chen, Z., Gao, H., Zhang, Y., 2024a. Airborne small target 
+detection method based on multimodal and adaptive feature fusion. IEEE Trans. 
+Geosci. Remote Sens. 62, 1–15.
+Xu, Y., Ma, Y., Zhang, Z., 2024b. Self-supervised pre-training for large-scale crop 
+mapping using Sentinel-2 time series. ISPRS J. Photogramm. Remote Sens. 207, 
+312–325.
+Yan, C., Li, Z., Zhang, Z., Sun, Y., Wang, Y., Xin, Q.J.C., & Agriculture, E.i. (2023). High- 
+resolution mapping of paddy rice fields from unmanned airborne vehicle images 
+using enhanced-TransUnet, 210, 107867.
+Yang, F., Zhang, D., Zhang, Y., Zhang, Y., Han, Y., Zhang, Q., Zhang, Q., Zhang, C., Liu, 
+Z., Wang, K.J.C., & Agriculture, E.i. (2023a). Prediction of corn variety yield with 
+attribute-missing data via graph neural network, 211, 108046.
+Yang, G., Li, X., Liu, P., Yao, X., Zhu, Y., Cao, W., Cheng, T., 2023b. Automated in-season 
+mapping of winter wheat in China with training data generation and model transfer. 
+ISPRS J. Photogramm. Remote Sens. 202, 422–438.
+Yaramasu, R., Bandaru, V., Pnvr, K.J.C., & Agriculture, E.i. (2020). Pre-season crop type 
+mapping using deep neural networks, 176, 105664.
+You, N., Dong, J., Li, J., Huang, J., Jin, Z., 2023. Rapid early-season maize mapping 
+without crop labels. Remote Sens. Environ. 290.
+Yu, J., Cheng, Q., 2002. Search range of the optimal cluster number in fuzzy clustering. 
+Science in China (series e) 32, 274–280.
+Zafar, Z., Zubair, M., Zha, Y., Fahd, S., Nadeem, A.A.J.T.E.J.o.R.S., & Sciences, S. (2024). 
+Performance assessment of machine learning algorithms for mapping of land use/ 
+land cover using remote sensing data, 27, 216-226.
+Zbontar, J., Jing, L., Misra, I., LeCun, Y., Deny, S., 2021. In: Barlow Twins: Self- 
+Supervised Learning via Redundancy Reduction. PMLR, pp. 12310–12320.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+18 
+Zhang, C., Di, L., Hao, P., Yang, Z., Lin, L., Zhao, H., Guo, L., 2021. Rapid in-season 
+mapping of corn and soybeans using machine-learned trusted pixels from Cropland 
+Data Layer. Int. J. Appl. Earth Obs. Geoinf. 102.
+Zhang, C., Marzougui, A., Sankaran, S., 2020. High-resolution satellite imagery 
+applications in crop phenotyping: an overview. Comput. Electron. Agric. 175.
+Zhou, S., Xu, Z., Liu, F., 2017. Method for determining the optimal number of clusters 
+based on agglomerative hierarchical clustering. IEEE Trans Neural Netw Learn Syst 
+28, 3007–3017.
+L. Xie et al.                                                                                                                                                                                                                                       International Journal of Applied Earth Observation and Geoinformation 144 (2025) 104951 
+19 

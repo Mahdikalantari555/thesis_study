@@ -1,0 +1,6 @@
+name: b1_cusum
+family: statistical_baseline
+scorer: cusum
+drift_k: 1.15
+decision_h: 4.0
+ewma_alpha: 0.30

@@ -1,0 +1,6 @@
+name: gbt_baseline
+family: operational_supervised
+classifier: hist_gradient_boosting
+max_iter: 120
+max_depth: 4
+learning_rate: 0.08

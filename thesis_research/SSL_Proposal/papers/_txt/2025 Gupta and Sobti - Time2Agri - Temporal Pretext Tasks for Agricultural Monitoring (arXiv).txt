@@ -1,0 +1,1040 @@
+arXiv:2507.04366v1  [cs.LG]  6 Jul 2025
+Time2Agri: Temporal Pretext Tasks for Agricultural Monitoring
+Moti Rattan Gupta 1 Anupam Sobti 1
+1Plaksha University
+Mohali
+Punjab, India
+moti.gupta@plaksha.edu.in, anupam.sobti@plaksha.edu.in
+Abstract
+Self Supervised Learning(SSL) has emerged as a prominent
+paradigm for label-efficient learning, and has been widely
+utilized by remote sensing foundation models(RSFMs). Re-
+cent RSFMs including SatMAE, DoFA, primarily rely on
+masked autoencoding(MAE), contrastive learning or some
+combination of them. However, these pretext tasks often over-
+look the unique temporal characteristics of agricultural land-
+scape, namely nature’s cycle. Motivated by this gap, we pro-
+pose three novel agriculture-specific pretext tasks, namely
+Time-Difference Prediction(TD), Temporal Frequency Pre-
+diction(FP), and Future-Frame Prediction(FF). Comprehen-
+sive evaluation on SICKLE dataset shows FF achieves 69.6%
+IoU on crop mapping and FP reduces yield prediction error
+to 30.7% MAPE, outperforming all baselines, and TD re-
+mains competitive on most tasks. Further, we also scale FF
+to the national scale of India, achieving 54.2% IoU outper-
+forming all baselines on field boundary delineation on FTW
+India dataset.
+1 Introduction
+With over 582 million people projected to be chronically un-
+dernourished by 2030, of which 53% would be concentrated
+in Africa, the world is significantly off-track in achieving
+SDG 2 - Zero Hunger (fao 2024). These are further exacer-
+bated by climate extremes like droughts and heatwaves af-
+fecting crop yields, and crop failures for farmers (A et al.
+2024). Remote sensing plays a critical role in addressing
+the growing challenges of food security and agricultural sus-
+tainability, particularly within the framework of Agriculture
+4.0, by enabling improved crop monitoring, yield forecast-
+ing, and resource optimization (Mehedi et al. 2024). How-
+ever, the lack of labelled data for training machine learning
+models, particularly in developing countries, remains a sig-
+nificant bottleneck in leveraging the full potential of remote
+sensing data for agriculture.
+Remote Sensing Foundation Models (RSFMs), built upon
+the principle of self-supervised learning, have shown re-
+markable promise in learning from the abundant unlabelled
+satellite imagery data, demonstrating superior performance
+on downstream tasks including landcover mapping, crop
+type mapping, and field boundary delineation (Lu et al.
+2025). However, we argue most of them are suboptimal for
+agricultural monitoring due to the following reasons:
+Figure 1: Overview of the proposed pretext tasks for self-
+supervised learning in agricultural remote sensing. On the
+right side, we have traditional pretext tasks focusing on
+masked reconstruction and invariance to augmentation(in
+case temporal), while on the right we have our temporally
+inspired pretext tasks.
+1. Lack of domain-specific knowledge: RSFMs trained pri-
+marily using masked autoencoding and/or contrastive
+learning do not incorporate domain-specific knowledge
+for agricultural monitoring.
+2. Lack of regional focus: RSFMs trained on global datasets
+may not be optimal for regional agricultural monitoring
+due to differences in crop types, farming practices, and
+climate.
+Inspired by work of Rolf et al. (2024), who argue that
+satellite imagery constitutes a distinct modality within com-
+puter vision due to its unique spatial, spectral, and temporal
+
+=== PAGE BREAK ===
+
+03/06/2018
+ 04/01/2019 Top-3 Dominant Frequencies
+Figure 2: Comparison of a region across two different acquisitions. Agricultural areas exhibit large, coherent frequency clus-
+ters—represented by different colors—that correspond to varying crop growth rates and naturally delineate farm parcels. In
+contrast, urban regions(highlighted in red) do not display such structured clustering, indicating distinct temporal dynamics.
+properties, we extend this perspective to agricultural mon-
+itoring. Specifically, we argue that agricultural landscapes
+exhibit characteristic temporal dynamics driven by the nat-
+ural cycle of sowing, growth, and harvest. These seasonal
+cycles strongly shape the spectral and temporal signatures,
+leading to predictable and recurring patterns which exhibit
+strong spatial clustering. In contrast, urban landscapes typi-
+cally exhibit weaker spatial clustering(see Figure 2). We ar-
+gue that this inherent regularity in agricultural data provides
+a strong inductive bias that can inform the design of more ef-
+fective pretext tasks for self-supervised learning, ultimately
+enabling the development of richer and more task-relevant
+representations for agricultural monitoring.
+To this end, we propose three novel pretext tasks that
+leverage the seasonal nature of agricultural land and explain
+our intuitions behind them,
+1. Temporal Difference Prediction: This task predicts the
+time difference between two images from a bitempo-
+ral pair of satellite images. The intuition is that agri-
+cultural landscapes undergo predictable transformations
+over time—from bare soil to seedlings to mature crops
+to harvest—and the magnitude of visual change corre-
+lates strongly with the elapsed time. By learning to es-
+timate temporal gaps, the network implicitly learns to
+recognize and differentiate between various phenologi-
+cal stages, enabling it to capture the progression of crop
+development cycles.
+2. Temporal Frequency Prediction: This task predicts the
+per-region dominant temporal frequencies from a bitem-
+poral satellite image pair. Agricultural landscapes ex-
+hibit characteristic periodic patterns—annual cycles for
+most crops, biannual patterns for double-cropping sys-
+tems, and multi-year rotations. By learning to predict
+these frequency characteristics from just two observa-
+tions, the network learns to identify crop types and farm-
+ing practices based on their inherent temporal dynamics,
+capturing information that extends far beyond the imme-
+diate observation period.
+3. Future Frame Prediction : Given a bitemporal pair of
+satellite images, this task predicts the future image from
+the past image. This approach exploits the highly pre-
+dictable nature of agricultural cycles—if we know the
+current crop stage and the time of year, we can reason-
+ably predict what the field will look like in the future.
+Unlike urban landscapes, agricultural areas follow man-
+aged, cyclical patterns. This task forces the network to
+understand the causal relationships between current con-
+ditions and future states, learning rich representations of
+crop phenology and management practices.
+We evaluate our proposed pretext tasks across a range of
+key agricultural monitoring tasks at regional scale of Tamil
+Nadu, on the SICKLE benchmark (Sani et al. 2024). Further-
+more, we assess the performance of one of our best perform-
+ing pretext task on the field boundary delineation at the na-
+tional scale of India, on FTW India(Kerner et al. 2024). We
+have observed consistent improvements over both state-of-
+the-art remote sensing foundation model DoFA (Xiong et al.
+2024) and a self-supervised MAE baseline. Our results sug-
+gest that incorporating domain-specific cues in the pretext
+task design can result in rich representations for agricultural
+monitoring tasks.
+Beyond pretext task design, we have also investigated the
+impact of geographical scale for training agricultural mod-
+els. Specifically, we compare models trained at a national
+scale with those trained at a regional scale. Our findings re-
+veal that regional scale pretraining outperform national scale
+pretraining on most regional downstream tasks, emphasiz-
+ing the importance of regional agricultural representations.
+To summarize, our contributions are as follows:
+1. We propose three novel pretext tasks for self-supervised
+learning that leverage the seasonal nature of agricultural
+land.
+2. We demonstrate the effectiveness of the proposed pre-
+
+=== PAGE BREAK ===
+
+text tasks on crop type mapping, crop yield prediction,
+sowing, transplanting and harvesting date prediction at
+regional scale of Tamil Nadu, and on field boundary de-
+lineation task at national scale of India.
+3. We investigate the impact of geographical scale on pre-
+training for agricultural monitoring, and show that re-
+gional scale pretraining outperforms national scale pre-
+training for tackling regional agricultural challenges.
+To the best of our knowledge, this is the first work to lever-
+age domain-specific agricultural knowledge in the design of
+pretext tasks for agricultural monitoring. We further demon-
+strate that region-specific pretraining outperforms national-
+scale approaches, underscoring the importance of both in-
+formed task design and geographic focus in advancing Agri-
+culture 4.0.
+2 Related Work
+Pretext Tasks in Satellite Imagery Early remote sens-
+ing SSL pretext tasks adapted their natural image counter-
+parts, focusing on invariance of spatially closer tiles(Jean
+et al. 2018) or patches(Kang et al. 2021), while others ex-
+tended colorization (Vincenzi et al. 2020). Later, methods
+like GASSL(Ayush et al. 2021) and SeCo(Ma ˜nas et al.
+2021) utilized the temporal dimension of satellite imagery
+for invariance. CaCo (Mall, Hariharan, and Bala 2023) built
+upon SeCo to ensure invariance only to seasonal changes.
+However, this invariance to seasonal change is suboptimal
+for agricultural landscapes, as seasonality is an important
+marker of agricultural land, and can lead to loss of rich phe-
+nological features.(see Section 1)
+Masked Autoencoders in Remote Sensing Recent
+RSFMs have build upon the MAE(He et al. 2021) frame-
+work, including SatMAE (Cong et al. 2022), ScaleMAE
+(Reed et al. 2023), SelectiveMAE (Wang et al. 2024) and
+M3AE (Li et al. 2024), while some combine masked im-
+age modelling(MIM) with contrastive objectives (Zhang,
+Liu, and Wang 2024). Although they have promising perfor-
+mance on several remote sensing tasks including change de-
+tection, landcover classification, and object detection, they
+neglect the temporal dimension of remote sensing data.
+Domain Specifc Features While generic SSL methods of-
+ten focus on raw pixel reconstruction or learning invariance
+to different augmentations, agricultural applications benefit
+from incorporating domain knowledge. For example, FG-
+MAE (Wang et al. 2023b) has shown that reconstructing
+agricultural indices(e.g:- NDVI) can improve downstream
+performance in MAE, compared to pixel-based reconstruc-
+tion. Instead of focusing on reconstructing spectral indices,
+which primarily focus on spatial and spectral features, we
+focus on integrating both change related temporal features
+along with rich semantic spatial and spectral features, which
+provide rich spatial, temporal and spectral signal for agricul-
+tural monitoring.
+Temporal Understanding in Remote Sensing Agricul-
+tural monitoring inherently requires rich understanding of
+temporal patterns. Recent works including U-Barn(Dumeur,
+Valero, and Inglada 2024b) and ALISE(Dumeur, Valero, and
+Inglada 2024a) emphasize the importance of effectively en-
+coding satellite image time series to learn temporally-rich
+representations. In contrast, our work focuses on captur-
+ing temporally-informative features from a single acquisi-
+tion at downstream, reducing reliance on dense temporal se-
+quences.
+Future Frame Prediction in other modalities Future
+frame prediction extends sequence modeling in time series
+data, aiming to generate future observations based on his-
+torical inputs. This task has been extensively studied across
+domains such as video understanding (Jang et al. 2024) and
+weather forecasting (Bodnar et al. 2024). Recently, (Ravi-
+rathinam et al. 2024) explored a related task—predicting
+future frames from past visual sequences conditioned on
+weather data. In contrast, our work proposes a novel ap-
+proach to future frame prediction in agricultural landscapes
+by leveraging only a single past frame, without relying on
+any external data. We hypothesize that this is feasible due to
+the inherently cyclical nature of agricultural patterns.
+To the best of our knowledge, this is the first work to intro-
+duce temporal difference prediction and temporal frequency
+prediction as self-supervised pretext tasks for remote sens-
+ing imagery. Furthermore, we are the first to explore future
+frame prediction from a single past frame without incorpo-
+rating any external information—an approach made viable
+by the cyclical patterns inherent in agricultural landscapes.
+3 Methodology
+3.1 Pretraining Data
+Our pretext tasks, as will be introduced later, require a dense
+time series of satellite imagery(SITS) over a target agri-
+cultural region. Existing large SITS pretraining datasets in-
+cluding SeCo(Ma ˜nas et al. 2021) and SSL4EO(Wang et al.
+2023a) lack a definitive agricultural focus, and have sparse
+temporal sampling. To effectively devise a pipeline to learn
+rich agricultural representations at both a regional scale
+and a national scale, we created two new SITS pretrain-
+ing datasets with large temporal coverage, one at a regional
+scale of Tamil Nadu and another at the national scale of In-
+dia. We used the already existing SICKLE and Fields of the
+World(FTW) benchmarks as our heuristic for sampling our
+training chips over the respective regions.
+Regional Pretraining
+SICKLE SICKLE dataset provides multi-sensor imagery
+(Sentinel-2, Sentinel-1, and Landsat-8) from January 2018
+till March 2021 over Cauvery Delta region in Tamil Nadu.
+They provide rich annotations for key agricultural tasks
+including crop type mapping, crop yield estimation, sow-
+ing date, transplanting date and harvesting date prediction.
+This dataset’s agricultural focus and geographical specificity
+not only establish it as our primary downstream evaluation
+benchmark but also provide the empirical justification for
+concentrating our regional pretraining efforts on Tamil Nadu
+Data Construction To construct our regional scale pre-
+training dataset, we systematically identified all Sentinel-2
+
+=== PAGE BREAK ===
+
+Xt1
+Xt2
+ViT
+Encoder
+fθ
+ViT
+Encoder
+fθ
+encode image
+Zt1
+Zt2
+extract CLS
+ZCLS,t1,t2
+ZCLS,t2,t1
+concat CLS tokens
+Temporal
+Classifier
+gϕ
+Temporal
+Classifier
+gϕ
+ˆ|∆t|
+ˆ|∆t|
+(a) Time Difference Prediction (TD)
+Xt1
+Xt2
+t1
+t2
+ViT
+Encoder
+fθ
+ViT
+Encoder
+fθ
+Time
+Embedder
+Time
+Embedder
+time embedding
+encode image
+Zt1
+Zt2
+te1
+te2
+pe
+positional encoding
+patch tokens
+Z
+[Zt1 ;Z t2 ] + [pe;te 1;te 2]
+Frequency
+Decoder
+gϕ
+ˆFX (b) Temporal Frequency Prediction (FP)
+Xt1
+t1
+t2
+ViT
+Encoder
+fθ
+encode image
+Time
+Embedder
+Time
+Embedder
+time embedding
+Zt1
+patch tokens
+te1
+te2
+pe
+positional encoding
+Z
+Zt1 + [pe;te 1;te 2]
+Time
+Translator
+ttγ
+ˆZt2
+Image
+Decoder
+gϕ
+ˆXt2
+(c) Future Frame Prediction (FF)
+Figure 3: Overview of proposed pretext tasks. (a) Time Difference Prediction (TD) : Predicts absolute time gap |∆t| from
+stacked CLS tokens [(Zt1)CLS; (Zt2)CLS] via temporal classifier gϕ. (b) Temporal Frequency Prediction (FP) : Predicts per-
+pixel dominant frequency map ˆFX from concatenated latents [Zt1; Zt2] + [pe; te1; te2] using decoder gϕ. (c) Future Frame
+Prediction (FF) : Predicts future frame ˆXt2 by generating latent ˆZt2 from Zt1 and [pe; te1; te2] using time translator ttγ,
+followed by decoder gϕ. Here, fθ is a ViT encoder, gϕ is a transformer decoder, and ttγ is a time translator module. pe and tei
+denote positional and temporal encodings respectively.
+tiles that intersect with SICKLE’s spatial extent, specifically
+tiles 44PKS, 44PKT, 44PLS, and 44PLT, with 44PLS and
+44PLT having significant ocean coverage. After application
+of a water body mask, all 224x224 spatial chips were sam-
+pled and a dense SITS for each chip was constructed with
+a monthly resolution from the dataset’s original acquisition
+period.
+Dominant Frequency Map We additionally augument
+our regional dataset with a per-pixel dominant frequency
+map derived from the per-pixel NDVI time series in our data.
+Each per-pixel NDVI time series is interpolated to a regu-
+lar monthly grid, and is smoothened using Savitzky-Golay
+filter. Dominant per-pixel fourier frequencies are calculated
+and stored as pixel values for each pixel sorted by their
+power. As discussed in 1, these frequencies capture differ-
+ent crop growth rates for crops grown in an agricultural par-
+cel, and can naturally identify different parcels. We refer the
+reader to pseudocode 1 for more details.
+National Pretraining
+Fields of the World(FTW) FTW is a field instance seg-
+mentation benchmark across multiple countries including
+India, and has over 70,000 chips globally and 1,960 chips
+specifically from India. Each chip consists of a bitemporal
+harmonized Sentinel 2 RGB+NIR imagery paired with in-
+stance and semantic segmentation masks, making it ideal to
+evaluate effectiveness of our methods at a national scale.
+National Pretraining Data To construct our national
+scale pretraining datasets, we referred to India chips from
+FTW(FTW India) and for each chip, we construct a 3x3
+grid with chip at center and additionally sample its eight spa-
+tial neighbors, since an agricultural area is likely to be sur-
+rounded by other agricultural areas. Similar to our regional
+pipeline, we keep a monthly resolution but chose acquisition
+period from January 2016 to January 2019.
+
+=== PAGE BREAK ===
+
+Listing 1: Algorithm for Frequency Map Construction
+1 def construct_frequency_map(ndvi,
+timestamps, K=3):
+2 T, H, W = ndvi.shape
+3 # Calculate months since start
+4 months = [(t.year - timestamps[0].
+year) * 12 + t.month - timestamps
+[0].month for t in timestamps]
+5 reg_months = np.arange( min(months),
+max(months) + 1)
+6
+7 # Interpolate Monthly NDVI
+8 ndvi_flat = ndvi.reshape(T, -1)
+9 reg_ndvi = np.zeros(( len(reg_months)
+, H * W))
+10 for i in range (H * W):
+11 f = interp1d(months, ndvi_flat
+[:, i], kind=’linear’,
+fill_value="extrapolate")
+12 reg_ndvi[:, i] = f(reg_months)
+13
+14 # Smooth using Savitzky-Golay filter
+15 smoothed = savgol_filter(reg_ndvi,
+window_length=7, polyorder=4,
+axis=0)
+16
+17 # FFT and frequency extraction
+18 fft_vals = fft(smoothed, axis=0)
+19 freqs = fftfreq( len(reg_months), d
+=1)
+20 amps = np. abs(fft_vals)
+21
+22 # Select top-K positive frequencies
+23 pos = freqs > 0
+24 top_k = np.zeros((K, H * W))
+25 for i in range (H * W):
+26 idx = np.argsort(amps[pos, i])[-
+K:]
+27 top_k[:, i] = freqs[pos][idx]
+28
+29 return top_k.reshape(K, H, W)
+3.2 Pretext Tasks
+Setup We define our pretraining dataset as S =
+(Xti , Xtj , FX) consisting of bitemporal image pairs , where
+Xti and Xtj are satellite images at ti and tj with ti <= tj,
+and FX is per-pixel dominant frequency map constructed
+from entire time series. We definefθ as a ViT encoder which
+extracts Zti ∈ R(N +1)×Din
+from Xti ∈ RH×W ×C,where
+N is the number of patches. From Vaswani et al. (2017), we
+define positional encoding P E(i, .)
+P E(i, 2j) = sin( i
+B
+2j
+D
+) (1)
+P E(i, 2j + 1) = cos( i
+B
+2j
+D
+) (2)
+where i, j denote position and feature index, D denotes
+length of the encoding and B is a constant. Similarly, we
+define time encoding of timestamp ti as tei as
+tei = [P E(mi); P E(yi)] (3)
+where mi, yi denote month, and year of ti, [; ] denotes con-
+catenation. We avoid using day-of-year(Cong et al. 2022) or
+month-of-year(Tseng et al. 2023) encodings, as we believe
+they undermine inter-year differences.
+Time Difference Prediction - TD In this task (see Fig-
+ure 3a), we predict the absolute monthly time difference
+|∆t| =|t2− t1| from latent representations Zt1 and Zt2 by
+applying a lightweight temporal classifier (e.g:-a three-layer
+MLP) on top of stacked CLS tokens from both representa-
+tions
+ZCLS,t1,t2 = [(Zt1)CLS; (Zt2)CLS] (4)
+where (Zti)CLS denote the CLS token of Zti. The clas-
+sifer is trained to predict|∆t| discretized into C classes, and
+trained using a cross-entropy loss.
+To ensure robustness to temporal order, we use a sym-
+metric loss function considering stacking ZCLS,t1,t2 and
+ZCLS,t2,t1 as input to the classifier.
+TD exploits temporal dimension of agricultural landscape
+by encoding temporal difference between sowing and har-
+vest, or between two harvests in its representation. This is
+useful for learning crop phenological stages and growth pat-
+terns, which is important for agricultural monitoring.
+Temporal Frequency Prediction - FP FP (see Figure 3b)
+effectively addresses the limitations of TD, namely lack of
+dense supervision and more rich temporal features. By pre-
+dicting a per-pixel temporal frequency map FX from the
+latent representations Zt1 and Zt2, it allows encoder fθ to
+learn dominant temporal features over each pixel from the
+entire time series. We utilize MAE inspired transformer de-
+coder gϕ to predict frequency map ˆFX, by using concate-
+nated latents(without CLS tokens) with summation of con-
+catenated temporal encodings te1 and te2, and positional en-
+coding pe.
+Z = [Zt1; Zt2] + [pe; te1; te2] (5)
+ˆFX = gϕ(Z) (6)
+This results in a rich temporal representation capturing tem-
+poral patterns(e.g:- crop rotation) beyond the immediate ob-
+servable window. This is a regression task, and is optimized
+using normalized pixel-wise MSE(He et al. 2021).
+Future Frame Prediction - FF FF (see Figure 3c) is a
+generative task, where we predict the future frameXt2 from
+the past frame Xt1. This addresses the limitation of dense
+temporal supervision, without the need of pre-computed fre-
+quency maps over the entire time series. We retain the same
+transformer decoder gϕ as in FP, but additionally use another
+transformer decoder ttγ, called time translator, to predict fu-
+ture latent representation ˆZt2 from summation of Zt1 and
+concatenation of te1, te2 and pe.
+ˆZt2 = ttγ([Zt1] + [pe; te1; te2]) (7)
+ˆXt2 = gϕ( ˆZt2) (8)
+Without the computational overhead of computing fre-
+quency maps, this results in rich temporal representation en-
+coding casual relationship between current state and future
+
+=== PAGE BREAK ===
+
+state of an agricultural landscape. The network is similarly
+optimized using normalized pixel-wise MSE(He et al. 2021)
+loss between predicted future frame ˆXt2 and ground truth
+Xt2.
+4 Experiments & Results
+We aim answer two fundamental questions that emerge from
+our core hypothesis that agricultural landscape’s cyclical na-
+ture can inform better self-supervised pretext tasks. Specif-
+ically, we aim to answer: do temporal pretext tasks learn
+more agriculturally relevant representations, and which tem-
+poral characteristicis are most valuable for different agricul-
+tural monitoring tasks. Additionally, we also seek to under-
+stand the role of national scale pretraining on tackling re-
+gional challenges.
+4.1 Downstream Evaluations
+SICKLE SICKLE benchmark, as discussed earlier in Sec-
+tion 3.1, is a comprehensive agricultural monitoring bench-
+mark over Cauvery Delta region of Tamil Nadu, consist-
+ing of SITS with annotations for crop type mapping, crop
+yield estimation, and sowing, transplanting and harvesting
+date prediction. Crop type mapping is a binary segmentation
+task for segmenting paddy pixels, measured by IoU, while
+crop yield estimation estimates the yield of a paddy parcel,
+measured by mean-absolute-percentage-error(MAPE). Sim-
+ilar to Sani et al. (2024), we consider using both using satel-
+lite images during actual growing season, referred to as in-
+season, as well as using the whole time series available for
+estimating crop-yield. Date prediction tasks are carried out
+using in-season time series, where the task is to predict how
+many days apart from reference does sowing, transplanting
+and harvesting occur. Date prediction, similar to yield esti-
+mation, is a regression tasks and evaluated using MAPE.
+Fields of the World FTW, as discussed earlier in Sec-
+tion 3.1, consists of over 70,000 chips with annotations for
+instance and semantic segmentation mask. Similar to Kerner
+et al. (2024), we consider field instance segmentation perfor-
+mance on India for 3-class setting: field interior, field exte-
+rior and field boundary. Our downstream task use IoU, Pixel
+Recall and Object Recall as our metrics due to availability
+of presence-only labels in FTW India. We consider evalua-
+tion strategy similar to Kerner et al. (2024), which involved
+three settings: training on all FTW countries following by
+finetuning only on India, training on Ai4boundaries coun-
+tries followed by finetuning on India, and training on France
+followed by finetuning on India. In addition, we also con-
+sider training on India only and evaluation on India test set
+of FTW.
+4.2 Implementation Details
+We utilize a ViT-S(small) encoder for our pretraining ex-
+periments, and use a 3-layer MLP classifier for TD, 6-
+layer Tranformer decoder for FP, and 2-layer Time Trans-
+lator followed by 4-layer Decoder for FF. For FP, we con-
+sider the top-3 dominant temporal frequencies. Unless oth-
+erwise specified, bitemporal pairs are sampled within a max-
+imum temporal gap of three months. Additionally, we con-
+sider an MAE baseline trained on single frame reconstruc-
+tion on our pretraining data. All our pretraining and down-
+stream experiments use 4-band(red,blue,green and nir) im-
+agery, in alignment with the FTW dataset, which provides
+only these four bands. We consider DoFA as our pretrained
+RSFM baseline, due to its native support for our 4-band im-
+agery, and its competitive or superior performance to most
+RSFMs across a range of remote sensing downstream tasks.
+For the SICKLE downstream task, we use a UPerNet seg-
+mentation head and compare against both supervised ViT-S
+and supervised UNet3D baselines. For the FTW India down-
+stream task, we employ a simpler segementation head con-
+stituting three ConvTranpose-Conv-BN-Relu-Dropout lay-
+ers, followed by a final ConvTranpose-Conv layer, using
+ConvTranspose for feature upsampling, and Conv for feature
+refinement. For FTW India, we additionally compare against
+supervised ViT-S. All our SSL experiments use AdamW
+with cosine annealling schedule, trained for 100 epochs.
+We use a batch size of 256 for regional-scale pretraining,
+and an effective batch size of 640 with 10-epoch warmup
+for national-scale pretraining. All our SSL and downstream
+experiments are run on a single RTX A6000(48GB) GPU,
+except our national scale pretraining use 2 x A100(40GB)
+GPUs.
+4.3 Regional Scale Evaluation on SICKLE
+Do Temporal Pretext Tasks perform better? As evident
+from Table 1, our temporal pretext tasks demonstrate clear
+advantages over existing methods. FF achieves the high-
+est IoU of 69.6% on crop type mapping, substantially out-
+performing DoFA (58.4%), MAE (67.1%) and supervised
+baselines(65.5%). Similarly, FP achieves the lowest MAPE
+of 34% for crop yield and 31% for in-season prediction,
+outperforming all supervised and self-supervised baselines.
+While temporal tasks remain competitive with our baselines
+on date prediction tasks, they show consistent advantages
+across the broader spectrum of agricultural monitoring ap-
+plications. This suggests that learning temporal characteris-
+tics of agricultural landscapes leads to more informative and
+transferable agricultural representations than spatial-only or
+globally-pretrained alternatives.
+Which Temporal Pretext Task for Agriculture? Among
+our temporal pretext tasks, FF and FP show complemen-
+tary strengths aligned with different agricultural monitoring
+objectives. FF outperforms FP and TD by 7.6% and 3.0%
+respectively on crop type mapping, while FP achieves su-
+perior performance for crop yield prediction, outperform-
+ing both FF and TD by 2.4% and 2.5% MAPE points re-
+spectively on both in-season and complete season predic-
+tion. This performance differentiation reveals an important
+principle: FF learns comprehensive spatial, temporal and
+spectral crop characteristics suitable for identification tasks,
+while FP leverages its global temporal horizon to capture
+growth dynamics critical for yield estimation. TD shows in-
+termediate performance across tasks, suggesting that simple
+temporal differences provide valuable but less specialized
+representations compared to generative (FF) or frequency-
+based (FP) approaches.
+
+=== PAGE BREAK ===
+
+Table 1: Performance comparison of our pretext tasks with MAE, pretrained DoFA, supervised ViT-S, and UNet3D on the
+SICKLE dataset.↓ indicates lower is better,↑ indicates higher is better. Bold values indicate the best performance for each task.
+Model Crop Type Crop Yield Yield In-Season Sowing Transpl. Harvest
+(IoU↑) (MAPE ↓) (MAPE ↓) (MAPE ↓) (MAPE ↓) (MAPE ↓)
+FF 0.69595 0.36765 0.32516 0.015821 0.028394 0.068059
+FP 0.61976 0.34338 0.30727 0.016081 0.022514 0.066166
+TD 0.66628 0.36875 0.32877 0.017842 0.024985 0.065945
+MAE 0.67138 0.37833 0.32701 0.017487 0.023406 0.065195
+DoFA 0.58363 0.36144 0.34571 0.016849 0.022475 0.071494
+ViT-S 0.65523 0.36357 0.33687 0.016278 0.025533 0.069594
+UNet3D 0.65442 0.38805 0.37964 0.012484 0.019249 0.047596
+Table 2: Performance comparison of different temporal gap between bitemporal pairs on FF. ↓ indicates lower is better, ↑
+indicates higher is better. Bold values indicate the best performance for each task. FF denotes 0–3 months apart; FF(3) denotes
+3 months apart; FF(3,6) denotes 3 and 6 months apart; FF(3,6,9) denotes 3, 6, and 9 months apart.
+Model Crop Type Crop Yield Yield In-Season Sowing Transpl. Harvest
+(IoU↑) (MAPE ↓) (MAPE ↓) (MAPE ↓) (MAPE ↓) (MAPE ↓)
+FF 0.69595 0.36765 0.32516 0.015821 0.028394 0.068059
+FF-(3) 0.58737 0.34233 0.34674 0.01515 0.027323 0.066392
+FF-(3,6) 0.64414 0.33411 0.36291 0.015033 0.025032 0.057168
+FF-(3,6,9) 0.59340 0.34979 0.34940 0.01544 0.021851 0.05391
+Why Different Downstream Favor Different Temporal
+Pretexts? The task-specific performance patterns reflect
+fundamental differences in different agricultural monitoring
+applications. While FF’s comprehensive understanding of
+temporal evolution over shorter horizon allows its to cap-
+ture and anticipate rich spatial, phenological, and spectral
+patterns suitable for crop mapping, it remains suboptimal
+for anticipating crop stresses. On the other hand FP’s fre-
+quency analysis approach captures both seasonal growth
+patterns and stress events over a much longer horizon, al-
+lowing it to learn robust representations for detecting crop
+stresses and yield estimation. Although neither beats super-
+vised baselines on date prediction tasks, suggesting super-
+vised approaches still remain superior for precise event de-
+tection.
+Does Time Scale Matter in Agriculture? Although the
+previous result shed a light on this, we conducted an exper-
+iment on effect of different temporal gaps on performance
+of FF. Table 2 reveals a clear principle: different agricul-
+tural monitoring tasks align with specific temporal scales in
+agricultural systems. While crop type mapping achieves best
+performance (69.6% IoU) with FF-(0,1,2,3), suggesting that
+crop identification benefits from observing diverse pheno-
+logical stages within growing seasons—early growth, peak
+vegetation, and senescence phases, crop yield prediction
+performs optimally (33.4% MAPE) with FF-(3,6) configu-
+ration, indicating that yield estimation requires understand-
+ing seasonal to inter-seasonal patterns that capture complete
+growing cycles and stress period impacts on final produc-
+tivity. Date prediction tasks shows progressive improvement
+with longer temporal contexts, achieving best performance
+(3.01% MAPE) with FF-(3,6,9), suggesting that accurate
+agricultural timing prediction benefits from understanding
+multi-season planting patterns.
+4.4 National Scale Evaluation on FTW India
+Which Pretext Task to Scale? Our regional scale experi-
+ments(see Table 1) suggests FF leads to better crop type rep-
+resentations, while FP performs the best on crop yield esti-
+mation. Our intuition that field boundary delineation is more
+closer to crop type mapping instead of yield estimation led
+us to go forward with FF for our national scale training.
+Do Temporal Pretext Task improve Cross-Region
+Transfer? Table 3 demonstrates that FF consistently
+outperforms MAE across different geographic super-
+vised pretraining sources, with advantages ranging from
+1.3%(Ai4boundaries) to 2.5%(France), suggesting that FF
+learn more fundamental agricultural principles that tran-
+scend specific geographic contexts.
+Does SSL eliminate the need for Cross Region data? FF
+and MAE on India supervised pretraining only, recovers
+99.7% and 100.8% of the supervised performance of FTW-
+India suggesting SSL pretraining alleviate the need of cross-
+region labelled data in label sparse setting.
+4.5 Role of Geographical Scale
+Foundation model paradigms suggest that larger, more di-
+verse datasets produce superior representations. However,
+agricultural systems are inherently location-specific due to
+climate, soil, crop varieties, and management practices. To
+answer this, question, we evaluated our national scale FF
+
+=== PAGE BREAK ===
+
+Table 3: Performance comparison of FF with MAE, pretrained DoFA, and supervised ViT-S on the India subset of the FTW
+dataset. FTW-India(all FTW countries except India), Ai4boundaries, France, and India refer to supervised pretraining regions,
+while metrics are reported on the India test set from FTW. Bold indicates the best performance per row.
+Pretrain Region Model IoU ( ↑) Pixel Recall ( ↑) Object Recall ( ↑)
+FTW - India
+FF 0.541998 0.637823 0.029626
+MAE 0.527783 0.628631 0.022341
+ViT-S 0.493208 0.577795 0.022827
+DoFA 0.38059 0.442879 0.002428
+Ai4boundaries
+FF 0.530193 0.626151 0.023798
+MAE 0.517006 0.615881 0.019427
+ViT-S 0.415647 0.488697 0.0034
+DoFA 0.368869 0.427868 0.001943
+France
+FF 0.490628 0.577658 0.015542
+MAE 0.465626 0.55264 0.014085
+ViT-S 0.476051 0.573084 0.003885
+DoFA 0.37447 0.439183 0.003885
+India
+FF 0.492768 0.591907 0.024284
+MAE 0.497104 0.60582 0.009228
+ViT-S 0 0 0
+DoFA 0.430635 0.513778 0.004371
+Table 4: Comparison of India FF with regionally pretrained TD, FP, FF, MAE; foundation model DoFA; and supervised ViT-S
+and UNet3D on the SICKLE dataset.↓ indicates lower is better,↑ indicates higher. Bold indicates the best score for each task.
+Model Crop Type Crop Yield Yield In-Season Sowing Transpl. Harvest
+(IoU↑) (MAPE ↓) (MAPE ↓) (MAPE ↓) (MAPE ↓) (MAPE ↓)
+FF 0.69595 0.36765 0.32516 0.015821 0.028394 0.068059
+FP 0.61976 0.34338 0.30727 0.016081 0.022514 0.066166
+TD 0.66628 0.36875 0.32877 0.017842 0.024985 0.065945
+MAE 0.67138 0.37833 0.32701 0.017487 0.023406 0.065195
+India FF 0.60483 0.39750 0.37407 0.016549 0.022403 0.064496
+DoFA 0.58363 0.36144 0.34571 0.016849 0.022475 0.071494
+ViT-S 0.65523 0.36357 0.33687 0.016278 0.025533 0.069594
+UNet3D 0.65442 0.38805 0.37964 0.012484 0.019249 0.047596
+pretrained representations(India FF) on the SICKLE bench-
+mark.
+Regional representations substantially outperform Na-
+tional representations Table 4 reveals a striking result
+that challenges foundation model conventions. Regional pre-
+training achieves 9.1% advantage for crop type mapping,
+3.0% advantage for crop yield prediction, and consistent im-
+provements for phenological dating. This finding suggests
+that agricultural foundation models should prioritize geo-
+graphic specialization over scale, contrary to conventional
+computer vision wisdom. The location-specific nature of
+agricultural systems—climate, crops, and practices—creates
+domain characteristics that benefit more from regional focus
+than global generalization.
+5 Discussion
+Our work demonstrates that incorporating domain knowl-
+edge into pretext task design can substantially improve
+representation learning. This challenges the prevailing ap-
+proach of adapting generic computer vision methods to spe-
+cialized domains. The discovery that regional pretraining
+outperforms national scale challenges foundation model or-
+thodoxy. Agricultural landscapes provide an ideal testbed
+for temporal representation learning because their dynam-
+ics are both complex(multi-scale) and predictable (seasonal,
+cyclical).
+6 Conclusion
+This work demonstrates that agricultural landscapes’s inher-
+ent temporal structure provides powerful supervisory signals
+for self-supervised learning. By designing three novel pre-
+text tasks that leverages this structure, we achieve substantial
+
+=== PAGE BREAK ===
+
+improvements over diverse agricultural monitoring tasks.
+Further, this work shows that regional pretraining substan-
+tially outperforms national scale for regional downstream
+tasks, emphasizing on development of regional agricultural
+representations instead of global representations for tackling
+regional agricultural challenges.
+Acknowledgments
+We thank the faculty and research staff at Plaksha Univer-
+sity for their insightful feedback during various stages of
+this work. We are grateful to the team behind the SICKLE
+and Fields of the World datasets for publicly releasing high-
+quality annotated data, which was instrumental in our exper-
+iments. This research was supported by the SRG019 startup
+grant from Plaksha University.
+References
+2024. The State of Food Security and Nutrition in the World
+2024 – Financing to end hunger, food insecurity and malnu-
+trition in all its forms. Rome: FAO.
+A, T.; D, B.; J, A. N.; L, A.; K, A.; P, B.; A, D. J.; A, F.; G,
+F.; S, G.; A, H. E.; D, M.; M, M.; N, M.; P, S.; S, S. N.; and
+D, V . 2024. Global Drought Overview September 2024.Eu-
+ropean Drought Observatory Reports, (KJ-01-24-075-EN-N
+(online)).
+Ayush, K.; Uzkent, B.; Meng, C.; Tanmay, K.; Burke, M.;
+Lobell, D.; and Ermon, S. 2021. Geography-Aware Self-
+Supervised Learning. In Proceedings of the IEEE/CVF In-
+ternational Conference on Computer Vision (ICCV), 10181–
+10190.
+Bodnar, C.; Bruinsma, W. P.; Lucic, A.; Stanley, M.;
+Vaughan, A.; Brandstetter, J.; Garvan, P.; Riechert, M.;
+Weyn, J. A.; Dong, H.; Gupta, J. K.; Thambiratnam, K.;
+Archibald, A. T.; Wu, C.-C.; Heider, E.; Welling, M.; Turner,
+R. E.; and Perdikaris, P. 2024. A Foundation Model for the
+Earth System. arXiv:2405.13063.
+Cong, Y .; Khanna, S.; Meng, C.; Liu, P.; Rozi, E.; He, Y .;
+Burke, M.; Lobell, D.; and Ermon, S. 2022. SatMAE:
+Pre-training Transformers for Temporal and Multi-Spectral
+Satellite Imagery. ArXiv, abs/2207.08051.
+Dumeur, I.; Valero, S.; and Inglada, J. 2024a. Paving the
+way toward foundation models for irregular and unaligned
+Satellite Image Time Series. arXiv:2407.08448.
+Dumeur, I.; Valero, S.; and Inglada, J. 2024b. Self-
+Supervised Spatio-Temporal Representation Learning of
+Satellite Image Time Series. IEEE Journal of Selected Top-
+ics in Applied Earth Observations and Remote Sensing , 17:
+4350–4367.
+He, K.; Chen, X.; Xie, S.; Li, Y .; Doll’ar, P.; and Girshick,
+R. B. 2021. Masked Autoencoders Are Scalable Vision
+Learners. 2022 IEEE/CVF Conference on Computer Vision
+and Pattern Recognition (CVPR), 15979–15988.
+Jang, H.; Kim, D.; Kim, J.; Shin, J.; Abbeel, P.; and Seo,
+Y . 2024. Visual Representation Learning with Stochastic
+Frame Prediction. arXiv:2406.07398.
+Jean, N.; Wang, S.; Samar, A.; Azzari, G.; Lobell, D.;
+and Ermon, S. 2018. Tile2Vec: Unsupervised repre-
+sentation learning for spatially distributed data. ArXiv,
+abs/1805.02855.
+Kang, J.; Fernandez-Beltran, R.; Duan, P.; Liu, S.; and Plaza,
+A. J. 2021. Deep Unsupervised Embedding for Remotely
+Sensed Images Based on Spatially Augmented Momentum
+Contrast. IEEE Transactions on Geoscience and Remote
+Sensing, 59(3): 2598–2610.
+Kerner, H.; Chaudhari, S.; Ghosh, A.; Robinson, C.; Ahmad,
+A.; Choi, E.; Jacobs, N.; Holmes, C.; Mohr, M.; Dodhia, R.;
+Ferres, J. M. L.; and Marcus, J. 2024. Fields of The World:
+A Machine Learning Benchmark Dataset For Global Agri-
+cultural Field Boundary Segmentation. arXiv:2409.16252.
+Li, Z.; Hou, B.; Ma, S.; Wu, Z.; Guo, X.; Ren, B.; and Jiao,
+L. 2024. Masked Angle-Aware Autoencoder for Remote
+Sensing Images. arXiv:2408.01946.
+Lu, S.; Guo, J.; Zimmer-Dauphinee, J. R.; Nieusma, J. M.;
+Wang, X.; VanValkenburgh, P.; Wernke, S. A.; and Huo, Y .
+2025. Vision Foundation Models in Remote Sensing: A Sur-
+vey. arXiv:2408.03464.
+Ma˜nas, O.; Lacoste, A.; Gir ´o-i Nieto, X.; Vazquez, D.;
+and Rodr´ıguez, P. 2021. Seasonal Contrast: Unsupervised
+Pre-Training From Uncurated Remote Sensing Data. In
+Proceedings of the IEEE/CVF International Conference on
+Computer Vision (ICCV), 9414–9423.
+Mall, U.; Hariharan, B.; and Bala, K. 2023. Change-Aware
+Sampling and Contrastive Learning for Satellite Images. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR), 5261–5270.
+Mehedi, I.; Hanif, M. S.; Bilal, M.; Vellingiri, M.; and
+Palaniswamy, T. 2024. Remote Sensing and Decision Sup-
+port System Applications in Precision Agriculture: Chal-
+lenges and Possibilities. IEEE Access, PP: 1–1.
+Ravirathinam, P.; Khandelwal, A.; Ghosh, R.; and Kumar, V .
+2024. A Causally Informed Pretraining Approach for Multi-
+modal Foundation Models: Applications in Remote Sensing.
+Reed, C. J.; Gupta, R.; Li, S.; Brockman, S.; Funk, C.;
+Clipp, B.; Keutzer, K.; Candido, S.; Uyttendaele, M.; and
+Darrell, T. 2023. Scale-MAE: A Scale-Aware Masked Au-
+toencoder for Multiscale Geospatial Representation Learn-
+ing. arXiv:2212.14532.
+Rolf, E.; Klemmer, K.; Robinson, C.; and Kerner, H. 2024.
+Position: Mission Critical – Satellite Data is a Distinct
+Modality in Machine Learning. In Salakhutdinov, R.;
+Kolter, Z.; Heller, K.; Weller, A.; Oliver, N.; Scarlett, J.; and
+Berkenkamp, F., eds., Proceedings of the 41st International
+Conference on Machine Learning, volume 235 of Proceed-
+ings of Machine Learning Research, 42691–42706. PMLR.
+Sani, D.; Mahato, S.; Saini, S.; Agarwal, H. K.; Devshali,
+C. C.; Anand, S.; Arora, G.; and Jayaraman, T. 2024.
+SICKLE: A Multi-Sensor Satellite Imagery Dataset Anno-
+tated With Multiple Key Cropping Parameters. In Proceed-
+ings of the IEEE/CVF Winter Conference on Applications of
+Computer Vision (WACV), 5995–6004.
+
+=== PAGE BREAK ===
+
+Tseng, G.; Zvonkov, I.; Purohit, M.; Rolnick, D.; and
+Kerner, H. R. 2023. Lightweight, Pre-trained Transformers
+for Remote Sensing Timeseries. ArXiv, abs/2304.14065.
+Vaswani, A.; Shazeer, N. M.; Parmar, N.; Uszkoreit, J.;
+Jones, L.; Gomez, A. N.; Kaiser, L.; and Polosukhin, I. 2017.
+Attention is All you Need. In Neural Information Process-
+ing Systems.
+Vincenzi, S.; Porrello, A.; Buzzega, P.; Cipriano, M.; Fronte,
+P.; Cuccu, R.; Ippoliti, C.; Conte, A.; and Calderara, S. 2020.
+The color out of space: learning self-supervised representa-
+tions for Earth Observation imagery. arXiv:2006.12119.
+Wang, F.; Wang, H.; Wang, D.; Guo, Z.; Zhong, Z.; Lan,
+L.; Zhang, J.; Liu, Z.; and Sun, M. 2024. Scaling Efficient
+Masked Image Modeling on Large Remote Sensing Dataset.
+arXiv:2406.11933.
+Wang, Y .; Braham, N. A. A.; Xiong, Z.; Liu, C.; Albrecht,
+C. M.; and Zhu, X. X. 2023a. SSL4EO-S12: A Large-Scale
+Multi-Modal, Multi-Temporal Dataset for Self-Supervised
+Learning in Earth Observation. arXiv:2211.07044.
+Wang, Y .; Hern´andez, H. H.; Albrecht, C. M.; and Zhu,
+X. X. 2023b. Feature Guided Masked Autoencoder for Self-
+supervised Learning in Remote Sensing. arXiv:2310.18653.
+Xiong, Z.; Wang, Y .; Zhang, F.; Stewart, A. J.; Hanna,
+J.; Borth, D.; Papoutsis, I.; Saux, B. L.; Camps-Valls,
+G.; and Zhu, X. X. 2024. Neural Plasticity-Inspired
+Multimodal Foundation Model for Earth Observation.
+arXiv:2403.15356.
+Zhang, M.; Liu, Q.; and Wang, Y . 2024. CtxMIM: Context-
+Enhanced Masked Image Modeling for Remote Sensing Im-
+age Understanding. arXiv:2310.00022.
+A Regional Pretraining Data Construction
+To construct our regional-scale pretraining dataset for Tamil
+Nadu, India, we utilized the SICKLE dataset (Sani et al.
+2024), a comprehensive benchmark for agricultural monitor-
+ing in the Cauvery Delta region of Tamil Nadu. The SICKLE
+dataset provides multi-sensor imagery from Sentinel-1,
+Sentinel-2, and Landsat-8 satellites, along with detailed an-
+notations for key agricultural parameters such as crop type,
+phenological dates (sowing, transplanting, harvesting), and
+crop yield at multiple spatial resolutions (3m, 10m, and
+30m). The dataset spans the time period from January 2018
+to March 2021, making it ideal for capturing the temporal
+dynamics of agriculture in the region.
+To construct the pretraining dataset, we used the spa-
+tial and temporal extent of the SICKLE dataset to sample
+Sentinel-2 L2A imagery. The following steps outline our
+methodology:
+Figure 4: This figure illustrates the complete workflow of
+regional pretraining data collection.
+1. Identifying Relevant Sentinel-2 Tiles : The spatial ex-
+tent of SICKLE dataset overlaps four Sentinel-2 tiles:
+44PKS, 44PKT, 44PLS, and 44PLT.
+2. Masking Ocean Regions : Among the identified tiles,
+44PLS and 44PLT contain significant ocean coverage,
+which exhibits temporal dynamics vastly different from
+agricultural land. To ensure the dataset focuses on rele-
+vant agricultural areas, we masked out the ocean regions
+and created a shapefile representing the target sampling
+
+=== PAGE BREAK ===
+
+region.
+3. Sampling Sentinel-2 Chips Geometries : Using the tar-
+get shapefile, we exhaustively sampled 224 x 224 non-
+overlapping chip geometries at a spatial resolution of
+10m. To ensure the chips were representative of the agri-
+cultural areas, we retained only those with at least 80%
+overlap with the target shapefile.
+4. Cloud and NoData Filtering: For each sampled chip ge-
+ometry, we downloaded Sentinel-2 L2A Scene Classifi-
+cation Layer(SCL) for time period spanning January 1,
+2018, to April 1, 2021 , which aligns with the temporal
+coverage of the SICKLE dataset. For each chip, we ap-
+plied the following heuristic:
+• We prioritized selecting the earliest image in the
+month that satisfied a predefined threshold for cloud
+and nodata.
+• If no image within the month met the threshold, we
+lowered the threshold for that specific region.
+• This adaptive filtering approach allowed us to identify
+relevant Sentinel-2 chips to balance data quality and
+temporal coverage, ensuring that each chip had at least
+one valid image per month.
+5. Data Acquisiton: For the identified timestamps for each
+chip geometry, we acquired B02, B03, B04,and B08
+bands and stored the time series in a Zarr store. The re-
+sulting dataset is high-resolution monthly time series tai-
+lored for temporal pretext tasks.
+B National Pretraining Data Construction
+For our national-scale experiments, we utilized India sub-
+set of the Fields of the World(FTW) dataset(Kerner et al.
+2024), which provides agricultural field instance segmenta-
+tion annotations across diverse regions in India. FTW in-
+cludes over 70,000 samples globally with 1,960 samples
+specifically from India(of which 399 samples are held-out
+for testing).Each sample in FTW includes bitemporal har-
+monized Sentinel-2 RGB+NIR imagery paired with instance
+and semantic segmentation masks , making it an ideal re-
+source for agricultural monitoring at a national scale.
+To construct our national-scale pretraining dataset, we ex-
+tended the India subset of FTW by increasing its temporal
+resolution, as well as sampling additional neighboring re-
+gions around each chip geometry. The following steps out-
+line our methodology:
+Figure 5: This figure illustrates the complete workflow of
+national pretraining data collection.
+1. Sampling Neighboring Chips : FTW provides prede-
+fined chip geometries, which cover diverse regions
+in India. For each chip in the dataset, we sampled
+its eight neighboring chips(top,bottom,left,right,top-
+right,top-left,bottom-right,bottom-left). This resulted in
+a 3x3 grid around each FTW sample. The rationale be-
+hind this approach was that areas surrounding agricul-
+tural fields are likely to be agricultural fields.
+2. Temporal Coverage: Similar to regional-scale dataset,
+we kept monthly temporal resolution, but kept acqusition
+period from January 2016 to January 2019.
+3. Cloud and No-Data Filtering : To ensure high-quality
+imagery, we used the same filtering heuristic:
+
+=== PAGE BREAK ===
+
+Figure 6: Visualization of predictions by TD, FP, and FF models across different samples. (a) The predicted future aligns
+well with the actual future; the frequency map naturally delineates farm parcels. (b) The field appears to be undergoing flood
+irrigation, which the models fail to fully anticipate. (c) The TD model’s prediction is offset by one month, likely due to minimal
+visual change between frames.
+
+=== PAGE BREAK ===
+
+• For each chip in 3x3 grid, we prioritized selecting the
+earliest image in the month that satisfied a predefined
+threshold for valid pixels
+• If no image within the month met the threshold, we
+lowered the threshold adaptively for that specific re-
+gion to ensure temporal continuity while maintaining
+data quality.
+4. Data Acquisiton: For each filtered chip in the 3x3 grid,
+we downloaded B02, B03, B04,and B08 bands and stored
+the time series in a Zarr store.
+C Visualization of Results
+Figure 6 presents qualitative examples of our model’s pre-
+text predictions:
+a. Well-behaved growth cycle: All three models accurately
+predict the crop’s progression, and the FP model’s fre-
+quency map (middle column) effectively delineates indi-
+vidual farm parcels even under homogeneous vegetation
+cover.
+b. Flood irrigation pattern : The ground truth (left) shows
+a flood irrigation event. FF partially capture these water
+pulses.
+c. Subtle phenological changes : In this image, the TD
+model’s forecast is shifted by one month—likely due to
+less visual change between the two time points.

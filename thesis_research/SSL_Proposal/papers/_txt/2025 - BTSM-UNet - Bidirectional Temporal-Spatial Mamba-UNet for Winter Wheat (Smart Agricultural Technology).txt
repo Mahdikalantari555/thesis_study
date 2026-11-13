@@ -1,0 +1,1271 @@
+BTSM-UNet: Bidirectional Temporal-Spatial vision Mamba-UNet for winter 
+wheat classification based on Sentinel-2 imagery
+Lingling Fan a,b,c, Shi Chen d, Lang Xia b,c, Yan Zha b,c, Qingbo Zhou a, Qi Yan b,c,*
+a Agricultural Information Institute, Chinese Academy of Agricultural Sciences, Beijing 100081, China
+b State Key Laboratory of Efficient Utilization of Arid and Semi-arid Arable Land in Northern China, Institute of Agricultural Resources and Regional Planning, Chinese 
+Academy of Agricultural Sciences, Beijing 100081, China
+c Key Laboratory of Agricultural Remote Sensing (AGRIRS), Ministry of Agriculture and Rural Affairs, Institute of Agricultural Resources and Regional Planning, Chinese 
+Academy of Agricultural Sciences, Beijing 100081, China
+d School of Geography and Planning, Chizhou University, Chizhou 247000, China
+ARTICLE INFO
+Keywords:
+Deep learning
+Wheat classification
+Multi-temporal imagery
+State-space sequence model
+Feature fusion
+ABSTRACT
+In recent years, deep learning has made significant advancements in the field of semantic segmentation of remote 
+sensing images, owing to its exceptional feature extraction capabilities and robust modeling performance. 
+However, due to the high dimensionality and multi-channel characteristics of time series remote sensing images, 
+most current semantic segmentation algorithms still find it difficult to automatically and efficiently extract image 
+features. Moreover, most models often overlook the integration of global and local information at multiple scales, 
+especially for time series remote sensing images with large-scale variations. In this study, we propose a novel 
+Bidirectional Temporal-Spatial vision Mamba-UNet (BTSM-UNet) for winter wheat mapping based on state space 
+sequence models, which can efficiently capture complex dependencies in sequential data. This model follows an 
+"Encoder + Decoder" structure, and a Bidirectional Temporal-Spatial vision Mamba (Bi-TSM) module is inserted 
+to fully exploit spatiotemporal information from time series imagery. The results indicate that our BTSM-UNet 
+achieved the best classification accuracy with an MCC of 0.905 and an F1-score of 0.952 for winter wheat 
+mapping in the North China Plain. Additionally, the results of band combinations demonstrated that our pro-
+posed model exhibited better stability compared to other deep models. Compared with the results of all band 
+combinations, we found that the MCC (MCC/All) of BTSM-UNet decreased by only 2.43% when using RGB 
+bands, while it decreased by 28.4% for the CNN-BiLSTM model, further proving the effectiveness and general-
+ization ability of our method. Moreover, the BTSM-UNet exhibited the fastest data processing rate (24 FPS), a 
+relatively small number of model parameters (4.86 M), and low computational complexity (60.19 G) compared 
+to other models. We expect that the proposed method will provide a practical and effective technical approach 
+for accurately and intelligently mapping winter wheat fields.
+1. Introduction
+Winter wheat is one of the important staple crops in the world, 
+effective mapping of winter wheat is crucial for optimizing crop struc-
+tures, assessing crop productivity, and monitoring crop health [4,35]. 
+Due to its ability to acquire timely data, provide wide coverage, and 
+operate at a low cost, remote sensing technology has emerged as an 
+increasingly powerful tool for mapping winter wheat spatially [13,31]. 
+Currently, winter wheat classification methods based on remote sensing 
+are mainly divided into two categories: single image-based methods and 
+time series image-based methods. However, due to the influence of 
+temporal resolution and weather conditions, it is often difficult to obtain 
+the key phenological period images of winter wheat based on a single 
+image. Due to the ability of time-series remote sensing images to provide 
+information on changes in time, spectrum, and texture at different points 
+during the winter wheat growing season, they can better capture the 
+phenological rhythm characteristics of winter wheat. Given the wealth 
+of temporal and spectral information, time-series remote sensing imag-
+ery has become an important data source in the field of crop mapping [6,
+11].
+Compared to the classification study based on a single image, time- 
+series images characterized by varying spatial resolutions and 
+* Corresponding author.
+E-mail address: yanqibeijing@126.cm (Q. Yan). 
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+https://doi.org/10.1016/j.atech.2025.101547
+Received 16 January 2025; Received in revised form 2 October 2025; Accepted 19 October 2025  
+Smart Agricultural Technology 12 (2025) 101547 
+Available online 21 October 2025 
+2772-3755/© 2025 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY license ( http://creativecommons.org/licenses/by/4.0/ ). 
+observation intervals can offer more opportunities accurately acquire 
+the winter wheat distribution [5,13,31]. Due to the significant advan-
+tages of high temporal resolution of Moderate Resolution Imaging 
+Spectroradiometer (MODIS) data in capturing information about the 
+crop growing season, this data has become an important source for 
+mapping the spatial distribution of winter wheat over large areas [33,
+34]. However, its spatial resolution is too coarse to extract plots smaller 
+than 32 ha, which hampers its performance in mapping winter wheat 
+areas marked by small, isolated patches and significant spatial hetero-
+geneity. Although Landsat satellite images provide enhanced spatial 
+resolution, their 16-day revisit period is not frequent enough to 
+adequately capture crop phenology information, especially under 
+cloudy conditions [3,14]. The rich information on crop phenology and 
+texture provided by commercial satellite images and radar data aids in 
+improving winter wheat mapping in areas characterized by complex 
+planting patterns [1,9,19]. However, due to high data processing costs, 
+complex mapping algorithms, and the high computational demands for 
+large-area calculations, crop mapping based on commercial satellites is 
+significantly limited and difficult to promote for mapping applications 
+over large areas. Sentinel satellite remote sensing images have seen 
+increasing application in the extraction of winter wheat distribution 
+information over recent years, driven by their superior spectral, spatial, 
+and temporal resolutions compared to alternative datasets [13,16,17]. 
+With a 5-day revisit frequency, spatial resolution as fine as 10 m, and the 
+addition of three red-edge spectral bands, Sentinel-2 has shown great 
+promise for winter wheat mapping.
+Considering the unique spectral features of different crops in 
+different growing periods, most studies acquire the spatial distribution 
+of winter wheat using temporal features and machine learning classifiers 
+[2,28]. However, approaches emphasizing temporal features do not 
+consider the spatial variability between objects, a factor that is essential 
+for accurate mapping of winter wheat. Moreover, geographical factors 
+lead to significant intra- and inter-class variations in winter wheat 
+phenology, resulting in poor spatial and temporal transferability for 
+methods relying on temporal features [22]. Machine learning classifiers, 
+such as Random Forest, Support Vector Machine, and Decision Trees, 
+have mitigated the problem and offered effective methods for extracting 
+spatial features. However, these feature extractors were heavily reliant 
+on domain-specific knowledge and failed to effectively capture the 
+sequential aspects of the winter wheat life cycle [20].
+During the past several years, deep learning has emerged as a 
+powerful tool with superior learning and feature extraction capabilities, 
+showing great potential in remote sensing applications [6,12,32]. Dur-
+ing this time, a proliferation of deep neural networks (DNNs) has 
+emerged, significantly influencing conventional time-series approaches 
+to winter wheat mapping. Convolutional networks and recurrent net-
+works are currently popular deep-learning architectures for time-series 
+crop classification [7,37]. Temporal networks that incorporate convo-
+lutions in both time and spectrum dimensions are capable of thoroughly 
+exploring spatial and temporal details in time-series datasets. To meet 
+the demands of various downstream tasks in the field of crop segmen-
+tation, the research based on time-series images focuses on constructing 
+a network structure that efficiently integrates spatiotemporal features 
+across different time periods [18,36]. However, most convolution 
+models fail to consider the sequential aspects of time series, which im-
+pairs their performance in learning long-term dependencies. Although 
+the recurrent networks are capable of detecting time dependencies and 
+evolving features in sequential data, they tend to experience gradient 
+Fig. 1. The locations of study sites and winter wheat distribution conditions. The central figure, set against a digital elevation model (DEM), displays the locations of 
+these sites, covering key wheat production areas in China. The inset map highlights the locations of these sites geographically. Enlarged views of the RGB composite 
+images and winter wheat distribution for the ten sites are detailed in A-T2, with winter wheat maps derived from Yang et al. [38]. Training experiments were 
+conducted on circular sites (A, B, C, D, E, F, G, H), while testing experiments was performed on pentagram sites (T1 and T2).
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+2 
+vanishing with excessively long-time sequences. Transformers have 
+become increasingly prominent and have attracted significant attention 
+for their effectiveness in time-series crop mapping. The emergence of the 
+Transformer framework has addressed the shortcomings of CNNs in 
+capturing global information. By utilizing the self-attention mechanism, 
+it can comprehensively consider the spatiotemporal relationships be-
+tween different parts of objects across the entire image, rapidly 
+modeling the spatial semantic information of objects [24,35]. Trans-
+formers, despite their effectiveness, suffer from quadratic computational 
+and memory complexity (O(L²)) with respect to sequence length (L). 
+This becomes prohibitively expensive for long time series, which are 
+common in multi-temporal crop monitoring. For instance, monitoring a 
+full winter wheat phenology cycle (approximately 240 to 250 days) 
+might require L > 30 Sentinel-2 images after cloud filtering. At this 
+length (L = 30), the computational load of a single multi-head attention 
+module increases by a factor of 900 [25].
+In recent years, deep models based on state space models, particu-
+larly Mamba, have received widespread attention in the field of se-
+mantic segmentation of remote sensing images. Their emergence 
+provides a promising framework capable of efficiently handling complex 
+dependencies in long sequence data [10,23,43]. Compared with Trans-
+former, these models integrate the features of recurrent convolutional 
+networks and convolutional neural networks, achieving a linear or 
+near-linear growth pattern in computational complexity (O(L)) relative 
+to the size of the input image, significantly reducing model complexity 
+and computational cost [15]. Previous studies found that while main-
+taining the same sequence data input, the computational load of vision 
+transformer is approximately 35 times that of vision mamba [8,15]. 
+Considering these outstanding advantages, Mamba has been success-
+fully applied to semantic segmentation, change monitoring, and 
+hyper-spectral image recognition [29,39]. However, the application 
+potential of Mamba in time series crop recognition tasks has not been 
+explored, which will be very instructive for efficient crop mapping in 
+large regions and long time series. Moreover, the common Mamba 
+model processes one-dimensional sequences and cannot retain the 
+spatial position information in the crop images. Integrating the advan-
+tages of convolution neural networks (CNNs) and Mamba to explore the 
+deep information in the spatial and temporal dimensions of farmland is 
+Table 1 
+The 9 spectral bands of Sentinel-2 imagery used in this study.
+Band Name Spatial resolution (m) Wavelength (nm)
+B2 Blue 10 490
+B3 Green 10 560
+B4 Red 10 665
+B5 Red-edge 1 20 705
+B6 Red-edge 2 20 740
+B7 Red-edge 3 20 783
+B8 NIR 10 842
+B11 SWIR 1 20 1610
+B12 SWIR 2 20 2190
+Fig. 2. (a) The overall structure of the proposed BTSM-UNet framework in this study. (b) The Bidirectional Temporal-Spatial Module (Bi-TSM) applies trans-
+formations to the time-series feature maps in a serial manner, first in the temporal dimension and then in the spatial dimension, to obtain the output feature vectors. 
+Bi-TSM2, Bi-TSM3, and Bi-TSM4 represent the Bi-TSM modules at layers 2, 3, and 4, with corresponding down-sampled feature map scales of 64, 32, and 16, 
+respectively.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+3 
+also worth exploring.
+This paper presents a new model called Bidirectional Temporal- 
+Spatial Vision Mamba-UNet (BTSM-UNet), aimed at processing 
+Sentinel-2 imagery to boost the efficiency and precision of capturing 
+deep features from multi-temporal images. This paper highlights the 
+following main contributions. 
+(1) Spatiotemporal Decoupled Bidirectional Vision Mamba Module: 
+An innovative spatiotemporal decoupled temporal feature 
+extraction module is proposed based on the bidirectional vision 
+mamba structure. This module extracts better spatiotemporal 
+global information, improving the processing of long time-series 
+remote sensing images.
+(2) Multi-Scale Temporal Global Information Fusion: By using multi- 
+scale fusion techniques, the spatiotemporal decoupled mamba 
+module is applied to different feature map scales to process time- 
+series data. This design effectively compensates for the loss of 
+Fig. 3. The Bidirectional Vision Mamba block.
+Table 2 
+Confusion matrix of the classification results based on BTSM-UNet at site T1 and T2.
+Site T1 Ground truth data Site T2 Ground truth data
+Wheat Nonwheat Wheat Nonwheat
+Predicted Wheat 0.950 0.050 Predicted Wheat 0.960 0.040
+Nonwheat 0.048 0.952 Nonwheat 0.045 0.955
+​ Recall 0.943 0.947 ​ Recall 0.958 0.956
+​ MCC 0.902 ​ ​ MCC 0.908 ​
+​ F1-score 0.948 ​ ​ F1-score 0.957 ​
+Fig. 4. Spatial prediction results based on BTSM-UNet at site T1 and T2. The green pixels correspond to true wheat, the black pixels to non-wheat areas, and the 
+yellow pixels to the wheat areas predicted by the BTSM-UNet model.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+4 
+temporal context information when 2D convolutions are used to 
+handle 3D time-series data.
+(3) Lower Parameter Count and Computational Cost: The model uses 
+a lower number of parameters and computational costs, signifi-
+cantly accelerating inference speed and achieving efficient time- 
+series data processing. The model also achieved state-of-the-art 
+(SOTA) high-precision winter wheat extraction results in both 
+northern and southern validation areas across China.
+2. Material and methods
+2.1. Study area
+In this study, we chose ten sites within China’s primary wheat- 
+producing regions to carry out our experiments (Fig. 1). Eight sites (A 
+to H) were designated for training, while the remaining two (T1 and T2) 
+were used for testing. Each site encompasses a rectangular area of 
+approximately 4000 × 4000 pixels, equivalent to 40,000 × 40,000 
+square meters. The distribution of these sites covers important produc-
+tion areas for winter wheat in China, with variations in geographical 
+environment, climatic conditions, phenological characteristics, and soil 
+conditions across different regions. Such site selection allows for a 
+comprehensive consideration of spatial and spectral differences of 
+winter wheat objects in images from different regions, ensuring the 
+generalization and representativeness of the training samples. These ten 
+sites fall within the temperate monsoon climate and subtropical 
+monsoon climate zones. Winters are dry and cold, while summers are 
+hot with abundant rainfall, and springs tend to be dry with little rain. 
+The region is well-endowed with heat resources, which support a variety 
+of double-cropping systems. The accumulated temperature above 0 ◦C 
+ranges from 4100 to 5400 ◦C, and the accumulated temperature above 
+10 ◦C ranges from 3700 to 4700 ◦C, allowing different types of winter 
+wheat to safely overwinter. The frost-free period lasts from 190 to 220 
+days, and the annual precipitation on the plain ranges from 500 to 1000 
+mm . The predominant planting patterns were winter wheat and sum-
+mer maize, with winter wheat serving as the main crop harvested in 
+Table 3 
+Comparative analysis of prediction results with other deep models.
+Models Metrics Comparison with 
+BTSM-UNet ( %)
+MCC F1-score Precision Recall MCC F1-score
+UNet3d 0.882 0.929 0.938 0.920 2.541 2.416
+UNet2d-LSTM 0.827 0.912 0.901 0.923 8.619 4.202
+CNN-BiLSTM 0.659 0.813 0.862 0.769 27.182 14.601
+TSViT 0.819 0.906 0.915 0.896 9.503 4.832
+UTS-Former 0.881 0.936 0.940 0.932 2.652 1.681
+VM-UNet 0.843 0.925 0.943 0.907 6.851 2.836
+BTSM-UNet 0.905 0.952 0.954 0.951 N/A N/A
+Note: Bold highlights the best results. The Comparison with BTSM-UNet ( %) 
+calculates the percentage difference between BTSM-UNet and the other models. 
+The abbreviation VM-UNet refers to Vision Mamba-UNet, consistent notation 
+will be maintained hereafter.
+Fig. 5. An enlarged view of the ground truth reference samples and the prediction results of different deep learning models from site T1 (a: ground truth, b: UNet3D, 
+c: UNet2D-LSTM, d: CNN-BiLSTM, e: TSViT, f: UTS-Former, g: VM-UNet, and h: BTSM-UNet). The enlarged views on the right represent the ground truth and 
+predicted winter wheat distribution within the red boxes by the different deep learning models. Green pixels indicate ground truth wheat samples, black pixels 
+represent non-wheat areas, and yellow pixels show the predicted winter wheat distribution by the different deep learning models. The geographical locations of m1 
+and m2 at site T1 are shown in Fig. 4.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+5 
+summer. The winter wheat area in the North China Plain accounts for 
+nearly 80 % of the national winter wheat area, and the growing season 
+spans from late September to early June. Notably, winter wheat is the 
+leading winter crop in China, covering about 91 % of the total winter 
+crop planting area.
+2.2. Sentinel-2 imagery
+In this study, we used multi-temporal Sentinel-2 surface reflectance 
+products to perform the winter wheat classification. The Sentinel-2 
+constellation comprises two satellites, each outfitted with a Multispec-
+tral Instrument (MSI) that covers 13 bands from visible to short-wave 
+infrared wavelengths, offering spatial resolutions between 10 and 60 
+m Featuring a 290 km wide swath and a 10-day revisit interval per 
+satellite, the system can achieve a revisit cycle of every 5 days, making it 
+an ideal data source for monitoring and mapping crops. To avoid 
+redundant preprocessing, preprocessed Sentinel-2 Level-2A surface 
+reflectance images were downloaded directly from Google Earth Engine 
+(GEE). While terrain correction and cloud masking are typically 
+required, terrain correction was omitted due to topographic homoge-
+neity across the North China Plain study area. To eliminate cloud 
+interference, all images acquired during the winter wheat growing 
+season (1 October 2022 - 30 June 2023) were filtered by a < 20 % cloud 
+cover threshold. Ultimately, 152 clear-sky time-series images spanning 
+ten experimental stations were acquired for subsequent experiments. To 
+maintain temporal information throughout the growing season, we kept 
+all observations along with their corresponding Day of Year (DoY), 
+which helps capture specific phenological events of winter wheat. To 
+achieve winter wheat classification, we selected ten spectral bands, 
+excluding the ones with a 60 m spatial resolution and Band 8A because 
+of its spectral overlap with Band 8 (Table 1).
+2.3. Winter wheat reference samples
+We used the winter wheat distribution datasets developed by Yang 
+et al. [38] as the reference source of ground-truth information for winter 
+wheat. Using multi-source imagery and extensive ground truth data, the 
+products were developed with a spatial resolution of 10 m. Based on a 
+knowledge-based approach and machine learning classifiers, this pub-
+lication extracted accurate distribution data of winter wheat from 2020 
+to 2022. To assess the quality of the training data generated, the trained 
+classification model was applied across various years. The evaluation 
+revealed that integrating the generated training data with a machine 
+learning classifier led to the highest accuracy across all classification 
+scenarios. The products consistently achieved high accuracy, with 
+overall accuracies above 0.90 from 2020 to 2022. Moreover, the esti-
+mated areas correlated strongly with agricultural census data, achieving 
+R² values of at least 0.95 at the provincial level and 0.91 at the municipal 
+level.
+Fig. 6. An enlarged view of the ground truth reference samples and the prediction results of different deep learning models from site T2 (a: ground truth, b: UNet3D, 
+c: UNet2D-LSTM, d: CNN-BiLSTM, e: TSViT, f: UTS-Former, g: VM-UNet, and h: BTSM-UNet). The enlarged views on the right represent the ground truth and 
+predicted winter wheat distribution within the red boxes by the different deep learning models. Green pixels indicate ground truth wheat samples, black pixels 
+represent non-wheat areas, and yellow pixels show the predicted winter wheat distribution by the different deep learning models. The geographical locations of m1 
+and m2 at site T2 are shown in Fig. 4.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+6 
+3. Methodology
+3.1. Background
+Mamba is a State Space Model (SSM) architecture and is one of the 
+most successful variants of SSMs. Mamba introduces a simple but highly 
+effective selection mechanism that parametrizes the SSM based on the 
+input, allowing the model to retain relevant data indefinitely while 
+filtering out irrelevant information [42]. Additionally, Mamba includes 
+a hardware-aware algorithm that uses scan operations instead of con-
+volutions to compute the model iteratively, which can speed up com-
+putations by three times on an A100 GPU. With its strong capability to 
+model long sequences and near-linear scalability, Mamba has become a 
+foundational model.
+As a key module of Vision Mamba, the Mamba block utilizes position 
+embeddings to encode image sequences and employs a bidirectional 
+state space model to compress visual representations, enabling Vision 
+Mamba to effectively capture the global context of images. This 
+approach addresses the inherent position sensitivity of visual data, a 
+critical issue often encountered by traditional Transformer models. In 
+particular, Vision Mamba outperforms traditional Transformers (such as 
+Vision Transformer) in terms of performance and memory efficiency 
+when handling high-resolution data tasks. Unlike many models that 
+process data unidirectionally, Vision Mamba’s encoder processes tokens 
+in both forward and backward directions, allowing for a richer under-
+standing of image context in accurate image classification.
+3.2. BTSM-UNet
+The proposed Bidirectional Temporal-Spatial vision Mamba-UNet 
+(BTSM-UNet) generally follows an "Encoder + Decoder" structure 
+(Fig. 2). In the middle three layers of the Encoder, we inserted the 
+Bidirectional Temporal-Spatial vision Mamba (Bi-TSM) structure to fully 
+exploit spatiotemporal information at different scales. In the Decoder 
+part, by combining local spatial features captured by the CNN and global 
+spatiotemporal features captured by the Bi-TSM module at various 
+scales, we achieved enhanced accuracy in wheat extraction. First, we 
+used multiple cascaded 2D CNN blocks to extract multi-scale spatial 
+detail features from the input time-series images. Second, we applied the 
+Bi-TSM module to the three middle feature maps to further mine their 
+spatiotemporal information, compensating for the loss of temporal in-
+formation in the 2D CNN architecture. Then, we fused the spatial detail 
+information obtained in the first step with the global spatiotemporal 
+information obtained in the second step using deconvolution operations, 
+increasing the resolution of the feature maps. Finally, we applied a 
+single deconvolution layer to produce a classification output that 
+matches the resolution of the input image.
+3.2.1. Theoretical basis of temporal-spatial decoupling
+The core innovation of our proposed Bidirectional Temporal-Spatial 
+Decoupled Mamba (Bi-TSM) module is the decomposition of complex 
+spatio-temporal modeling into two sequential stages: spatial modeling 
+followed by temporal modeling. This section provides a theoretical 
+justification for this decoupling strategy over traditional joint processing 
+methods, focusing on computational complexity and information 
+retention capabilities. 
+(1) Analysis of computational complexity
+Joint models (e.g., 3D-CNNs) process all dimensions of the data in a 
+unified operation, leading to computational complexity that scales 
+exponentially with the input size. For an input tensor with a batch size of 
+1, temporal length T, spatial dimensions H × W, and input/output 
+channels Cin and Cout, the computational complexity of a basic 3D 
+convolution kernel (of size t × k × k) is approximately: 
+Ojoint ≈ T⋅H⋅W⋅Cin⋅Cout ⋅t⋅k2 (1) 
+This represents a multiplicative relationship between the temporal 
+and spatial dimensions. When processing large-scale (large H, W) and 
+long-term (large T) remote sensing data, this leads to a significant 
+computational burden, often referred to as the "curse of dimensionality."
+In contrast, our Bi-TSM module employs a decoupled strategy. First, 
+the spatial modeling stage (e.g., using 2D-CNNs) has a complexity of: 
+Ospace ≈ H⋅W⋅Cin ⋅Cout ⋅k2 (2) 
+Subsequently, the temporal modeling stage processes the feature 
+sequence of length T and dimension D using the Bidirectional Visual 
+Mamba. Benefiting from the linear time-invariant system properties and 
+the selective scanning mechanism of State Space Models (SSMs), the 
+complexity of this stage is optimized to approximately O(T), which is 
+significantly lower than the O(T2) complexity of Transformer-based 
+attention mechanisms. Thus, the overall complexity of our decoupled 
+approach is: 
+Odecoupled ≈ Ospace+ O(T⋅D) (3) 
+This demonstrates that our method successfully reduces the 
+complexity from a multiplicative scale in joint methods to an additive 
+scale. This leads to markedly improved computational efficiency when 
+handling large-scale remote sensing time series, without compromising 
+model performance. 
+(2) Advantages in information retention and feature learning
+Joint models, which fuse spatio-temporal information in a single 
+operation, can lead to learned feature representations that suffer from 
+"spatio-temporal entanglement." For the winter wheat identification 
+task, this means the model may conflate spatial structure information (e. 
+g., field shape, texture) with the critically important phenological tem-
+poral information (e.g., spectral changes during green-up and heading 
+stages). Given that existing literature strongly suggests that temporal 
+Table 4 
+Comparisons of the number of model parameters, computation and running 
+efficiency.
+Models Params FLOPs FPS Inference time 
+(ms)
+Input data 
+resolution
+UNet3d 6.16M 2159.23G 9 111 256 × 256
+539.81 34 29 128 × 128
+134.95 140 7 64 × 64
+UNet2d- 
+LSTM
+8.45M 233.69 2 500 256 × 256
+58.42 8 125 128 × 128
+14.61 30 33 64 × 64
+CNN- 
+BiLSTM
+5.90M 12,369.51 3 333 256 × 256
+3092.38 13 77 128 × 128
+773.1 50 20 64 × 64
+TSViT 2.48M 16.45 10 100 256 × 256
+4.11 40 25 128 × 128
+1.03 152 7 64 × 64
+UTS- 
+Former
+21.69M 112.23 8 125 256 × 256
+28.06 30 33 128 × 128
+7.01 115 9 64 × 64
+VM-UNet 12.49M 98.63 13 77 256 × 256
+24.66 50 20 128 × 128
+6.16 195 5 64 × 64
+BTSM- 
+UNet
+12.77M 97.62 20 50 256 × 256
+24.41 75 13 128 × 128
+6.11 300 3 64 × 64
+Note: Params (Parameters) represents the total number of learnable parameters 
+in the model. FLOPs (Floating Point Operations) measure the computational 
+complexity of the deep learning model, indicating the total number of floating- 
+point operations required for a single forward pass. FPS (Frames Per Second) 
+refers to the processing throughput, i.e., how many image frames the model can 
+analyze per second. Inference time denotes the duration required for the model 
+to process a single input image.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+7 
+variation outweighs spatial information in importance for crop mapping 
+using time-series remote sensing data [25], our model intentionally 
+adopts a temporal-first strategy.
+Temporal-first strategy: the Mamba module first processes the spectral 
+series for each pixel, leveraging its selective scanning to focus on key 
+phenological phases [8]. This isolates the learning of robust temporal 
+signatures without spatial interference.
+Spatial Contextualization: the refined temporal features are then 
+processed spatially to aggregate context and smooth boundaries. This 
+strategy prevents the "temporal-spatial entanglement" common in joint 
+models, where critical phenological patterns can be diluted. By priori-
+tizing the most discriminative information source (time), our model 
+learns a clearer and more effective feature hierarchy.
+3.2.2. Encoder
+We input the time-series images with a spatial resolution of 256 ×
+256, a maximum time sequence length of 32, and 10 channels into the 
+encoder network including 9 spectral bands and 1 time band. To process 
+the acquisition dates of each image, we converted them to Day of Year 
+(DOY) values and expanded this information into a separate time 
+channel that matches the resolution of the input images. In the Encoder, 
+Table 5 
+Classification performance of deep models under different classification combinations.
+Bands Models Metrics Comparison with BTSM-UNet ( %)
+MCC F1 Precision Recall MCC F1 MCC/All F1/All
+RGB UNet3d 0.860 0.920 0.925 0.915 2.60 2.13 4.97 3.36
+UNet2d-LSTM 0.816 0.905 0.895 0.915 7.59 3.72 9.83 4.94
+CNN-BiLSTM 0.648 0.802 0.850 0.760 26.61 14.68 28.40 15.76
+TSViT 0.811 0.900 0.910 0.890 8.15 4.26 10.39 5.46
+UTS-Former 0.876 0.928 0.931 0.925 0.79 1.28 3.20 2.52
+VM-UNet 0.821 0.909 0.930 0.889 7.02 3.30 9.28 4.52
+BTSM-UNet 0.883 0.940 0.943 0.937 N/A N/A 2.43 1.26
+RGB-R1 UNet3d 0.863 0.922 0.927 0.918 2.49 2.02 4.64 3.15
+UNet2d-LSTM 0.819 0.906 0.900 0.913 7.46 3.72 9.50 4.83
+CNN-BiLSTM 0.650 0.806 0.852 0.765 26.55 14.35 28.18 15.34
+TSViT 0.809 0.898 0.909 0.887 8.59 4.57 10.61 5.67
+UTS-Former 0.875 0.930 0.933 0.927 1.13 1.17 3.31 2.31
+VM-UNet 0.823 0.911 0.931 0.891 7.00 3.19 9.06 4.31
+BTSM-UNet 0.885 0.941 0.943 0.938 N/A N/A 2.21 1.16
+RGB-R2 UNet3d 0.870 0.922 0.928 0.917 2.79 2.54 3.87 3.15
+UNet2d-LSTM 0.821 0.909 0.899 0.920 8.27 3.91 9.28 4.52
+CNN-BiLSTM 0.648 0.807 0.851 0.767 27.60 14.69 28.40 15.23
+TSViT 0.810 0.901 0.911 0.891 9.50 4.76 10.50 5.36
+UTS-Former 0.880 0.928 0.932 0.925 1.68 1.90 2.76 2.52
+VM-UNet 0.825 0.910 0.930 0.890 7.82 3.81 8.84 4.41
+BTSM-UNet 0.895 0.946 0.950 0.942 N/A N/A 1.10 0.63
+RGB-R3 UNet3d 0.868 0.920 0.926 0.914 3.13 2.75 4.09 3.36
+UNet2d-LSTM 0.819 0.907 0.896 0.918 8.59 4.12 9.50 4.73
+CNN-BiLSTM 0.651 0.807 0.853 0.765 27.34 14.69 28.07 15.23
+TSViT 0.812 0.899 0.912 0.886 9.38 4.97 10.28 5.57
+UTS-Former 0.878 0.928 0.934 0.923 2.01 1.90 2.98 2.52
+VM-UNet 0.827 0.908 0.932 0.886 7.70 4.02 8.62 4.62
+BTSM-UNet 0.896 0.946 0.951 0.941 N/A N/A 0.99 0.63
+RGB-NR UNet3d 0.871 0.924 0.930 0.919 2.68 2.33 3.76 2.94
+UNet2d-LSTM 0.824 0.911 0.902 0.920 7.93 3.70 8.95 4.31
+CNN-BiLSTM 0.656 0.809 0.859 0.764 26.70 14.48 27.51 15.02
+TSViT 0.815 0.902 0.912 0.893 8.94 4.65 9.94 5.25
+UTS-Former 0.879 0.933 0.936 0.930 1.79 1.37 2.87 2.00
+VM-UNet 0.826 0.912 0.935 0.891 7.70 3.59 8.73 4.20
+BTSM-UNet 0.895 0.946 0.947 0.944 N/A N/A 1.10 0.63
+RGB-SW1 UNet3d 0.867 0.920 0.925 0.916 2.25 2.34 4.20 3.36
+UNet2d-LSTM 0.821 0.909 0.899 0.919 7.44 3.50 9.28 4.52
+CNN-BiLSTM 0.648 0.808 0.858 0.763 26.94 14.23 28.40 15.13
+TSViT 0.808 0.897 0.908 0.887 8.91 4.78 10.72 5.78
+UTS-Former 0.874 0.927 0.930 0.924 1.47 1.59 3.43 2.63
+VM-UNet 0.824 0.909 0.933 0.887 7.10 3.50 8.95 4.51
+BTSM-UNet 0.887 0.942 0.944 0.939 N/A N/A 1.99 1.05
+RGB-SW2 UNet3d 0.865 0.918 0.924 0.912 2.04 2.34 4.42 3.57
+UNet2d-LSTM 0.818 0.906 0.896 0.917 7.36 3.62 9.61 4.83
+CNN-BiLSTM 0.649 0.806 0.856 0.762 26.50 14.26 28.29 15.34
+TSViT 0.809 0.895 0.906 0.885 8.38 4.79 10.61 5.99
+UTS-Former 0.872 0.925 0.929 0.922 1.25 1.60 3.65 2.84
+VM-UNet 0.823 0.908 0.932 0.886 6.79 3.40 9.06 4.62
+BTSM-UNet 0.883 0.940 0.941 0.938 N/A N/A 2.43 1.26
+Note: Bold text indicates the best results. MCC/All and F1/All denote comparisons with the BTSM-UNet performance across all band combinations, as presented in 
+Table 4.
+Table 6 
+Band combinations of the Sentinel-2 dataset used in this study.
+Band combinations Used bands
+RGB True-color channels
+RGB-R1 True-color channels, red edge 1
+RGB-R2 True-color channels, red edge 2
+RGB-R3 True-color channels, red edge 3
+RGB-NR True-color channels, near-infrared
+RGB-SW1 True-color channels, shortwave infrared 1
+RGB-SW2 True-color channels, shortwave infrared 2
+RGB-R1-R2-R3-NR-SW1- 
+SW2 (All)
+True-color channels, red edge bands (1, 2, 3), near- 
+infrared, shortwave infrared bands (1, 2)
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+8 
+we performed convolutional operations using 2D CNNs by merging the 
+time dimension T with the batch dimension. Each convolutional block 
+included a 3 × 3 convolution layer, followed by a batch normalization 
+layer and a ReLU activation layer. After five convolutional blocks, we 
+obtained feature maps at scales of 128, 64, 32, 16, and 8. To minimize 
+information loss during down-sampling, we chose to use convolution 
+layers with a stride of 2 rather than using pooling operations.
+3.2.3. Multi-scale bidirectional temporal-spatial vision mamba (Bi-TSM)
+To account for the implicit merging of the time dimension T when 
+shifting from 3D CNN to 2D CNN, we incorporated a Bi-TSM module at 
+the feature map scales of 128, 64, and 32. This structure leverages the 
+strong modeling capabilities of Bi-TSM for temporal information to fully 
+exploit spatiotemporal global information, thereby compensating for the 
+loss of temporal information in 2D CNNs. The Bi-TSM is a decoupled 
+Vision Mamba structure designed with a serial configuration of 
+Temporal-Vision Mamba (Temporal-VM) and Spatial-Vision Mamba 
+(Spatial-VM).
+Fig. 3
+(1) Tokenization of Bi-TSM
+To better capture the local features and reduce information loss, we 
+performed conv2d on feature maps at resolutions of 128 × 128, 64 × 64, 
+and 32 × 32 to obtain feature embeddings instead of patch splicing at 
+different scales. The convolution kernel sizes are 8 × 8, 4 × 4, and 2 × 2, 
+with corresponding strides of 8, 4, and 2, respectively. Like patch 
+processing, we obtained N non-overlapping feature blocks after the 
+convolution operation. Then, we applied linear transformation on each 
+feature block to get embedding vectors of specific dimensions. Consid-
+ering the effect of scale changes, we set the dimensions of the embedding 
+vectors to 128, 256, and 512 respectively. To adequately model the 
+spatial and temporal context information, T time embeddings were 
+explicitly added to the temporal embedding vector, while N position 
+embeddings were explicitly added to the spatial embedding vector. 
+(2) Temporal-VM
+The tokenization of our 3D inputs (a series of T images with spatial 
+dimensions H × W and C channels) is performed by extending the 
+tokenization-as-convolution concept to spatial-temporal data. This is 
+achieved by applying a non-overlapping 3D kernel of size (t × h × w) 
+with a stride of (t, h, w) across the temporal and spatial dimensions. This 
+process yields N = [T/t][H/h][W/w] tokens, each denoted as Xi ∈ RthwC, 
+which are subsequently projected into a D-dimensional space and then 
+restructured into the form ZT ∈ RNHNW×NT×d.
+For the temporal dimension, the token sequences were processed in 
+chronological order (front to back) to form the input for the Temporal- 
+VM module. The explicit temporal information was one-hot encoded and 
+then transformed by a linear layer to produce the temporal embedding 
+P T[t₀,:]. This embedding was enhanced by adding a learnable tem-
+poral parameter ZT. Finally, this enhanced embedding was prepended to 
+a sequence of K learnable segment embeddings, Z K∈ RK×d, to form the 
+complete input to the Temporal-VM module. Consequently, the input 
+Fig. 7. Close-up views of the BTSM-UNet predictions for different band combinations at site T1: RGB (a), RGB-N (b), RGB-R1 (c), RGB-R2 (d), RGB-R3 (e), RGB-SW1 
+(f), RGB-SW2 (g), and all bands (h). The enlarged views on the right represent the detailed predictions of winter wheat by the BTSM-UNet model for different band 
+combinations within the red boxes. The geographical locations of m1 and m2 at site T1 are shown in Fig. 4.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+9 
+vector for the Temporal-VM is: 
+ZK
+T = concat(ZK, ZT+ PT[t0, :])∈ RNHNW×K+NT×d (4) 
+where PT[t0,:] ∈ RN
+T
+×d represents the temporal embedding vector at the 
+initial time step t₀, while ZK ∈ RK×d denotes a learnable segment 
+embedding vector. These two components are respectively added to and 
+prepended before all NHNW time series. Meanwhile, t ∈ RT is a vector 
+containing all T acquisition timestamps.
+Then, ZT was input into the Temporal -VM module to extract and 
+represent temporal features, ultimately obtaining the output vector of 
+the Temporal-VM, ZK
+T ∈ RNHNW×K+NT×d. An unflatten operation was per-
+formed on this vector to obtain the temporal output feature map, 
+denoted as ZL
+T ∈ RK×H×W×d. 
+(3) Spatial-VM
+To enhance spatial perception capabilities, we conducted horizontal 
+and vertical scans separately according to the convolution blocks in the 
+spatial dimension, aggregating the output of the Temporal-VM module 
+as the input for the Spatial-VM module, denoted as ZSi∈ RK×NHNW×d, 
+where 0 indicates horizontal scanning and 1 indicates vertical scanning. 
+To maintain the spatial information, the patch position embedding 
+vector Psi were integrated into the Zsi vector as the input for the Spatial- 
+VM module, denoted as Zs i.e., 
+ZS =(Zsi+ Psi)∈ RK×NHNW×d(i= 0, 1) (5) 
+Then, the Zs vectors are input into the Spatial-VM module separately 
+for the extraction and representation spatial feature information, and 
+the output results are fused to obtain ZL
+S ∈ RK×NHNW×d. Finally, alignment 
+of the Bi-TSM output with the CNN feature maps is achieved by applying 
+a fully connected layer to ZL
+S. This layer maps the representation from a 
+dimension of d to h × w, yielding ZL
+TS ∈ RK× h ×w. The tensor ZL
+TS thus 
+denotes the final global spatiotemporal output of the Bi-TSM module.
+3.2.4. Decoder
+We employ 2D deconvolution for the Decoder part of the convolution 
+block. Following five deconvolution modules, the feature map resolu-
+tions gradually increased to 8, 16, 32, 64, and 128. Each module con-
+sisted of a 3 × 3 convolution layer, a batch normalization layer, and a 
+ReLU activation layer. The feature maps were fused with the corre-
+sponding feature maps obtained from the Bi-TSM at the 32, 64, and 128 
+scales before the deconvolution operation.
+4. Experiment implementation
+We used eight sites for training and retained the other two sites for 
+testing (Fig. 1). In the training stage, the collected time series remote 
+sensing data (except T1 and T2) were segmented into patches of 256 ×
+256 size and step of 128. Meanwhile, the time information corre-
+sponding to the data at each acquisition date was fused into the 
+segmented data as a single band, generating 42,000 training samples. 
+The data were split into a training set and a verification set at an 8:2 
+ratio, with T1 and T2 reserved as test sites. We also performed data 
+augmentation on the training set to boost the model’s generalization 
+Fig. 8. Close-up views of the BTSM-UNet predictions for different band combinations at site T2: RGB (a), RGB-N (b), RGB-R1 (c), RGB-R2 (d), RGB-R3 (e), RGB-SW1 
+(f), RGB-SW2 (g), and all bands (h). The enlarged views on the right represent the detailed predictions of winter wheat by the BTSM-UNet model for different band 
+combinations within the red boxes. The geographical locations of n1 and n2 at site T2 are shown in Fig. 4.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+10 
+abilities. We mask several images randomly on a given acquisition date 
+according to a certain random probability to simulate the data missing in 
+the time dimension. Moreover, we conducted random rotation (±10◦), 
+random flip, and color enhancement or reduction operations to the 
+training sample in spatial dimension.
+5. Results
+5.1. Performance of the BTSM-UNet
+We trained the BTSM-UNet on eight training sites and transferred it 
+to the two testing sites. The classification results shown in Table 2
+indicate that the predictions from BTSM-UNet exhibit excellent spatial 
+consistency with the ground truth samples. Although there is some 
+variation in classification accuracy between the two testing sites, over-
+all, both sites demonstrate very high classification accuracy. The MCC 
+scores for sites T1 and T2 are 0.902 and 0.908, respectively, while the F1 
+scores are 0.948 and 0.957, respectively. There are differences in pre-
+cision and recall between the two testing sites, but these differences are 
+not significant, suggesting that the false positive and false negative rates 
+are nearly equal at both sites. The precision for sites T1 and T2 is 0.950 
+and 0.960, respectively, and the recall rates are 0.943 and 0.958, 
+respectively (Table 2).
+In addition to quantitative evaluation, qualitative analysis was also 
+employed to evaluate the performance of our BTSM-UNet (Fig. 4). The 
+visual results of the predicted results showed high spatial accuracy for 
+identifying wheat pixels (Fig. 4). The zoomed-in images provided a 
+closer look at parcel details and highlighted the differences between 
+predictions and actual wheat areas, demonstrating high accuracy in 
+identifying wheat locations. Additionally, the BTSM-UNet model 
+delineated road boundaries from winter wheat fields, with minimal salt- 
+and-pepper noise observed within the patches. Despite a small number 
+of misidentified patches, the overall identification result was highly 
+consistent with the ground truth data (Fig. 4, Site T2, A, a).
+Fig. 9. Settings of different spatial Vision Mamba and temporal Vision Mamba combinations.
+Table 7 
+Results of the ablation experiments based on the BTSM-UNet.
+Ablation MCC F1 Precision Recall
+The number of Bi-TSM module
+Without Bi-TSM module 0.831 0.890 0.902 0.878
+Bi-TSM2 0.862 0.929 0.928 0.930
+Bi-TSM3 0.858 0.925 0.945 0.905
+Bi-TSM4 0.862 0.930 0.925 0.933
+Bi-TSM2þBi-TSM3 0.892 0.944 0.946 0.941
+Bi-TSM3þBi-TSM4 0.899 0.948 0.942 0.954
+Bi-TSM2þBi-TSM4 0.899 0.948 0.949 0.947
+Bi-TSM2þBi-TSM3þBi-TSM4 0.905 0.952 0.954 0.951
+The inputting resolution
+64 £ 64 0.860 0.927 0.932 0.921
+128 £ 128 0.892 0.944 0.945 0.943
+256 £ 256 0.905 0.952 0.954 0.951
+Settings of spatial-temporal modules
+Only S-BiVM 0.878 0.935 0.934 0.937
+Only T-BiVM 0.881 0.940 0.941 0.939
+ST-BiVM 0.893 0.945 0.944 0.945
+TS-BiVM 0.905 0.952 0.954 0.951
+Note: The optimal results are highlighted in bold. S-BiVM, T-BiVM, ST- BiVM, 
+and TS-BiVM respectively represent Spatial Vision Mamba, Temporal-Vision 
+Mamba, Spatial-temporal Vision Mamba, and Temporal-spatial Vision Mamba.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+11 
+5.2. Comparative experiments with other deep learning models
+In our study, we compared our proposed model with six mainstream 
+deep-learning models (Table 3). Among the evaluated models, BTSM- 
+UNet achieved the highest classification accuracy in identifying winter 
+wheat, with an MCC of 0.905 and an F1-score of 0.952. The UNet3d 
+model exhibited slightly lower classification performance compared to 
+BTSM-UNet, achieving an MCC of 0.882 and an F1-score of 0.929. 
+Additionally, UTS-Former outperformed TSViT but was slightly weaker 
+than BTSM-UNet, achieving an MCC of 0.881 and an F1-score of 0.936. 
+Compared to BTSM-UNet, UTS-Former’s MCC decreased by 2.65 %, and 
+its F1-score decreased by 1.86 %. The classification accuracy of VM- 
+UNet was slightly lower than that of UTS-Former, with an MCC of 
+0.843 and an F1-score of 0.925. The CNN-BiLSTM model had the poorest 
+classification performance, obtaining an MCC of 0.659 and an F1-score 
+of 0.813, which is approximately 27.2 % lower in MCC compared to 
+BTSM-UNet.
+The spatial prediction results based on different deep learning 
+models indicate that BTSM-UNet provides superior visual segmentation 
+results and accurate identification of plot boundaries at both testing sites 
+compared to several current mainstream deep learning models (Fig. 5). 
+From the segmentation results, it is obvious that BTSM-UNet effectively 
+extracts wheat plots while ensuring their integrity. Additionally, there is 
+minimal salt-and-pepper noise within the segmented wheat plots, 
+accurately depicting the spatial distribution characteristics of wheat. For 
+non-wheat categories, BTSM-UNet successfully excludes wheat pixels 
+and delineates other land cover types such as residential areas, roads, 
+and rivers, preserving their complete boundaries and detailed 
+information. The segmented non-wheat patches also exhibit very little 
+salt-and-pepper noise or trace of image clipping. In contrast, other deep 
+learning models like UNet3d, although capable of accurately identifying 
+wheat plots and their boundaries, still have room for improvement in 
+capturing plot details and smaller plots. The VM-UNet clearly mis-
+identified the small paths between the plot boundaries as wheat, thereby 
+reducing the classification accuracy of the model (Fig. 6g). While UTS- 
+Former achieves good segmentation accuracy, it exhibits noticeable 
+salt-and-pepper noise within the segmented plots compared to BTSM- 
+UNet (Fig. 5f, Fig. 6f).
+We also compared the number of parameters, computational 
+complexity, and inference speed of different deep models (Table 4). The 
+results demonstrated that our BTSM-UNet achieved the highest pro-
+cessing rate (300 FPS), featured a relatively small number of parameters 
+(12.77 M), and exhibited low computational complexity (6.11 GFLOPs) 
+at an input resolution of 64 × 64 (Table 4). In contrast, the UTS-Former, 
+with 21.69 M parameters, had a slower processing rate of 115 FPS at the 
+same resolution. The CNN-BiLSTM showed the highest computational 
+complexity (773.1 GFLOPs) and a slower processing rate (50 FPS) at the 
+64 × 64 resolution. Although VM-UNet and our model have a similar 
+number of parameters and computational complexity, its inference 
+speed is lower.
+Under the condition that the model’s receptive field is sufficiently 
+large and its feature extraction capability is adequate, increasing the 
+input image resolution typically enhances its accuracy. Our experi-
+mental results indicated that elevating the image resolution substan-
+tially decreased the model’s data processing rate and significantly 
+increased its computational complexity. In general, computational 
+Fig. 10. Classification accuracy of winter wheat, including MCC (a) and F1-score (b), under different-length sequence image combinations.
+Table 8 
+Sentinel-2 acquisition dates used for identifying the most accurate groups (according to MCC and F1-score), according to the number of acquisition dates included.
+m t1 t2 t3 t4 t5 t6 t7 t8 t9 Average accuracy
+MCC ( %) F1-score ( %)
+5 ​ ​ 1 ​ 1 ​ 1 ​ 2 71.39 ​
+​ ​ ​ 1 1 ​ ​ ​ ​ 3 ​ 89.95
+10 ​ 1 2 ​ 1 ​ 2 2 2 74.90 ​
+​ ​ 1 2 ​ 1 ​ 2 2 2 ​ 90.62
+15 ​ 3 2 1 ​ 1 2 3 3 72.29 ​
+​ ​ 3 2 2 ​ 1 1 2 4 ​ 89.90
+20 1 3 3 3 2 3 2 ​ 3 72.35 ​
+​ 1 3 3 3 2 3 2 ​ 3 ​ 89.96
+25 1 2 4 3 4 2 4 1 4 72.12 ​
+​ ​ 3 5 1 4 2 3 3 4 ​ 89.84
+32 1 3 5 5 4 3 4 3 4 72.35 ​
+​ 1 3 5 5 4 3 4 3 4 ​ 89.79
+Frequency 5 25 35 24 23 18 27 19 38 ​ ​
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+12 
+complexity exhibits a quadratic increase with higher input resolution, 
+whereas the image processing rate demonstrates a corresponding 
+quadratic decrease. For example, when the input resolution for BTSM- 
+UNet was elevated from 64 × 64 to 128 × 128 (resulting in a four- 
+fold expansion in total area), the FLOPs increased from 6.11 G to 
+24.41 G, the FPS decreased from 300 to 75, and the inference time per 
+image rose from 3 ms to 13 ms (Table 4).
+Table 6
+The evaluation of various band combinations for these models 
+demonstrated that the BTSM-UNet model consistently outperformed all 
+other models (Table 5). The BTSM-UNet model achieved MCC scores of 
+0.883 (RGB), 0.885 (RGB-R1), 0.895 (GRB-R2), 0.896 (RGB-R3), 0.895 
+(RGB-NR), 0.887 (RGB-SW1), and 0.883 (RGB-SW2) for the respective 
+band combinations. We found that nearly all models showed improved 
+performance when the NR and R2 bands were included in the classifi-
+cation, while other bands showed a slighter influence on the classifica-
+tion performance for all the models. Additionally, our analysis revealed 
+that the BTSM-UNet model was the least sensitive to changes in band 
+combinations among the five deep models, showing an MCC (MCC/All) 
+reduction of only 2.43 % relative to the RGB bands. In contrast, the CNN- 
+BiLSTM model exhibited a significant accuracy difference compared to 
+our BTSM-UNet model. In comparison to the BTSM-UNet, the RGB 
+combination resulted in a 28.40 % decrease in MCC (MCC/All) and a 
+15.76 % decline in F1 score (F1/All). Notably, the accuracies of almost 
+all band combinations for the UTS-Former model fell between those of 
+UNet3d and BTSM-UNet. Compared with the all-bands combination of 
+BTSM-UNet, there was a 3.20 % decrease in MCC (MCC/All) and a 2.52 
+% reduction in F1 score (F1/All).
+We also illustrated the spatial performance of classification results 
+using various band combinations in both testing areas (Figs. 7 and 8). 
+We found that the highest spatial accuracy was achieved when using all 
+the spectral bands, which effectively preserved the integrity and greater 
+detailed information of the winter wheat plots. Combining the near- 
+infrared band and the three red-edge bands showed negligible differ-
+ences in identifying wheat areas, while the addition of two shortwave 
+infrared bands resulted in errors in defining the detailed boundaries of 
+wheat plots (Figs. 7g and 7h). Maybe this is also the reason why the 
+classification precision of these two combinations is slightly lower than 
+that of other combinations.
+5.3. Ablation experiments
+To explore the contribution of different levels of deep features to the 
+classification performance, we designed three scenarios to assess the 
+ablation study, including the setting of the number of Bi-TSM modules, 
+the resolution of the input image, and the addition order of the Bi-TSM 
+module (Fig. 9). Adding the Bi-TSM2, Bi-TSM3, and Bi-TSM4 modules to 
+our model resulted in MCC improvements of 3.7 %, 3.2 %, and 3.7 %, 
+and F1 score gains of 4.4 %, 3.9 %, and 4.5 %. Moreover, the various 
+combinations of Bi-TSM modules significantly contributed to the 
+Fig. 11. Grad-CAM results of the temporal-VM and spatial-VM.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+13 
+effectiveness of our method (Table 7). We found that the MCC increased 
+by 7.3 %, and F1 increased by 6.1 % when Bi-TSM2 and Bi-TSM3 were 
+added, while the MCC increased by 8.2 %, and F1 increased by 6.5 % 
+when Bi-TSM3 and Bi-TSM4 are added which was the same as that of the 
+combination of Bi-TSM2 and Bi-TSM4. When all three Bi-TSM modules 
+are used for modeling, the MCC increased by 8.9 %, while F1 increased 
+by 7.0 %. Additionally, we observed that larger input resolutions 
+generally performed better. This can be attributed to the fact that higher 
+resolutions preserve a greater degree of spatial relationships, facilitating 
+the modeling of adjacent areas. The MCC increased by 5.2 % and the F1 
+score by 2.7 % when the input resolution was increased from 64 × 64 to 
+256 × 256. Moreover, we found that the order of the spatial and tem-
+poral modules also had a non-negligible influence on the classification 
+performance. The Bi-TSM module increased the MCC by 1.3 % to 0.905 
+and F1 by 0.7 % to 0.952 compared with the ST-VM module.
+6. Discussion
+6.1. Effects of feature combinations and temporal resolution
+This study involved the training and testing of models utilizing 
+varying temporal sequence lengths across ten distinct locations. The 
+results demonstrated excellent performance in winter wheat classifica-
+tion across all sites. Nevertheless, significant differences in classification 
+performance were observed among the different temporal lengths, 
+indicating that the duration of the time series considerably influences 
+model performance. A comparative experiment was conducted at the 
+site T2 with the longest available time series to systematically evaluate 
+the effect of image time series length on classification performance 
+(Supplementary Materials). The experimental results indicate that the 
+model’s classification accuracy exhibits an upward trend with an in-
+crease in the number of temporal images (Fig. 10). The Matthews Cor-
+relation Coefficient (MCC) values for the six combinations ranged from 
+0.20 to 0.80, whereas the F1-score values ranged from 0.70 to 0.90. The 
+lower MCC values relative to the F1-scores are primarily due to the 
+imbalanced distribution of positive and negative samples in the dataset, 
+given that the MCC calculation incorporates the distributions of all 
+samples (both positive and negative), while the F1-score primarily fo-
+cuses on the positive class.
+To further identify the most discriminative image acquisition periods 
+for winter wheat classification, we selected the highest-accuracy results 
+from each experimental set and calculated the frequency of each 
+acquisition date across all combinations. A higher frequency of a specific 
+acquisition date among high-accuracy results indicates its greater 
+contribution to correct classification, highlighting its stronger discrim-
+inative power. Analysis revealed that images from the early and late 
+growth stages of winter wheat appeared most frequently in high- 
+accuracy combinations, suggesting that imagery from these phenolog-
+ical phases is particularly critical for successful classification. In the 
+highest-accuracy combinations, images acquired during the harvesting 
+period (late growth stage) exhibited the highest frequency, followed by 
+those from the emergence and wintering periods (early growth stage) 
+(Table 8).
+Furthermore, we applied the Gradient-weighted Class Activation 
+Mapping (Grad-CAM) technique to visualize features within the tem-
+poral module layers, aiming to evaluate the wheat plot recognition 
+Fig. 12. The comparison between our BTSM-UNet and the other deep learning models. The asterisk indicates the level of significance (p***<0.001, 
+p**<0.01, p*<0.05).
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+14 
+capabilities of the T-BiVM and S-BiVM modules. The temporal visuali-
+zation results revealed that in the temporal model, late-growth-stage 
+images (May 25) received the highest attention weights, followed by 
+images from the overwintering period (February 25) and the emergence 
+period (October 23) in the early growth stage. The spatial visualization 
+results further demonstrated that despite the diverse distribution pat-
+terns and high complexity of the wheat plots, the network was able to 
+accurately capture wheat-planted areas and effectively focus on them. 
+For instance, in complex areas with interwoven construction land and 
+farmland, the network consistently assigned higher attention weights to 
+highly heterogeneous fragmented wheat plots (Fig. 11e and f).
+6.2. Explanation of the model advantages
+In this study, we proposed a Bidirectional Temporal-Spatial Vision 
+Mamba-UNet on time-series imagery and tested its performance in both 
+the northern and southern areas across China. Both test sites achieved 
+high accuracy; for example, the predicted precision of winter wheat in 
+sites T1 and T2 are 0.95 and 0.96, respectively. The accuracy difference 
+between the two sites can mainly be attributed to the length of the time- 
+series sequence, with site T1 having 22 acquisition dates and site T2 
+having 32 acquisition dates. The longer time-series sequence retains 
+more temporal signals and better models the changing relationship 
+during the winter wheat growing season, especially for images at key 
+phenological stages [5]. Moreover, our method can better capture 
+temporal dependencies through a bidirectional modeling mechanism, 
+effectively simulating the growth patterns of winter wheat over time. In 
+addition, the visual mapping of the predicted results also showed 
+satisfactory performance, with wheat and non-wheat pixels well 
+distinguished and field boundaries well extracted using the BTSM-UNet 
+model. This result benefits from the ability of Vision Mamba to effec-
+tively capture the global context of images, addressing the position 
+sensitivity inherent in visual data, especially for high-resolution imagery 
+[40,42].
+This study used 9 Sentinel-2 bands for model training and testing, 
+including three visible light bands (Red, Green, and Blue), one near- 
+infrared (NIR) band, three red-edge bands, and two short-wave 
+infrared bands. We found that the quantitative accuracy of different 
+band combinations was generally similar for winter wheat identifica-
+tion. This is likely because the phenological changes in winter wheat are 
+more significant than those in other land cover types, making it easier 
+for the temporal model to identify winter wheat signals in multiple 
+bands [21,26]. Notably, the inclusion of red-edge bands contributed 
+more significantly to improving classification accuracy compared to the 
+addition of short-wave infrared bands (Table 5). This may be because 
+red-edge bands are typically more sensitive to biochemical content in 
+Fig. 13. Ground truth and predicted results from the BTSM-UNet model for Xinyang City, Henan Province and Huainan City, Anhui Province. The green pixels 
+represent ground truth winter wheat, while the yellow pixels indicate winter wheat predicted by the BTSM-UNet model. The zoomed-in maps display spatial details at 
+locations a, b, and c. The RGB composite image of Xinyang was acquired on 21 October 2023, while that of Huainan was acquired on 20 November 2023.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+15 
+vegetation, whereas short-wave infrared bands are more sensitive to 
+crop residue and vegetation moisture content [27]. The visualization 
+results of classification under different band combinations showed some 
+differences, especially in field boundaries and plot details. This is 
+possibly due to the high degree of fragmentation at field boundaries and 
+the less noticeable changes in non-wheat areas over time, leading to 
+greater uncertainty in the mapping results.
+The proposed method in this paper achieves better results than 
+existing mainstream deep models in extracting features from multi- 
+temporal images and optimizing model runtime efficiency. Our statis-
+tical results show that the method proposed in this paper has significant 
+improvements over the current mainstream several time series models 
+(Fig. 12). The four accuracy indicators of the BTSM model (i.e., MCC, F1- 
+score, Precision, and Recall) are almost all significantly higher than 
+those of the other six mainstream models. For instance, the MCC of the 
+BTSM model is approximately 28 % higher than that of the CNN-BiLSTM 
+model, and the F1 score is nearly 15 % higher. Our significance analysis 
+also provides a quantitative demonstration of the superiority of this 
+method in terms of extraction accuracy. UNet3d and UTS-Former 
+(embedded with the Transformer framework) have demonstrated 
+excellent segmentation performance in remote sensing research, but 
+these networks primarily rely on multiple convolutional layers or 
+transformers to extract and fuse local and global feature information, 
+leading to high model complexity and low runtime efficiency [4,7]. In 
+contrast, our method can reduce the model parameter count to 4.86 M 
+and the computational cost to 60 GFLOPs, while achieving a runtime 
+efficiency of 24FPS under the same input data resolution conditions. 
+UNet3d has a computational cost of 2159 GFLOPs and a runtime effi-
+ciency of 9 FPS (Table 4). UTS-Former uses a spatiotemporal feature 
+extraction module to bridge the encoder and decoder of the network, 
+effectively compensating for the loss of temporal features caused by 2D 
+convolutions. However, the vision transformer used in UTS-Former has a 
+high model complexity that scales quadratically with sequence length, 
+limiting its application in high-resolution, long-time series data [4]. In 
+comparison, the Bidirectional Vision Mamba model inherits the char-
+acteristics of state-space models, enabling it to process long sequences in 
+linear time, making it ideally suited for dealing with high-resolution, 
+long-term remote sensing data series [15]. The complexity of our 
+method is 50 % lower than that of UTS-Former, and the data processing 
+speed is three times faster. The goal of an effective model is not to 
+maximize its parameter count but to achieve high parameter efficiency 
+and information utility, effectively acting as an adaptive filter that dis-
+cards noise while preserving task-relevant signals. The selective mech-
+anism inherent in the State Space Model (e.g., Mamba) fulfills this role. 
+It dynamically prioritizes critical phenological stages (e.g., heading and 
+maturing) while suppressing irrelevant temporal information (e.g., 
+dormant phases), thereby allocating limited computational resources to 
+the most discriminative features. This selective compression aligns with 
+the information bottleneck principle, which favors minimal sufficient 
+representations. Consequently, the model achieves an optimal balance 
+between representational power and complexity. This explains why a 
+reduction in parameters and FLOPs does not compromise performance 
+but instead leads to a more efficient and generalizable architecture.
+6.3. Limitations and potential applications
+Although the proposed method achieved promising results in this 
+study, it faces certain challenges when applied to other large-scale 
+winter wheat remote sensing identification. Specifically, more 
+research is needed to evaluate how well the model generalizes to other 
+regions with varying crop planting structures and phenological condi-
+tions. The model was trained and validated using large, relatively flat 
+plots in the North China Plain (NCP). Its application in mountainous 
+areas poses significant challenges not explicitly addressed in the current 
+study. Factors such as phenological shifts, varied geographical envi-
+ronments, diverse farming practices, and data quality issues all 
+significantly impact the model’s performance. Nevertheless, experi-
+mental results from fragmented plots in Xinyang and Huainan, which 
+are characterized by a wheat-rice rotation in contrast to the wheat-corn 
+rotation dominant in the NCP, demonstrate that the resulting spatial 
+distribution maps capture winter wheat plot boundaries more compre-
+hensively (Supplementary Materials, Fig. 13). Although some misclas-
+sification and omission errors occurred in fragmented areas, the overall 
+performance remained satisfactory, with Matthews Correlation Coeffi-
+cient (MCC) values of 0.87 in Xinyang and 0.83 in Huainan. Moving 
+forward, integrating digital elevation models (DEMs) for topographic 
+correction or developing terrain-invariant feature representations will 
+be essential for achieving robust performance in such complex regions. 
+In addition, the success of our phenology-based model hinges on the 
+target crop possessing a clear and unique temporal signature. Winter 
+wheat, with its characteristic green-up in early spring followed by rapid 
+senescence, is an ideal case in point. Extending this approach to crops 
+like corn or soybean could be challenging, as they often have over-
+lapping growing seasons and less spectrally distinct phenological phases 
+in intensive agricultural systems. The model would require retraining 
+and might achieve lower accuracy if the interspecies temporal separa-
+bility is reduced. Future work should explicitly test the model’s trans-
+ferability across a wider range of agro-ecosystems.
+Future research should also delve deeper into enhancing the model’s 
+generalization capabilities. This entails enhancing the model’s adapt-
+ability to diverse regional geographical environments, phenological 
+changes, and climatic conditions, as well as its compatibility with data 
+from various sensors [41]. A promising avenue for all-weather crop 
+monitoring is the integration of SAR data from sensors like Sentinel-1. 
+However, fusing optical and SAR time series presents a considerable 
+challenge. The physiologically meaningful optical indices (e.g., NDVI) 
+and the structurally sensitive SAR backscatter represent fundamentally 
+different physical quantities. Developing a unified framework that 
+effectively leverages the complementary strengths of both data type-
+s—using SSMs to model their complex, coupled temporal dynam-
+ics—remains an open and highly valuable research challenge [30]. 
+Another critical consideration for the practical application of crop 
+mapping methods is their robustness to data noise and occlusion, 
+particularly from cloud cover. While this study intentionally controlled 
+cloud cover (all images <20 %) to isolate the core objective of evalu-
+ating phenological sequence construction, the impact of cloud contam-
+ination warrants discussion. It is important to note that the impact of 
+cloud cover is not solely a function of its spatial coverage but is intrin-
+sically coupled with the phenological timing of the obscured observa-
+tion. Our model’s performance likely exhibits a nonlinear sensitivity to 
+cloudy images depending on the growth stage they occlude. For 
+instance, the loss of a clear observation during a transitional or 
+non-critical period may have a minimal impact due to the inherent 
+redundancy in the temporal sequence. In contrast, the occlusion of a key 
+phenological window (e.g., the highly discriminative green-up or 
+heading stages) could significantly degrade accuracy, as the model 
+would be deprived of the most salient spectral-temporal features. This 
+coupling effect makes a simplistic evaluation based solely on uniform 
+cloud coverage percentages less meaningful. Therefore, a more nuanced 
+future investigation is essential, one that systematically analyzes the 
+interaction between the timing of data gaps/noise and model perfor-
+mance, rather than just the magnitude of coverage. This would provide a 
+truly comprehensive assessment of robustness for operational deploy-
+ment. Furthermore, several advanced Mamba variants, such as 
+RS-Mamba [40] and Samba [43], have recently demonstrated remark-
+able performance in single-temporal remote sensing image analysis. 
+While a direct comparison was not feasible within our multi-temporal 
+framework, their innovative designs (e.g., specialized remote sensing 
+adaptations, efficient skip-connections) offer valuable inspiration. A 
+promising future direction is to explore how these architectures can be 
+extended or integrated into temporal modeling paradigms, potentially 
+leading to even more powerful spatio-temporal analyzers for 
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+16 
+agricultural remote sensing.
+7. Conclusions
+In this study, we introduced a novel Bidirectional Temporal-Spatial 
+Vision Mamba-UNet (BTSM-UNet) for Sentinel-2 imagery to enhance 
+the efficiency and segmentation accuracy of winter wheat mapping. We 
+designed an innovative spatiotemporal decoupled temporal feature 
+extraction module based on the bidirectional vision mamba structure 
+(Bi-TSM) which can better extract spatiotemporal global information 
+and improve the processing efficiency of long-series images. By using 
+multi-scale fusion techniques, the Bi-TSM is applied to different feature 
+map scales to reduce the loss of temporal context information when 
+processing 3D time-series data. The results demonstrated that our BTSM- 
+UNet outperformed mainstream deep models, achieving average MCC 
+and F1 scores of 0.905 and 0.952, respectively. Additionally, multi-band 
+combinations showed superior performance in terms of accuracy and 
+model stability. Moreover, our BTSM-UNet achieved significant 
+improvement in data processing efficiency, a decrease in the number of 
+parameters, and a reduction in model complexity, demonstrating the 
+high efficiency and good performance of our proposed method. To our 
+knowledge, this represents the first effort to achieve high-quality wheat 
+mapping based on multi-temporal imagery by leveraging Mamba’s state 
+space sequence models. Furthermore, the modular architecture of our 
+model facilitates seamless adaptation to multi-source remote sensing 
+data (such as Landsat) and diverse agroecological zones, establishing a 
+technical reference for high-precision crop identification across het-
+erogeneous landscapes.
+Funding
+This work was supported by the National Natural Science Foundation 
+of China (Award Nos. 42,201,112 and 32,471,999), the Youth Innova-
+tion Program of the Chinese Academy of Agricultural Sciences 
+(Y2025QC11), the National Key Research and Development Program of 
+China (Award Nos. 2022YFD2001105), and the Central Public-interest 
+Scientific Institution Basal Research Fund (Award Nos. JBYW-AII- 
+2025–40).
+Institutional review board statement
+Not applicable.
+Informed consent statement
+Not applicable.
+Data availability statement
+No new data were created or analyzed in this study. Data sharing is 
+not applicable to this article.
+Ethics statement
+Not applicable: This manuscript does not include human or animal 
+research.
+CRediT authorship contribution statement
+Lingling Fan: Software, Methodology, Conceptualization. Shi Chen: 
+Validation, Software. Lang Xia: Methodology. Yan Zha: Writing – re-
+view & editing. Qingbo Zhou: Supervision, Methodology. Qi Yan: 
+Writing – review & editing.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Supplementary materials
+Supplementary material associated with this article can be found, in 
+the online version, at doi:10.1016/j.atech.2025.101547.
+Data availability
+Data will be made available on request.
+References
+[1] J. Adrian, V. Sagan, M. Maimaitijiang, Sentinel SAR-optical fusion for crop type 
+mapping using deep learning and Google Earth Engine, ISPRS J. Photogramm. 
+Remote Sens. 175 (2021) 215–235.
+[2] M. Belgiu, O. Csillik, Sentinel-2 cropland mapping using pixel-based and object- 
+based time-weighted dynamic time warping analysis, Remote Sens. Environ. 204 
+(2018) 509–523.
+[3] J. Dong, X. Xiao, M.A. Menarguez, G. Zhang, Y. Qin, D. Thau, C. Biradar, B. Moore, 
+Mapping paddy rice planting area in northeastern Asia with Landsat 8 images, 
+phenology-based algorithm and Google Earth Engine, Remote Sens. Environ. 185 
+(2016) 142–154.
+[4] L. Fan, L. Xia, J. Yang, X. Sun, S. Wu, B. Qiu, J. Chen, W. Wu, P. Yang, A temporal- 
+spatial deep learning network for winter wheat mapping using time-series Sentinel- 
+2 imagery, ISPRS J. Photogramm. Remote Sens. 214 (2024) 48–64.
+[5] L. Fan, J. Yang, X. Sun, F. Zhao, S. Liang, D. Duan, H. Chen, L. Xia, J. Sun, P. Yang, 
+The effects of Landsat image acquisition date on winter wheat classification in the 
+North China Plain, ISPRS J. Photogramm. Remote Sens. 187 (2022) 1–13.
+[6] F. Feng, M. Gao, R. Liu, S. Yao, G. Yang, A deep learning framework for crop 
+mapping with reconstructed Sentinel-2 time series images, Comput. Electron. 
+Agric. (2023) 213.
+[7] I. Gallo, L. Ranghetti, N. Landro, R. La Grassa, M. Boschetti, In-season and dynamic 
+crop mapping using 3D convolution neural networks and sentinel-2 time series, 
+ISPRS J. Photogramm. Remote Sens. 195 (2023) 335–352.
+[8] Gu, A., & Dao, T. (2024). Mamba: linear-time sequence modeling with selective 
+State spaces. arXiv: 2312.00752.
+[9] Z. Han, C. Zhang, L. Gao, Z. Zeng, B. Zhang, P.M. Atkinson, Spatio-temporal multi- 
+level attention crop mapping method using time-series SAR imagery, ISPRS J. 
+Photogramm. Remote Sens. 206 (2023) 293–310.
+[10] Hu, Y., Ma, X., Sui, J., & Pun, M.-O. (2024). PPMamba: a pyramid pooling local 
+auxiliary SSM-based model for remote sensing image semantic segmentation. 
+arXiv: 2409.06309v1.
+[11] I. Kamenova, M. Chanev, P. Dimitrov, L. Filchev, B. Bonchev, L. Zhu, Q. Dong, Crop 
+type mapping and winter wheat yield prediction utilizing Sentinel-2: a case study 
+from upper thracian Lowland, Bulgaria, Remote Sens. (2024) 16.
+[12] N. Kussul, M. Lavreniuk, S. Skakun, A. Shelestov, Deep learning classification of 
+land cover and crop types using remote sensing data, IEEE Geosci. Remote Sens. 
+Lett. 14 (2017) 778–782.
+[13] G. Li, J. Cui, W. Han, H. Zhang, S. Huang, H. Chen, J. Ao, Crop type mapping using 
+time-series Sentinel-2 imagery and U-Net in early growth periods in the Hetao 
+irrigation district in China, Comput. Electron. Agric. (2022) 203.
+[14] L. Liu, X. Xiao, Y. Qin, J. Wang, X. Xu, Y. Hu, Z. Qiao, Mapping cropping intensity 
+in China using time series Landsat and Sentinel-2 images and Google Earth Engine, 
+Remote Sens. Environ. (2020) 239.
+[15] Liu, X., Zhang, C., & Zhang, L. (2024). Vision Mamba: a comprehensive survey and 
+taxonomy. arXiv: 2405. 04404v1.
+[16] K. Luo, L. Lu, Y. Xie, F. Chen, F. Yin, Q. Li, Crop type mapping in the central part of 
+the North China Plain using Sentinel-2 time series and machine learning, Comput. 
+Electron. Agric. (2023) 205.
+[17] A. Meraner, P. Ebel, X. Zhu, M. Schmitt, Cloud removal in Sentinel-2 imagery using 
+a deep residual neural network and SAR-optical data fusion, ISPRS J. Photogramm. 
+Remote Sens. 166 (2020) 333–346.
+[18] S. Mohammadi, M. Belgiu, A. Stein, A source-free unsupervised domain adaptation 
+method for cross-regional and cross-time crop mapping from satellite image time 
+series, Remote Sens. Environ. 314 (2024) 114385.
+[19] M. Pandˇzi´c, D. Pavlovi´c, P. Matavulj, S. Brdar, O. Marko, V. Crnojevi´c, 
+M. Kilibarda, Interseasonal transfer learning for crop mapping using Sentinel-1 
+data, Int. J. Appl. Earth Obs. Geoinf. (2024) 128.
+[20] R. Priyatikanto, Y. Lu, J. Dash, J. Sheffield, Improving generalisability and 
+transferability of machine-learning-based maize yield prediction model through 
+domain adaptation, Agric. For. Meteorol. (2023) 341.
+[21] X. Qi, Y. Wang, J. Peng, L. Zhang, W. Yuan, X. Qi, The 10-meter winter wheat 
+mapping in Shandong Province using sentinel-2 data and coarse resolution maps, 
+IEEe J. Sel. Top. Appl. Earth. Obs. Remote Sens. 15 (2022) 9760–9774.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+17 
+[22] B. Qiu, Y. Luo, Z. Tang, C. Chen, D. Lu, H. Huang, Y. Chen, N. Chen, W. Xu, Winter 
+wheat mapping combining variations before and after estimated heading dates, 
+ISPRS J. Photogramm. Remote Sens. 123 (2017) 35–46.
+[23] Qu, H., Ning, L., An, R., Fan, W., Derr, T., Xu, X., & Li, Q. (2024). A survey of 
+Mamba. arXiv: 2408.01129.
+[24] P. Tang, J. Chanussot, S. Guo, W. Zhang, L. Qie, P. Zhang, H. Fang, P. Du, Deep 
+learning with multi-scale temporal hybrid structure for robust crop mapping, ISPRS 
+J. Photogramm. Remote Sens. 209 (2024) 117–132.
+[25] Tarasiou, M., Chavez, E., & Zafeiriou, S. (2023). ViTs for SITS: vision transformers 
+for satellite image time series. arXiv: 2301.04944v3.
+[26] J. Torres-S´anchez, J. Pe˜na, A. de Castro, F. L´opez-Granados, Multi-temporal 
+mapping of the vegetation fraction in early-season wheat fields using images from 
+UAV, Comput. Electron. Agric. 103 (2014) 104–113.
+[27] K. Tran, H. Zhang, J. McMaine, X. Zhang, D. Luo, 10 m crop type mapping using 
+Sentinel-2 reflectance and 30 m cropland data layer product, Int. J. Appl. Earth 
+Obs. Geoinf. (2022) 107.
+[28] R. Tufail, A. Ahmad, M.A. Javed, S.R. Ahmad, A machine learning approach for 
+accurate crop type mapping using combined SAR and optical time series data, Adv. 
+Space Res. 69 (2022) 331–346.
+[29] C. Wang, J. Huang, M. Lv, H. Du, Y. Wu, R. Qin, A local enhanced mamba network 
+for hyperspectral image classification, Int. J. Appl. Earth Obs. Geoinf. (2024) 133.
+[30] D. Wang, W. Cao, F. Zhang, Z. Li, S. Xu, X. Wu, A review of deep learning in 
+multiscale agricultural sensing, Remote Sens. (2022) 14.
+[31] H. Wang, Y. Yao, Z. Ye, W. Chang, J. Liu, Y. Zhao, S. Li, Z. Liu, X. Zhang, Solution 
+for crop classification in regions with limited labeled samples: deep learning and 
+transfer learning, GIsci. Remote Sens. (2024) 61.
+[32] N. Wang, Q. Wu, Y. Gui, Q. Hu, W. Li, Cross-modal segmentation network for 
+winter wheat mapping in complex terrain using remote-sensing multi-temporal 
+images and DEM data, Remote Sens. (2024) 16.
+[33] X. Wang, S. Zhang, L. Feng, J. Zhang, F. Deng, Mapping maize cultivated area 
+combining MODIS EVI time Series and the spatial variations of phenology over 
+Huanghuaihai Plain, Appl. Sci. (2020) 10.
+[34] Y. Wang, Y. Fang, W. Zhong, R. Zhuo, J. Peng, L. Xu, A spatial–Temporal depth- 
+wise residual network for crop sub-pixel mapping from MODIS images, Remote 
+Sens. (2022) 14.
+[35] Y. Wang, L. Feng, W. Sun, L. Wang, G. Yang, B. Chen, A lightweight CNN- 
+Transformer network for pixel-based crop mapping using time-series Sentinel-2 
+imagery, Comput. Electron. Agric. (2024) 226.
+[36] Y. Wang, L. Feng, W. Sun, Z. Zhang, H. Zhang, G. Yang, X. Meng, Exploring the 
+potential of multi-source unsupervised domain adaptation in crop mapping using 
+Sentinel-2 images, GIsci. Remote Sens. 59 (2022) 2247–2265.
+[37] Z. Wang, H. Zhang, W. He, L. Zhang, Cross-phenological-region crop mapping 
+framework using Sentinel-2 time series Imagery: a new perspective for winter crops 
+in China, ISPRS J. Photogramm. Remote Sens. 193 (2022) 200–215.
+[38] G. Yang, X. Li, P. Liu, X. Yao, Y. Zhu, W. Cao, T. Cheng, Automated in-season 
+mapping of winter wheat in China with training data generation and model 
+transfer, ISPRS J. Photogramm. Remote Sens. 202 (2023) 422–438.
+[39] Q. Zhang, G. Geng, P. Zhou, Q. Liu, Y. Wang, K. Li, Link aggregation for skip 
+connection–Mamba: remote sensing image segmentation network based on Link 
+aggregation Mamba, Remote Sens. (2024) 16.
+[40] Zhao, S., Chen, H., Zhang, X., Xiao, P., Bai, L., & Ouyang, W. (2024). RS-Mamba for 
+large remote sensing image dense prediction. arXiv: 2404. 02668v2.
+[41] L. Zhong, L. Hu, H. Zhou, Deep learning based multi-temporal crop classification, 
+Remote Sens. Environ. 221 (2019) 430–443.
+[42] Zhu, L., Zhang, Q., Wang, X., Liu, W., & Wang, X. (2024). Vision Mamba: efficient 
+visual representation learning with bidirectional State space model. arXiv: 2401. 
+09417v3.
+[43] Q. Zhu, Y. Cai, Y. Fang, Y. Yang, C. Chen, L. Fan, A. Nguyen, Samba: semantic 
+segmentation of remotely sensed images with state space model, Heliyon. (2024) 
+10.
+L. Fan et al.                                                                                                                                                                                                                                      Smart Agricultural Technology 12 (2025) 101547 
+18 

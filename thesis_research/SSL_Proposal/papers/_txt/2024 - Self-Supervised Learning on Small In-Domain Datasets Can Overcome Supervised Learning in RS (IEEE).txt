@@ -1,0 +1,1210 @@
+IEEE JOURNAL OF SELECTED TOPICS IN APPLIED EARTH OBSERV ATIONS AND REMOTE SENSING, VOL. 17, 2024 12797
+Self-Supervised Learning on Small In-Domain
+Datasets Can Overcome Supervised Learning in
+Remote Sensing
+Andres J. Sanchez-Fernandez , Sergio Moreno-Álvarez , Student Member , IEEE,
+Juan Antonio Rico-Gallego , Member , IEEE, and Siham Tabik
+Abstract—The availability of high-resolution satellite images has
+accelerated the creation of new datasets designed to tackle broader
+remote sensing (RS) problems. Although popular tasks, such as
+scene classiﬁcation, have received signiﬁcant attention, the recent
+release of the Land-1.0 RS dataset marks the initiation of endeavors
+to estimate land-use and land-cover (LULC) fraction values per
+RGB satellite image. This challenging problem involves estimating
+LULC composition, i.e., the proportion of different LULC classes
+from satellite imagery, with major applications in environmen-
+tal monitoring, agricultural/urban planning, and climate change
+studies. Currently, supervised deep learning models—the state-of-
+the-art in image classiﬁcation—require large volumes of labeled
+training data to provide good generalization. To face the challenges
+posed by the scarcity of labeled RS data, self-supervised learning
+(SSL) models have recently emerged, learning directly from unla-
+beled data by leveraging the underlying structure. This is the ﬁrst
+article to investigate the performance of SSL in LULC fraction
+estimation on RGB satellite patches using in-domain knowledge.
+We also performed a complementary analysis on LULC scene
+Manuscript received 9 February 2024; revised 31 May 2024; accepted
+23 June 2024. Date of publication 2 July 2024; date of current version
+24 July 2024. This work was supported in part by the project SmartFoR-
+est (in part by MCIN/AEI/10.13039/501100011033 and in part by the Eu-
+ropean Union NextGenerationEU/ PRTR under Grant TED2021-129690B-
+I00), in part by the Spanish Ministry of Science and Innovation under Grant
+PID2019-110315RB-I00 (APRISA), in part by the European Regional De-
+velopment Fund (ERDF/FEDER), in part by Junta de Extremadura under
+Grant IB20040, in part by the project Thematic Center on Mountain Ecosys-
+tem & Remote sensing, Deep learning-AI e-Services University of Granada-
+Sierra Nevada, Ministry of Science and Innovation through the FEDER funds
+from the Spanish Pluriregional Operational Program 2014-2020 (POPE) under
+Grant LifeWatch-2019-10-UGR-01, Grant LifeWatch-ERIC action line, Grant
+LifeWatch-2019-10-UGR-01_WP-8, Grant LifeWatch-2019-10-UGR-01_WP-
+7, and Grant LifeWatch-2019-10-UGR-01_WP-4. (Corresponding author: An-
+dres J. Sanchez-Fernandez.)
+Andres J. Sanchez-Fernandez is with the Department of Computer Systems
+Engineering and Telematics, School of Technology, University of Extremadura,
+10003 Cáceres, Spain (e-mail: sfandres@unex.es).
+Sergio Moreno-Álvarez is with the Department of Computer Languages and
+Systems, National University of Distance Education, UNED, 28040 Madrid,
+Spain (e-mail: smoreno@lsi.uned.es).
+Juan Antonio Rico-Gallego is with the CénitS-COMPUTAEX: Extremadura
+Center for Research, Technological Innovation, and Supercomputing, 10071
+Cáceres, Spain (e-mail: juanantonio.rico@cenits.es).
+Siham Tabik is with the Department of Computer Science and Artiﬁcial
+Intelligence, Andalusian Research Institute in Data Science and Computational
+Intelligence, DaSCI, University of Granada, 18071 Granada, Spain (e-mail:
+siham@ugr.es).
+Code is available online at https://github.com/sfandres/ssl-overcome-
+supervised-rs/.
+Dataset is available online at https://doi.org/10.5281/zenodo.7858952
+and https://doi.org/10.5281/zenodo.6941662.
+Digital Object Identiﬁer 10.1109/JSTARS.2024.3421622
+classiﬁcation. Speciﬁcally, we pretrained Barlow Twins, MoCov2,
+SimCLR, and SimSiam SSL models with ResNet-18 using the
+Sentinel2GlobalLULC small RS dataset and then performed trans-
+fer learning to downstream tasks on Land-1.0. Our experiments
+demonstrate that SSL achieves competitive or slightly better re-
+sults when trained on a smaller high-quality in-domain dataset
+of 194 877 samples compared to the supervised model trained on
+ImageNet-1k with 1 281 167 samples. This outcome highlights the
+effectiveness of SSL using in-distribution datasets, demonstrating
+efﬁcient learning with fewer but more relevant data.
+Index Terms—Deep learning, fraction estimation, land use and
+land cover (LULC), multispectral data, remote sensing (RS), RGB
+satellite images, self-supervised learning (SSL).
+I. I NTRODUCTION
+R
+EMOTE sensing (RS) has emerged as an increasingly
+popular research ﬁeld within Earth observation [1].T h i s
+discipline focuses on acquiring and analyzing data from sensors
+on platforms, such as satellites, airplanes, and drones, to study
+the Earth’s surface changes. These sensors remotely measure the
+electromagnetic radiation reﬂected and emitted, which is then
+processed, analyzed, and transformed into different forms of
+imagery and information. RS offers numerous advantages over
+traditional ground-based methods by the following:
+1) covering large areas at reasonable time intervals;
+2) collecting data in hard-to-reach or hazardous locations;
+3) providing consistent and repeatable measurements over
+time, among others [2].
+Consequently, RS has become a valuable tool in various ﬁelds,
+including agriculture [3], [4], forestry [5], urban planning [6],
+natural resource management [7], [8], and environmental mon-
+itoring [9].
+One of the key applications of RS lies in the classiﬁcation and
+description of different types and uses of land surfaces, com-
+monly known as land use and land cover (LULC) [10].L U L C
+maps are crucial, providing detailed insights into human activi-
+ties and land characteristics, including residential, agricultural,
+industrial, and commercial areas, along with natural features,
+such as forests, water bodies, wetlands, grasslands, and urban
+regions. Accurate and up-to-date LULC information is essential
+for a broad spectrum of RS applications and decision-making
+processes [11], [12], [13].
+© 2024 The Authors. This work is licensed under a Creative Commons Attribution 4.0 License. For more information, see
+https://creativecommons.org/licenses/by/4.0/
+12798 IEEE JOURNAL OF SELECTED TOPICS IN APPLIED EARTH OBSERV ATIONS AND REMOTE SENSING, VOL. 17, 2024
+Supervised deep learning models have demonstrated excep-
+tional performance in processing RS data and performing fun-
+damental computer vision tasks [14]. However, achieving these
+remarkable results requires extensive and high-quality labeled
+datasets, which are resource-intensive and time-consuming to
+create. To mitigate these challenges, self-supervised learning
+(SSL) has emerged as a promising alternative. In SSL, a deep
+learning model ﬁrst learns valuable representations from a large
+unlabeled dataset by completing an assigned pretext task—a spe-
+ciﬁc learning objective or problem designed to be solved in this
+initial pretraining phase. These acquired representations then
+serve as a solid foundation for subsequent supervised tasks [15].
+This innovative learning approach has gained considerable trac-
+tion in computer vision, often producing results that compete
+with or at times surpass traditional supervised methods [16].
+Despite its potential, the adoption of SSL in RS is still limited,
+primarily focusing on a few datasets and tasks, such as scene
+classiﬁcation [16].
+The application of SSL approaches for estimating LULC frac-
+tions per RGB satellite image remains unexplored. This complex
+task involves quantifying the composition of LULC classes (e.g.,
+in percentages) within a given RGB satellite patch. Recently,
+a signiﬁcant development in this ﬁeld has been the release of
+the ﬁrst dataset speciﬁcally tailored for this purpose, known
+as Land-1.0. 1 The availability of this dataset, which provides
+LULC fraction estimates for individual satellite patches, holds
+immense potential to advance applications in diverse areas, such
+as environmental monitoring, natural resource management, and
+land change analysis.
+In light of the above discussion, this article attempts to answer
+the following question: Can SSL models pretrained on a small
+in-distribution dataset outperform popular techniques, such as
+fully supervised (FS) learning with random and ImageNet-1k
+weight initialization in LULC fraction estimation? To this aim,
+we assess the transferability of features learned by pretrained
+SSL models for LULC fraction estimation on RGB satellite
+patches, particularly under scenarios with limited training sam-
+ple availability.
+Our experimentation is carried out in two phases. Initially,
+four state-of-the-art SSL models—Barlow Twins, MoCov2,
+SimCLR, and simple Siamese (SimSiam)—were pretrained on
+the Sentinel2GlobalLULC dataset[17] using 175 381 pure-pixel
+RGB satellite images without labels to acquire transferable
+representations. Subsequently, the Barlow Twins model, which
+demonstrated superior performance in the preliminary phase,
+underwent supervised ﬁne-tuning (FT) on the Land-1.0 dataset.
+This smaller dataset consists of 21 489 mixed-pixel RGB im-
+ages. In this phase, we systematically tested the model’s per-
+formance across different subsets of training samples, varying
+from 5% to 100% of the dataset, to simulate conditions of limited
+sample availability. Then, Barlow Twins is compared against tra-
+ditional deep learning approaches, including FS models initial-
+ized with ImageNet-1k or random weights, focusing on LULC
+fraction estimation. In addition, we assessed its applicability to
+scene classiﬁcation tasks.
+1[Online]. Available: https://doi.org/10.5281/zenodo.7858952.
+The ﬁndings from our study underscore the competitiveness
+of SSL models in both downstream tasks compared with their
+FS counterparts. It is worth noting that the in-domain RS
+dataset used for pretraining the SSL models is approximately
+seven times smaller than ImageNet-1k, signiﬁcantly reducing
+pretraining time. Moreover, when the full dataset is utilized for
+scene classiﬁcation, the SSL model exhibits a distinct advantage,
+outperforming traditional ImageNet-based approaches. These
+results provide compelling evidence of the potential of SSL
+in RS applications. The main contributions of this study are
+summarized below.
+1) This study conducts a detailed evaluation of SSL models
+for LULC fraction estimation on RGB satellite images.
+It includes pretraining the SSL models using a small in-
+domain dataset of LULC RGB patches, which closely mir-
+rors the distribution of the Land-1.0 downstream dataset,
+ensuring relevance and applicability.
+2) This article provides a thorough comparative analysis
+between SSL pretrained models and FS models initial-
+ized with ImageNet-1k and random weights. The com-
+parison per training percentages showcases the supe-
+riority of SSL models over random initialization and
+demonstrates their competitiveness with models initial-
+ized with ImageNet-1k weights. These results under-
+score the promising potential of SSL models for LULC
+fraction estimation and scene classiﬁcation as efﬁcient
+learners.
+3) The ﬁndings offer valuable insights and practical recom-
+mendations for practitioners in the RS ﬁeld, particularly
+beneﬁting researchers who are less familiar with SSL
+approaches. This guidance aims to foster the integration
+of SSL into existing RS methodologies.
+The rest of this article is organized as follows. Section II
+reviews recent publications on the use of SSL models in RS,
+focusing mainly on their application to RGB satellite images.
+Section III introduces the core concepts and characteristics
+of the SSL models considered in this research. Section IV
+details the methodology used in this study. Section V presents
+the results derived from the analyses. Section VI offers a
+comprehensive discussion of these results. Finally, Section VII
+concludes this article.
+II. R ELA TEDWORK
+In the domain of satellite data-based applications, SSL
+has been gaining increasing attention, a trend further am-
+pliﬁed by signiﬁcant achievements in computer vision. Re-
+cent advancements and explorations underscore the grow-
+ing interest in leveraging this convergence. In this context,
+the following three predominant research directions have
+emerged:
+1) the creation of extensive RS datasets speciﬁcally designed
+for SSL pretraining;
+2) the evaluation of state-of-the-art SSL models on popular
+RS datasets;
+3) the creation of RS-speciﬁc SSL architectures.
+Below, we discuss the most relevant works within each trend.
+SANCHEZ-FERNANDEZ et al.: SSL ON SMALL IN-DOMAIN DA TASETS CAN OVERCOME SUPERVISED LEARNING IN RS 12799
+A. RS-Speciﬁc Pretraining Datasets
+The work presented in [18] introduces the SSL4EO-S12
+dataset, marking a pioneering contribution to the realm of unla-
+beled RS pretraining datasets. This dataset comprises diverse im-
+ages from different geographical regions worldwide, leveraging
+data from the Sentinel-2 L1C, Sentinel-2 L2A, and Sentinel-1
+platforms. Notably, it incorporates overlap ﬁltering for image
+patches, a feature that sets it apart from earlier datasets, such
+as SeCo [19]. Purposefully designed to meet the demands of
+multiple RS applications, the SSL4EO-S12 dataset is tailored
+to bridge the domain gap that typically challenges conventional
+ImageNet pretraining practices.
+Rigorous empirical evaluations demonstrated the efﬁcacy
+of SSL4EO-S12, highlighting its superiority over ImageNet
+and other smaller RS datasets. Speciﬁcally, DINO, MAE, and
+data2vec exhibited superior performance when pretrained on
+SSL4EO-S12 and tested under linear probing (LP) across three
+distinct downstream tasks: scene classiﬁcation, semantic seg-
+mentation, and change detection. However, several notable lim-
+itations of SSL4EO-S12 were identiﬁed, including its lack of
+representation of certain land-cover regions, the inclusion of
+only medium-resolution images, and the presence of instances
+with ambiguous geospatial overlap.
+B. Evaluating SSL in RS
+Within the second research context, the study in[20] conducts
+a thorough investigation into SSL models, complemented by a
+series of insightful benchmarking experiments. This study ex-
+plores the application of generative, predictive, and contrastive
+methodologies to analyze RS data. A signiﬁcant strength of
+this work is its meticulous focus on elucidating the inherent
+challenges and distinct properties associated with multispectral,
+hyperspectral, synthetic aperture radar, and multimodal data.
+These ﬁndings encompass the physical signiﬁcance of data
+measurements, the representation of multiple objects within
+scenes—especially in low-resolution scenarios where a single
+pixel may encompass multiple object categories, and the tem-
+poral variability of the data. Speciﬁcally, the study employed
+pretrained SSL models, such as MoCov2, SwA V , SimSiam, and
+Barlow Twins, using popular RS datasets, including BigEarth-
+Net, SEN12MS, and So2Sat-LCZ42. Their evaluation demon-
+strates that the contrastive negative sampling model, MoCov2,
+outperforms alternative methods for the classiﬁcation task on
+EuroSA T[21]. The study provided valuable insights into the
+issue of model collapsing, thereby enhancing the understanding
+of SSL in RS contexts.
+Pursuing a similar objective, Berg et al. [16] conducted a
+comprehensive evaluation of diverse SSL methods across public
+scene classiﬁcation datasets, including RESISC-45 [22],E u -
+roSA T, Aerial Image Dataset [23], and UC-Merced [24]. Their
+results showcased the performance of SSL models through a
+benchmarking process that involved training on incrementally
+larger portions of the same training dataset.
+In the evolving research landscape, the study presented in[25]
+highlights the capability of SSL methods to capture visual
+features with higher discriminative power than conventional
+supervised approaches with ImageNet initialization. This work
+effectively leverages contrastive strategies to transfer mean-
+ingful representations extracted from aerial imagery to RS
+datasets, signiﬁcantly improving classiﬁcation performance for
+downstream tasks. In addition, notable improvements are
+demonstrated through hierarchical pretraining, which involves
+initial training on natural images followed by subsequent train-
+ing on RS images [26].
+T h ew o r ki n[27] introduces a comprehensive analysis of
+future trends and challenges associated with SSL methods
+in RS scenes. By employing SimSiam or MoCov2 mod-
+els, this research underscores the effectiveness of SSL mod-
+els in extracting highly informative features for downstream
+tasks. A major contribution of this study is its emphasis
+on considering spatial resolution when creating pretraining
+datasets.
+C. Specialized SSL Architectures for RS
+RS datasets contrast sharply with popular object-centric
+datasets, such as ImageNet, where individual images are in-
+dependent and lack spatial or temporal relationships. Adjacent
+satellite images maintain temporal and spatial continuity, pro-
+viding a unique advantage. These inherent characteristics have
+been leveraged to enhance accuracy in various RS studies.
+A notable example is given by Jung et al. in [28], where
+they developed a novel SSL architecture based on the Sim-
+CLR framework, speciﬁcally tailored for RS applications. Their
+approach utilizes the spatial continuity in neighboring images
+by treating them as positive pairs of the anchor image. By
+averaging the embeddings of these neighboring images, they
+achieve smoother and more accurate representations. Muhtar
+et al. [29] presented IndexNet, a novel SSL framework designed
+for RS semantic segmentation, capable of capturing both image-
+level and pixel-level spatio–temporal representations from large
+amounts of unlabeled data. Another work proposes the use of
+MoCov2 and geography-aware contrastive learning, leveraging
+the spatio–temporal structure of RS data by using temporal
+positive pairs from spatially aligned images over time and in-
+corporating geo-location information into pretext tasks [30].
+Recent research contributions collectively offer valuable and
+growing evidence supporting the efﬁcacy of SSL methodologies
+in enriching RS applications, particularly for classiﬁcation pur-
+poses. However, LULC fraction estimation has not been previ-
+ously explored in this context. By applying SSL methodologies
+to LULC fraction estimation using small in-domain pretraining
+datasets, our work pioneers a direct comparison with traditional
+FS methods, providing valuable insights for practitioners in the
+RS ﬁeld.
+III. B ACKGROUND ON SSL
+SSL is recognized as one of the most promising method-
+ologies for acquiring data representations that exhibit robust
+generalization across downstream tasks [16], [20], [31]. Unlike
+supervised learning, SSL eliminates the need for explicit labels
+but requires understanding the semantic proximity between data
+samples [32].
+12800 IEEE JOURNAL OF SELECTED TOPICS IN APPLIED EARTH OBSERV ATIONS AND REMOTE SENSING, VOL. 17, 2024
+Fig. 1. Main SSL models based on convolutional architectures assessed in this research: Barlow Twins [33],M o C o v 2[36],S i m C L R[15], and SimSiam [35].I n
+cases where gradients are not explicitly indicated, gradient stopping is enabled. EMA stands for exponential moving average.
+In the literature, SSL methods are typically categorized into
+four groups based on their learning processes[16]: 1) generative,
+2) predictive, 3) contrastive, and 4) noncontrastive. The ﬁrst two
+categories fall outside the scope of this research and are not
+addressed here.2 Instead, this study revisits popular SSL models
+based on convolutional architectures that belong to the latter
+two categories (see Fig. 1): Barlow Twins [33],M o C o v 2[34],
+SimCLR [15], and SimSiam [35].
+A. Contrastive
+The core principle underlying contrastive learning involves
+training a model to discern similarities and dissimilarities among
+samples. Essentially, the objective is to maximize the similar-
+ity between representations of positive pairs—two augmented
+versions of the same image—while minimizing the similarity
+between representations of negative pairs—two variations from
+different images. This approach aims to improve the ability of
+the SSL model to encapsulate meaningful and discriminative
+features within the learned representations.
+1) Simple Framework for Contrastive Learning of Visual
+Representations (SimCLR): Developed by Google Research’s
+Brain Team in 2020, SimCLR [15] is a widely recognized SSL
+algorithm that effectively maps semantically similar images to
+proximal points within the representation space, while pushing
+apart semantically dissimilar images. This effectiveness derives
+from four key elements: data augmentation techniques, the base
+encoder, the projection head, and the contrastive loss function.
+Among these components, data augmentation plays a pivotal
+role by exposing the model to diverse perspectives of the same
+image, thereby facilitating the learning of invariant and infor-
+mative features. The transformations applied include random
+cropping, color jittering, Gaussian blurring, and others. During
+training, a set of data augmentation transforms is randomly
+sampled from a predeﬁned pool and applied to each image.
+2A more extensive review on these topics can be found in [31].
+This process generates two distinct batches that contain different
+views of the same images, crucial for training the model to
+recognize semantic similarities under varied conditions. The
+augmented batches are then fed into the base encoder, which
+typically employs a ResNet architecture [37], to extract high-
+level features and generate representation vectors for the images.
+Following this, a projection head, designed as a compact feed-
+forward neural network, maps the high-dimensional representa-
+tions produced by the encoder to a lower dimensional embedding
+space. Training the projection head to optimize the contrastive
+loss function enables SimCLR to develop robust representations
+of input images that are useful for downstream tasks. Notably,
+the original research implemented the normalized temperature-
+scaled cross-entropy loss.
+2) Momentum Contrast (MoCo): Introduced by Facebook
+AI Research (FAIR) in 2020, MoCo is an SSL model
+that leverages contrastive learning to train deep neural net-
+works and extract visual representations from unlabeled
+data [36].
+Unlike traditional contrastive learning methods limited by
+the ﬁxed number of negative samples that can be included in
+each mini-batch, MoCo introduces a more ﬂexible approach:
+it constructs a large, dynamic dictionary that maintains con-
+sistent queries and keys. Positive query–key pairs are formed
+by aligning keys with augmented views of the query images
+(dictated by the pretext task), whereas negative pairs represent
+the opposite scenario. The dictionary operates as a queue that
+continuously accommodates encoded representations from the
+most recent mini-batches while removing the oldest ones. This
+setup allows for a signiﬁcantly larger pool of samples beyond the
+mini-batch size, offering a richer diversity of negative samples.
+To learn effective features, MoCo employs the noise-contrastive
+estimation (InfoNCE) loss.
+Another novel aspect of MoCo is the implementation of
+a momentum-based update process for the key encoder. This
+method involves updating the key encoder gradually, using a
+fraction of its previous state, which ensures consistency across
+SANCHEZ-FERNANDEZ et al.: SSL ON SMALL IN-DOMAIN DA TASETS CAN OVERCOME SUPERVISED LEARNING IN RS 12801
+different mini-batches. Such a momentum-based update fosters
+a smoother evolution of the key encoder, resulting in higher
+quality feature representations and mitigating potential incon-
+sistencies.
+The optimized version of MoCo, MoCov2 [34], represents a
+reﬁned release built upon the foundation laid by its predecessor.
+MoCov2 integrates two key features from SimCLR to enhance
+its functionality: a two-layer MLP projection head including a
+hidden layer of 2048 units, and more robust data augmentation
+techniques, such as Gaussian blur. These enhancements signif-
+icantly strengthen MoCov2’s stability and efﬁcacy within the
+domain of contrastive learning.
+3) Barlow Twins: This SSL model, released by the FAIR
+group in 2021, is rooted in the redundancy-reduction principle,
+originally proposed by H. Barlow, given in [33]. In contrast
+to conventional SSL methods that depend on negative sample
+pairs, Barlow Twins adopts a unique approach similar to con-
+trastive learning [31], but without requiring negative samples.
+As detailed in [38], this unique learning methodology is termed
+negative-sample-free contrastive learning . The essence of this
+model lies in measuring the cross-correlation matrix between
+the outputs of two identical networks—each consisting of an
+encoder and projector head—fed with different augmented ver-
+sions of the same samples within a batch.
+Barlow Twins seeks to minimize the difference between the
+cross-correlation and identity matrices. This optimization drives
+the model to increase the similarity of the embedding vectors
+derived from augmented samples while minimizing redundancy
+among their components. This strategy allows the model to
+effectively mitigate the well-known dimensional collapse prob-
+lem without requiring large batches or introducing asymmetry
+between network twins. This critical problem occurs when the
+model identiﬁes a trivial solution—producing the same con-
+stant value for all input samples—that maximizes similarity but
+impairs learning. Moreover, this is achieved without resorting
+to elements, such as prediction networks, gradient stopping, or
+weighted updates in one of the branches.
+B. Noncontrastive
+Noncontrastive models are speciﬁcally designed to acquire
+representations from unlabeled data without the need for nega-
+tive sample pairs. To achieve this, these models leverage pretext
+tasks, such as data augmentation. The primary objective is to
+enforce the proximity between augmented views of the same
+image within the latent space. These augmented views offer
+diverse perspectives, enabling SSL models to capture robust and
+invariant features. However, it is crucial to highlight that non-
+contrastive models are particularly susceptible to the problem of
+dimensional collapse.
+1) Simple Siamese Network (SimSiam): This network, devel-
+oped by the FAIR group in 2021, adopts a Siamese network ar-
+chitecture, utilizing two parallel networks, one of which includes
+a prediction head [35]. SimSiam aims to maximize the similarity
+between the augmented views of the same image, thus offering
+an advantage by eliminating the need for negative sample pairs.
+This feature is particularly beneﬁcial as it addresses hardware
+TABLE I
+EXAMPLE SHOWCASING THE FRACTION ESTIMA TION OF LULC CLASSES FROM
+A SINGLE RGB SA TELLITEIMAGE
+constraints and challenges often associated with managing large
+batches.
+Notably, SimSiam operates without the use of momentum
+encoders, which simpliﬁes its architecture. However, it is sus-
+ceptible to the collapse problem. To overcome this, SimSiam
+employs two mitigation approaches. First, a stop-gradient ap-
+proach is applied to one of the networks, serving as a primary
+strategy to prevent collapse. Second, a prediction head is added
+to the other branch to introduce diversity and disrupt symmetry,
+further stabilizing the learning process.
+IV . METHODOLOGY
+LULC fraction estimation (see Table I) from RGB satellite
+patches plays a critical role across various RS applications due
+to its extensive utility and practical signiﬁcance. This process
+involves determining the proportions of the different LULC
+categories present in the satellite image of a speciﬁc area, pro-
+viding essential insights into environmental changes, ecosystem
+health, and human activities. For example, in agricultural mon-
+itoring, accurately identifying the distribution of various crop
+types is crucial for forecasting yields and optimizing resource
+distribution. In the context of urban planning, discerning the
+ratio between built-up areas and green spaces is key to informed
+decision-making in infrastructure development and environmen-
+tal preservation initiatives.
+This research assesses the effectiveness of SSL models in
+performing LULC fraction estimation and, additionally, scene
+classiﬁcation. The methodology followed in this study consists
+of two stages, as illustrated in Fig. 2. Initially, Barlow Twins,
+MoCov2, SimCLR, and SimSiam undergo pretraining on a small
+pure-pixel dataset of LULC scenes of RGB satellite patches.
+The knowledge acquired by the top-performing SSL model is
+then transferred to a smaller mixed-pixel dataset, where it is
+compared with traditional supervised approaches. Both phases
+involve extensive hyperparameter tuning.
+A. First Stage: Self-Supervised Pretraining
+1) Dataset: The pure-pixel dataset used to pretrain the SSL
+models is known as Sentinel2GlobalLULC [17]. This dataset
+includes all common LULC classes that cover the entire Earth’s
+12802 IEEE JOURNAL OF SELECTED TOPICS IN APPLIED EARTH OBSERV ATIONS AND REMOTE SENSING, VOL. 17, 2024
+Fig. 2. Workﬂow of the proposed methodology that initiates with a pretraining phase for each SSL model, lasting 500 epochs, on the training subset of th e
+Sentinel2GlobalLULC pure-pixel dataset [17]. Following pretraining, the quality of feature learning is assessed using LP on validation and testing subsets, with
+the model backbones’ weights frozen. The model that exhibits the highest macro F1 evaluation metric during this phase is selected for knowledge trans fer to
+speciﬁc downstream tasks: LULC fraction estimation and scene classiﬁcation. Subsequently, different training partitions of the Land-1.0 mixed-p ixel dataset [39]
+are considered to evaluate the SSL models. Evaluation encompasses both LP and FT techniques, which facilitates the comparison of SSL performance aga inst FS
+models initialized with ImageNet-1k and random weights.
+TABLE II
+OVERVIEW OF THE LULC CLASSES AND THEIR RESPECTIVE SAMPLE COUNTS IN THE DA TASETS:T HE PURE-PIXEL SENTINEL2GLOBALLULC DATASET[17] USED
+FOR PRETRAINING THE SSL MODELS (LEFT-HAND SIDE) AND THE MIXED-PIXEL LAND-1.0 DATA S E T[39] CONSIDERED IN THE TARGET DOWNSTREAM TASKS
+(RIGHT-HAND SIDE)
+surface. It was meticulously crafted to facilitate the creation
+of regional and global LULC maps to train deep learning
+models. Sentinel2GlobalLULC contains RGB satellite patches,
+with each image uniquely representing a single LULC class—
+commonly referred to as pure pixels. These images are generated
+by integrating up to 15 global LULC products available in
+Google Earth Engine, which ensures a robust spatial–temporal
+consensus across the dataset.
+The latest release of this dataset, Sentinel2GlobalLULC
+v2.1,3 comprises 194 877 single-class RGB image patches cat-
+egorized into 29 different LULC classes, such as Barren lands,
+Moss and lichen lands , and Grasslands (as detailed in the
+left-hand side portion of Table II). Each image is a cloud-free
+3[Online]. Available: https://doi.org/10.5281/zenodo.6941662.
+composite of 224 × 224 pixels with a resolution of 10 ×
+10 m, derived from the Sentinel-2 satellite imagery captured
+from June 2015 to October 2020. The dataset provides detailed
+LULC annotations for each image and additional metadata. This
+information includes details about the level of consensus reached
+in the annotation process, reverse geo-referencing information,
+the global human modiﬁcation index, and the number of dates
+used to create the composite dataset.
+2) Hyperparameter Tuning: Multiple conﬁgurations are ex-
+plored for each SSL model, including different learning rates,
+hidden and output layer sizes, weight decays, and other param-
+eters. Due to hardware limitations, the training set is reduced to
+40% using a stratiﬁed sampling approach. This approach main-
+tains the original dataset distribution while addressing hardware
+and time constraints. As a result, extensive experimentation is
+SANCHEZ-FERNANDEZ et al.: SSL ON SMALL IN-DOMAIN DA TASETS CAN OVERCOME SUPERVISED LEARNING IN RS 12803
+conducted without compromising the representativeness of the
+dataset.
+Regarding hyperparameter tuning, we use Ray Tune [40],
+a widely recognized Python library for scalable hyperparam-
+eter optimization. This library provides an efﬁcient API that
+supports tuning deep learning models across a broad spectrum of
+hyperparameters, algorithms, and frameworks. In this study, Ray
+Tune was seamlessly integrated with PyTorch to systematically
+explore the hyperparameter space, enabling the identiﬁcation of
+a custom, near-optimal set of hyperparameters for each targeted
+SSL model.
+3) Data Augmentations: In the pretraining process of SSL
+models, data augmentation proves crucial due to the reliance on
+unlabeled data. By generating diverse perspectives of the same
+input data, the model is exposed to a broad spectrum of examples.
+This exposure aids in acquiring meaningful and robust features
+that can adapt to various changes.
+This research employs the data augmentations used by
+MoCov2 and SimCLR: random resized cropping, random hori-
+zontal and vertical ﬂipping, color jittering (with constant hue),
+Gaussian blurring, and normalization. Maintaining the hue con-
+stant in color transformations is strategic, helping the model
+discern color-related discriminative features critical in satellite
+imagery analysis.
+4) Pretraining: Each SSL model is pretrained for 500 epochs
+using its pseudooptimal hyperparameter conﬁguration. This
+strategy aims to balance training effectiveness and the develop-
+ment of meaningful representations, a critical aspect given that
+most SSL methods require extensive training—typically hun-
+dreds of epochs—to achieve effective convergence [41], [42].
+The training set comprises 90% of the Sentinel2GlobalLULC
+dataset, totaling 175 381 unlabeled samples. The remaining parts
+of the dataset are allocated for ofﬂine validation and testing, with
+2.5% (4861 samples) and 7.5% (14 635 samples), respectively.
+These subsets are used to assess the quality of the backbone
+weights upon completing pretraining.
+During the evaluation phase, the backbone weights are du-
+plicated and frozen, with a classiﬁcation head attached on
+top. Subsequently, LP is conducted over 50 epochs, using the
+macro F1 metric to evaluate the effectiveness of the learned
+features, particularly important given the imbalanced nature of
+the dataset. The top-performing SSL model is selected based on
+achieving the highest macro F1 score.
+B. Second Stage: Transfer Learning to Downstream Tasks
+1) Downstream Tasks: The weights obtained from the pre-
+training phase are transferred to evaluate their efﬁcacy in real-
+world RS applications. Speciﬁcally, the primary task is LULC
+fraction estimation using RGB satellite images. In addition,
+scene classiﬁcation is conducted as a supplementary analysis,
+where the most prevalent class in each image is designated as
+its label.
+2) Dataset: The target dataset, known as Land-1.04 [39],
+comprises 21 489 mixed-pixel RGB satellite patches from
+4[Online]. Available: https://doi.org/10.5281/zenodo.7858952.
+Andalusia—the southern region of Spain. Each sample in
+the dataset is associated with fraction values that represent
+its composition, encompassing ten distinct classes, such as
+Artiﬁcial, Annual croplands , and Greenhouses (as detailed in
+the right-hand side portion of TableII). For practical application,
+the Land-1.0 dataset is split into three subsets: train, validation,
+and test, containing 15 038 (70%), 2153 (10%), and 4298 (20%)
+samples, respectively. To simulate a scenario with limited
+samples, the training subset is further subdivided into varying
+percentages, ranging from 5 to 100. This subdivision preserves
+the original class distribution and retains the inherent imbalance
+found in the dataset. The main objective of this segmentation is
+to assess the model’s generalization capabilities relative to the
+proportion of labeled training samples available.
+3) Weight Initialization Techniques: For each training data
+subset, we evaluate the performance of three FS learning meth-
+ods, distinguished by different weight initialization of the back-
+bone network; the attached classiﬁcation head is always ran-
+domly initialized. The initialization methods include 1) random
+weights,2 )ImageNet-1k weights, and 3)pretrained weightsfrom
+the top-performing SSL model on the Sentinel2GlobalLULC
+dataset.
+The use of random weights serves as the foundational ini-
+tialization method, providing a baseline for comparison and
+enabling the assessment of the impact of alternative strategies.
+Following this, we explore the use of ImageNet-1k weights,
+which are well established and widely available, having been
+trained in a supervised manner on a comprehensive image classi-
+ﬁcation dataset [43]. These weights encapsulate general features
+and patterns, making them suitable for transfer learning scenar-
+ios. Finally, we investigate the beneﬁts of using SSL weights
+pretrained on Sentinel2GlobalLULC. This dataset, speciﬁcally
+tailored for LULC classiﬁcation of pure-pixel RGB images, of-
+fers domain-speciﬁc knowledge that could enhance performance
+in LULC fraction estimation tasks, as tested using the Land-1.0
+dataset.
+By evaluating these different weight initialization methods
+across varying amounts of labeled data, we derive insights
+into their respective impacts and the advantages of integrating
+domain-speciﬁc pretraining for LULC fraction estimation.
+4) Transfer Learning Methods: To identify the most suitable
+model for the speciﬁed downstream task, we explored two dis-
+tinct transfer learning strategies: LP and FT. In LP , the initialized
+weights of the layers are kept ﬁxed (i.e., frozen), and only the
+classiﬁcation head is trained. This approach makes it possible to
+evaluate the discriminative capability of the initialized features.
+In contrast, FT involves updating the weights throughout the
+entire network using task-speciﬁc data. This comprehensive
+approach is designed to reﬁne the network’s ability to extract
+features directly relevant to the target downstream task.
+V. E XPERIMENTAL RESULTS
+A. Experimental Setup
+1) Initial Settings: Training and hyperparameter tuning for
+each model take place on the computing nodes of the Turgalium
+12804 IEEE JOURNAL OF SELECTED TOPICS IN APPLIED EARTH OBSERV ATIONS AND REMOTE SENSING, VOL. 17, 2024
+TABLE III
+PSEUDOOPTIMAL HYPERPARAMETER VALUES OBTAINED FROM THE BEST TRIAL CONDUCTED WITH THE RAY TUNE TOOL AFTER EXPLORING THE
+HYPERPARAMETER SPACE
+cluster, part of the CETA-Ciemat high-performance infrastruc-
+ture. Each node within this cluster has two to four NVIDIA
+Tesla V100 GPUs. Every experiment shows the results after
+averaging ﬁve independent runs, each with a different seed. This
+approach ensures that the results are reliable and not dependent
+on the randomness of a single seed, providing a more robust
+evaluation.
+The SSL models detailed in Section III were implemented us-
+ing the Lightly open-source computer vision framework, which
+is speciﬁcally designed for SSL applications [44]. This Python
+library offers a comprehensive and user-friendly framework that
+streamlines the implementation and evaluation of SSL models.
+To optimize memory usage and reduce training time, the ResNet-
+18 architecture [37] was employed.
+In terms of the training setup, each model is trained on a
+single GPU, with conﬁgurations optimized as detailed below
+in Section V- B. Despite variations in speciﬁc settings, several
+hyperparameters remain consistent across all models. During
+pretraining, a batch size of 512 is used, along with the SGD op-
+timizer. The learning rate is initially increased following a linear
+warm-up strategy for the ﬁrst ten epochs, then transitions to a
+cosine decay schedule, continuing without restarts. In addition,
+MoCov2 implements a momentum value of 0.999, consistent
+with the practices outlined in the original research [36].F o r
+downstream tasks, the batch size is reduced to 64, while the
+same optimizer is used.
+2) Evaluation Metrics: The quality of predictions in LULC
+fraction estimation is assessed using two main metrics: overall
+root mean squared error (RMSE), which measures the average
+variance between predicted and actual values across all classes,
+and per-class RMSE, which calculates the RMSE for each
+class. In both cases, lower values indicate better performance.
+For scene classiﬁcation, the primary evaluation metric is the
+macro-averaged F1 score, which averages the F1 scores across
+all classes and is particularly useful for unbalanced datasets.
+Additional metrics include micro F1, weighted F1, and per-class
+F1 scores, where higher scores reﬂect a better balance between
+precision and recall.
+B. Self-Supervised Pretraining: Model Selection
+Before pretraining the SSL models, we used the grid-search
+algorithm provided by Ray Tune to test hyperparameter combi-
+nations. This analysis covered different learning rates ranging
+from 10−4 to0.1·
+√
+bsz, where bsz stands for batch size, hidden
+layer sizes and output dimensions (128, 256, 512), momentum
+values (0.9, 0.99), and weight decays (0,10−4,10−5). The ASHA
+scheduler was used to determine the optimal conﬁgurations,
+TABLE IV
+F1 SCORES OBTAINED FOR EACH SSL MODEL OBTAINED FOLLOWING THE
+EVA L U AT I O NPROTOCOL CONDUCTED AFTER THE FINAL PRETRAINING EPOCH
+ON THE TEST SUBSET OF THE SENTINEL2GLOBALLULC DATA S E T
+aiming to minimize within a constrained timeframe of 12 epochs.
+Moreover, early stopping was implemented with a grace period
+of four epochs. The optimal hyperparameters for each model are
+detailed in Table III.
+The selected SSL models were pretrained on the Sen-
+tinel2GlobalLULC training subset for 500 epochs. Subsequent
+evaluations were performed through LP on the test subset over
+50 epochs, where the backbones were kept frozen to assess the
+robustness of learned features.
+For illustrative purposes, Fig. 3 shows the embeddings from
+the pretrained SSL models on the Sentinel2GlobalLULC test
+subset. The embeddings demonstrate that Barlow Twins pro-
+duces the most structured and discriminative feature space.
+The well-deﬁned and compact clusters suggest that Barlow
+Twins effectively reduces redundancy and learns meaningful
+features. MoCov2 and SimCLR perform moderately, with Mo-
+Cov2 showing relatively better clustering than SimCLR, but nei-
+ther achieves the same level of quality as Barlow Twins. Lastly,
+SimSiam’s embeddings are widely scattered and overlapping,
+indicating its difﬁculty in learning useful representations. The
+embeddings suggest that the model might have learned collapsed
+or redundant representations.
+The above results are also evidenced in Table IV, where Bar-
+low Twins achieves the highest accuracy scores. Consequently,
+the backbone of the Barlow Twins model was selected for further
+transferring learning to downstream tasks.
+C. Performance Analysis
+The pseudooptimal hyperparameters for the FS models—
+whether initialized with weights from pretrained SSL,
+ImageNet-1k, or random—are determined using Ray Tune. This
+process employs the same grid search space as previously used
+(excluding layer sizes that are irrelevant in this context) and
+spans 100 epochs with a grace period of 75 epochs.
+To maintain simplicity, the naming convention of these mod-
+els adopts the structure X-Y-Z. Here, X denotes the training
+SANCHEZ-FERNANDEZ et al.: SSL ON SMALL IN-DOMAIN DA TASETS CAN OVERCOME SUPERVISED LEARNING IN RS 12805
+Fig. 3. t-SNE visualization comparing embeddings generated by the studied SSL methods using the ResNet-18 backbone on the Sentinel2GlobalLULC data set.
+These embeddings illustrate the feature representations learned by the models. Notably, Barlow Twins showcases superior clustering performance. Each color in
+the visualization represents one of the 29 distinct classes found in the Sentinel2GlobalLULC dataset. (a) Barlow Twins. (b) MoCov2. (c) SimCLR. (d) S imSiam.
+TABLE V
+PER-CLASS AND OVERALL RMSE RESULTS OBTAINED FOR LULC FRACTION ESTIMA TION ON THE LAND-1.0 DATA S E T,A VERAGED OVER FIVE RUNS
+method: FS or SSL. 5 Subsequently, Y represents the initializa-
+tion weights: Barlow Twins, ImageNet, or Random. Lastly, Z
+corresponds to the transfer learning algorithm: LP or FT. For in-
+stance, FS-ImageNet-FT represents an FS model initialized with
+ImageNet-1k weights and ﬁne-tuned for the target downstream
+task. When only the ﬁrst two components are mentioned, such
+as FS-ImageNet, it refers to the general performance of the FS
+model, regardless of the transfer learning protocol.
+1) LULC Fraction Estimation: We evaluated the inﬂuence of
+varying training ratios on the performance of the deep learning
+models for the LULC fraction estimation classiﬁcation task
+(see Table V). To simulate real-world scenarios with limited
+data availability, we sampled images from the original Land-1.0
+dataset to create different training subsets. The complete train-
+ing set consists of 15 038 samples, from which we employed
+stratiﬁed sampling to preserve the original distribution across
+subsets. We considered subset sizes of 5%, 10%, 25%, 50%,
+and 100% of the initial training dataset to understand the im-
+pact of data availability on model performance. The validation
+and test sets, comprising 2153 and 4298 samples, respectively,
+remained consistent throughout the experiments to ensure a fair
+comparison of results.
+Fig. 4 displays the RMSE values achieved by each target
+model across different training ratios and transfer learning algo-
+rithms for the LULC fraction estimation task.
+5The SSL model undergoes FS training on the downstream dataset in the same
+way as the other models. However, for simplicity, the abbreviation SSL is used
+instead of SSL-FS.
+In general, under the less demanding LP scenario, SSL-
+BarlowTwins-LP achieves the best results compared with
+FS-ImageNet-LP and FS-Random-LP . In contrast, in the
+most demanding TF scenario, both SSL-BarlowTwins-TF and
+FS-ImageNet-TF achieve highly competitive results, consis-
+tently outperforming the baseline FS-Random-FT across all
+train ratios and transfer learning protocols. The best re-
+sults were observed under the FT scenario. This indicates
+that weights pretrained on an in-distribution dataset, such
+as Sentinel2GlobalLULC, still require FT on the down-
+stream Land-1.0 dataset. Notably, SSL-BarlowTwins-LP out-
+performs FS-Random-FT for smaller train ratios, even though
+the latter has undergone FT on the same target downstream
+dataset.
+Based on average values, SSL-BarlowTwins-LP outperforms
+the FS-Random-LP model by 18.85% (0.099 versus 0.122)
+under the LP setting. Similarly, in FT, it shows an improve-
+ment of 16.16% (0.083 versus 0.099). When comparing SSL-
+BarlowTwins with FS-ImageNet, the performance is generally
+close. Speciﬁcally, SSL-BarlowTwins performs better in LP by
+2.94% (0.099 versus 0.102) but is slightly worse in FT by 6.41%
+(0.083 versus 0.078).
+To gain a deeper understanding of these differences, pairwise
+comparisons were conducted between the three FS models,
+considering the per-class results and employing the FT transfer
+learning method. The FT procedure, which is more powerful
+than LP , facilitates unlocking the full potential of each model.
+By adjusting all the weights in the network, FT enables the
+12806 IEEE JOURNAL OF SELECTED TOPICS IN APPLIED EARTH OBSERV ATIONS AND REMOTE SENSING, VOL. 17, 2024
+Fig. 4. RMSE results obtained for LULC fraction estimation on Land-1.0 using LP and FT. The ResNet-18 feature extractor was pretrained under two parad igms:
+SSL using the Barlow Twins architecture (SSL-BarlowTwins-LP/FT) and FS learning initialized with ImageNet-1k (FS-ImageNet-LP/FT) and random wei ghts
+(FS-Random-LP/FT). Lower RMSE values indicate better performance. The shaded area around each line represents the standard deviation calculated f rom ﬁve
+independent runs with different seeds.
+Fig. 5. RMSE per class and train ratio obtained for LULC fraction estimation using the Land-1.0 dataset after FT the models for 100 epochs. To enhance cl arity,
+the left-hand side side showcases the comparison between the SSL Barlow Twins model and the FS model initialized with random weights (baseline). The right-hand
+side displays the SSL Barlow Twins model against the FS model initialized with ImageNet-1k weights. The per-class metrics are provided for each train ratio,
+with the downstream dataset comprising nine classes. Each bar represents the best performance achieved. Lower RMSE values indicate superior perfor mance.
+(a) Comparison with baseline. (b) Comparison with FS-ImageNet-FT.
+TABLE VI
+PER-CLASS AND OVERALL F1 SCORES OBTAINED FOR LULC SCENE CLASSIFICA TION ON THE LAND-1.0 DATA S E T,A VERAGED OVER FIVE RUNS
+extraction of more relevant and task-speciﬁc features, capturing
+intricate patterns and nuances that LP might overlook.
+Fig. 5(a) compares the performance of SSL-BarlowTwins-FT
+and FS-Random-FT models in the context of LULC fraction
+estimation. The former consistently achieves superior results
+across all classes and training ratios, spanning 60 different
+scenarios. This underscores the effectiveness of the SSL pre-
+trained weights. In contrast, Fig.5(b) provides a second pairwise
+comparison, showing that FS-ImageNet-FT model outperforms
+SSL-BarlowTwins-FT in 54 out of 60 scenarios.
+2) Supplementary Test on LULC Scene Classiﬁcation: Scene
+classiﬁcation serves as an additional experiment, complement-
+ing the results presented above on LULC fraction estimation.
+These results are detailed in Table VI.
+Fig. 6 presents the macro F1 scores. In the LP setting,
+the SSL-BarlowTwins-LP model signiﬁcantly outperforms the
+SANCHEZ-FERNANDEZ et al.: SSL ON SMALL IN-DOMAIN DA TASETS CAN OVERCOME SUPERVISED LEARNING IN RS 12807
+Fig. 6. Macro F1 scores obtained for LULC scene classiﬁcation on Land-1.0 using LP and FT. The ResNet-18 feature extractor was pretrained under two
+paradigms: SSL using the Barlow Twins architecture (SSL-BarlowTwins-LP/FT) and FS learning initialized with ImageNet-1k (FS-ImageNet-LP/FT) and random
+weights (FS-Random-LP/FT). Higher F1 scores indicate superior performance. The shaded area around each line represents the standard deviation cal culated from
+ﬁve independent runs with different seeds.
+Fig. 7. F1 score per class and train ratio obtained for the LULC scene classiﬁcation challenge on the Land-1.0 dataset after FT the models for 100 epochs .
+To enhance clarity, the left-hand side side showcases the comparison between the SSL Barlow Twins model and the FS model initialized with random weigh ts
+(baseline). The right-hand side displays the SSL Barlow Twins model against the FS model initialized with ImageNet-1k weights. The per-class metrics are provided
+for each train ratio, with the downstream dataset comprising nine classes. Each bar represents the best performance achieved. Higher F1 scores indic ate superior
+performance. (a) Comparison with baseline. (b) Comparison with FS-ImageNet-FT.
+FS-Random-LP across all training ratios. Moreover, it surpasses
+the FS-ImageNet-LP model in more than half of the train-
+ing ratios studied. In FT, the SSL-BarlowTwins-FT and FS-
+ImageNet-FT models perform similarly, and both outperform
+the FS-Random-FT model. Notably, the SSL-BarlowTwins-LP
+model achieves a higher F1 score than the FS-Random-FT model
+for almost all the training ratios studied, which is signiﬁcant
+given the increased computational resources required for FT.
+Considering average results, SSL-BarlowTwins-LP signif-
+icantly outperforms the baseline FS-Random-LP model by
+38.86% (0.561 versus 0.404) and 21.32% (0.643 versus 0.530)
+in LP and FT, respectively. When compared to FS-ImageNet-LP ,
+SSL-BarlowTwins-LP shows an average performance improve-
+ment of 2.56% (0.561 versus 0.547). However, the opposite is
+observed with the FT protocol, where FS-ImageNet-FT nar-
+rowly outperforms SSL-BarlowTwins-FT by 1.53% (0.653 ver-
+sus 0.643). Overall, both SSL-BarlowTwins and FS-ImageNet
+demonstrate strong performance in this downstream task, re-
+gardless of the transfer learning protocol used.
+The difference between SSL-BarlowTwins-FT and FS-
+Random-FT becomes more pronounced in the pairwise compar-
+ison [see Fig. 7(a)], with SSL-BarlowTwins-FT outperforming
+the baseline model in 58 out of 60 cases. For nearly every class
+and training ratio, SSL-BarlowTwins-FT consistently provides
+more accurate predictions than random initialization after FT.
+Furthermore, the FS-ImageNet-FT model outperforms the SSL
+counterpart in 41 out of 60 cases [see Fig. 7(b)]. Speciﬁcally, in
+the scenario using 100% of training data, SSL-BarlowTwins-FT
+excels in 8 out of 10 classes. This performance underscores the
+robustness of the model and its potential as a more efﬁcient
+alternative for deep learning applications in these domains.
+VI. D ISCUSSION
+In this study, we compared the performance of SSL models
+with popular FS approaches for the analysis of RGB satellite
+patches, focusing on the critical task of LULC fraction estima-
+tion. In addition, we explored the supplementary task of LULC
+scene classiﬁcation to provide a more comprehensive evaluation.
+Speciﬁcally, we examined the effectiveness of transferring SSL
+models pretrained using in-domain knowledge compared with
+traditional supervised approaches. The results of these compar-
+isons are discussed in detail below, highlighting the strengths
+and potential limitations of each approach in the RS context.
+12808 IEEE JOURNAL OF SELECTED TOPICS IN APPLIED EARTH OBSERV ATIONS AND REMOTE SENSING, VOL. 17, 2024
+A. Barlow Twins: Leading in Clustering Performance
+Among the four SSL models based on convolutional architec-
+tures, Barlow Twins distinctly demonstrated superior clustering
+performance. This method’s ability to produce well-deﬁned
+and compact clusters with clear boundaries between different
+classes indicates its exceptional capacity to capture the intricate
+patterns and nuances in RS data. The effectiveness of Barlow
+Twins in delineating these classes suggests that it generates
+highly discriminative features, which are essential for enhancing
+the performance of downstream tasks, such as classiﬁcation,
+segmentation, and change detection in RS applications.
+B. Outperforming Random Initialization
+Accurately capturing spatial characteristics is crucial for
+many RS applications. This study demonstrates the effectiveness
+of the Barlow Twins model in achieving this goal after pre-
+training on the Sentinel2GlobalLULC dataset. This advantage
+becomes evident when comparing the SSL-BarlowTwins and
+FS-Random models in the target downstream tasks.
+Across both LP and FT scenarios, SSL-BarlowTwins consis-
+tently outperforms the baseline FS-Random model, showcasing
+the effectiveness of SSL to capture the spatial characteristics of
+the RS-speciﬁc classes within the pretraining dataset. Notably,
+the SSL-BarlowTwins model not only outperforms the FS-
+Random model but also shows remarkable consistency across
+various training ratios and downstream tasks, underscoring its
+potential as a powerful tool for RS applications.
+C. Transfer Learning Effects Compared with ImageNet-1k
+In the case of LP , SSL-BarlowTwins-LP consistently out-
+performs FS-ImageNet-LP across various training ratios and
+downstream tasks. This consistent performance highlights the
+nuanced impact of different transfer learning protocols on model
+performance, showcasing the superior adaptability of the SSL-
+BarlowTwins model in capturing relevant features for RS appli-
+cations.
+Fig. 8 shows the classwise differences between the SSL-
+BarlowTwins-FT and FS-ImageNet-FT models, with the latter
+used as the reference. The performance differences between the
+two models for both downstream tasks are minimal. For FT, the
+analysis indicates an average difference of ΔRMSE =0 .0053
+between the SSL pretrained and ImageNet-1k weights for LULC
+fraction estimation. In the scene classiﬁcation task, the average
+difference in macro F1 score is ΔF1 =0 .0308. These results
+highlight the competitive performance of the SSL-BarlowTwins-
+FT model, suggesting it is a viable alternative to traditional
+supervised approaches.
+D. Maximizing Small Pretraining Data
+The performance parity between SSL-BarlowTwins and FS-
+ImageNet is particularly noteworthy, especially considering the
+signiﬁcant differences in the number of classes and training
+images between the two pretraining datasets. The ImageNet-
+1 k dataset, designed for visual object recognition, contains
+1000 classes and 1 281 167 training images. In contrast, the
+Fig. 8. Performance differences per class between the ﬁne-tuned FS models
+initialized with the SSL pretrained and ImageNet-1k weights, the latter being
+the reference for the y-axis. Each color represents one of the ten classes included
+in the downstream dataset, and the variations are shown for different train ratios.
+(a) LULC fraction estimation. (b) LULC scene classiﬁcation.
+Fig. 9. Comparison of pretraining times between the SSL Barlow Twins
+model, utilizing the Sentinel2GlobalLULC dataset, and its FS counterpart
+trained on ImageNet-1k. Both training processes were conducted on a single
+NVIDIA Tesla V100 for 500 epochs and employed a ResNet-18 backbone
+architecture with weights randomly initialized.
+Sentinel2GlobalLULC dataset used to pretrain Barlow Twins
+comprises only 29 classes and 175 381 training samples of RGB
+satellite images.
+This comparison highlights two key points. First, the ro-
+bustness of SSL-BarlowTwins in effectively leveraging in-
+distribution data from smaller and more specialized datasets.
+Second, it underscores the potential of SSL-BarlowTwins in
+scenarios where massive datasets, such as ImageNet-1k, cannot
+be used for training. This adaptability is crucial, especially in
+ﬁelds with limited data availability.
+E. Superior Training Time Efﬁciency
+Fig. 9 illustrates the pretraining times required by the SSL
+Barlow Twins model, which employs a ResNet-18 architecture
+on the Sentinel2GlobalLULC dataset, compared to the same
+backbone when FS trained on the ImageNet-1k dataset. Both
+scenarios utilize a single NVIDIA Tesla V100 and pretraining
+spans 500 epochs. The FS model, initialized randomly, demands
+approximately 59 days and 15 hours to complete the pretraining
+process. This extensive period is necessary to develop and adjust
+weights that are transferable for FT in downstream tasks.
+SANCHEZ-FERNANDEZ et al.: SSL ON SMALL IN-DOMAIN DA TASETS CAN OVERCOME SUPERVISED LEARNING IN RS 12809
+In contrast, the SSL model completes pretraining on the Sen-
+tinel2GlobalLULC dataset in just 2 days and 16 hours. Despite
+the substantial reduction in the number of training samples
+when comparing both datasets, this discrepancy does not lead
+to a drastic decrease in accuracy. Remarkably, both approaches
+achieve similar accuracy results, yet the SSL approach offers a
+22-fold acceleration compared with FS training. This signiﬁcant
+reduction in training time highlights the efﬁciency and potential
+of SSL methods in scenarios where computational resources and
+time are limited.
+VII. C ONCLUSION
+The role of SSL models in RS is gaining momentum due
+to their ability to learn valuable representations from unla-
+beled data. In this study, we explore the potential of SSL in
+the challenging task of LULC fraction estimation using RGB
+satellite patches. In addition, LULC scene classiﬁcation was
+also explored as a supplementary experiment. The aim is to
+determine whether SSL models pretrained with in-domain RS
+datasets can outperform traditional supervised approaches, such
+as FS models with ImageNet-1k and random initialization.
+The ﬁndings revealed that the features learned from SSL
+models, obtained through a pretext task on a small in-domain RS
+dataset of pure-pixel RGB satellite patches, were successfully
+transferred to perform LULC fraction estimation and scene
+classiﬁcation on a smaller dataset of mixed pixels with varying
+train ratios. The experimental results demonstrated that the
+SSL model achieved competitive or slightly better results when
+trained on a smaller high-quality in-domain dataset compared
+to the supervised model trained on the extensive ImageNet-1k
+dataset. This underscores the impressive performance of SSL
+approaches pretrained using in-distribution datasets without la-
+bels, showcasing the efﬁcient learning of SSL in terms of dataset
+size and training time.
+This research opens new avenues for exploring SSL in RS
+data analysis, speciﬁcally for LULC problems. By leveraging
+the strengths of SSL models, we can enhance the accuracy
+and efﬁciency of LULC estimation and scene classiﬁcation,
+potentially transforming practices in environmental monitoring
+and land management.
+ACKNOWLEDGMENT
+The authors would like to thank the computer resources at (i)
+Turgalium, managed by the Extremadura Research Centre for
+Advanced Technologies (CETA-CIEMA T), and (ii) Lusitania
+and the technical support provided by Cénits-COMPUTAEX
+and Red Española de Supercomputación, RES (QS-2021-1-0027
+and QHS-2021-2-0022).
+REFERENCES
+[1] F. F. Sabins Jr and J. M. Ellis, Remote Sensing: Principles, Interpretation,
+and Applications. Long Grove, IL, USA: Waveland Press, 2020.
+[2] O. Dubovik et al., “Grand challenges in satellite remote sensing,” Front.
+Remote Sens., vol. 2, 2021, Art. no. 619818.
+[3] R. P . Sishodia, R. L. Ray, and S. K. Singh, “Applications of remote sensing
+in precision agriculture: A review,” Remote Sens., vol. 12, no. 19, 2020,
+Art. no. 3136.
+[4] S. Khanal, K. Kc, J. P . Fulton, S. Shearer, and E. Ozkan, “Remote sensing
+in agriculture-accomplishments, limitations, and opportunities,” Remote
+Sens., vol. 12, no. 22, 2020, Art. no. 3783.
+[5] Y . Gao, M. Skutsch, J. Paneque-Gálvez, and A. Ghilardi, “Remote sensing
+of forest degradation: A review,”Environ. Res. Lett., vol. 15, no. 10, 2020,
+Art. no. 103001.
+[6] T. Wellmann et al., “Remote sensing in urban planning: Contributions
+towards ecologically sound policies?,” Landscape Urban Plan. , vol. 204,
+2020, Art. no. 103921.
+[7] P . C. Pandey and L. K. Sharma, Advances in Remote Sensing for Natural
+Resource Monitoring. Hoboken, NJ, USA: Wiley, 2021.
+[8] S. Kumar et al., “Remote sensing for agriculture and resource manage-
+ment,” in Natural Resources Conservation and Advances for Sustainabil-
+ity. Amsterdam, The Netherlands: Elsevier, 2022, pp. 91–135.
+[9] Q. Y uan et al., “Deep learning in environmental remote sensing:
+Achievements and challenges,” Remote Sens. Environ. , vol. 241, 2020,
+Art. no. 111716.
+[10] A. V ali, S. Comai, and M. Matteucci, “Deep learning for land use and land
+cover classiﬁcation based on hyperspectral and multispectral Earth obser-
+vation data: A review,”Remote Sens., vol. 12, no. 15, 2020, Art. no. 2495.
+[11] S. Gaur and R. Singh, “A comprehensive review on land use/land cover
+(LULC) change modeling for urban development: Current status and future
+prospects,”Sustainability, vol. 15, no. 2, 2023, Art. no. 903.
+[12] M. N. Ahmad, Z. Shao, and A. Javed, “Modelling land use/land cover
+(LULC) change dynamics, future prospects, and its environmental impacts
+based on geospatial data models and remote sensing data,” Environ. Sci.
+Pollut. Res., vol. 30, no. 12, pp. 32985–33001, 2023.
+[13] S. D. Sasmito et al., “Effect of land-use and land-cover change on mangrove
+blue carbon: A systematic review,” Glob. Change Biol. , vol. 25, no. 12,
+pp. 4291–4302, 2019.
+[14] A. V oulodimos, N. Doulamis, A. Doulamis, and E. Protopapadakis, “Deep
+learning for computer vision: A brief review,” Comput. Intell. Neurosci. ,
+vol. 2018, 2018, Art. no. 7068349.
+[15] T. Chen, S. Kornblith, M. Norouzi, and G. Hinton, “A simple framework
+for contrastive learning of visual representations,” inProc. Int. Conf. Mach.
+Learn., 2020, pp. 1597–1607.
+[16] P . Berg, M.-T. Pham, and N. Courty, “Self-supervised learning for scene
+classiﬁcation in remote sensing: Current state of the art and perspectives,”
+Remote Sens., vol. 14, no. 16, 2022, Art. no. 3995.
+[17] Y . Benhammou et al., “Sentinel2GlobalLULC: A Sentinel-2 RGB image
+tile dataset for global land use/cover mapping with deep learning,” Sci.
+Data, vol. 9, no. 1, 2022, Art. no. 681.
+[18] Y . Wang, N. A. A. Braham, Z. Xiong, C. Liu, C. M. Albrecht, and X. X.
+Zhu, “SSL4EO-S12: A large-scale multimodal, multitemporal dataset for
+self-supervised learning in Earth observation [Software and Data Sets],”
+IEEE Geosci. Remote Sens. Mag. , vol. 11, no. 3, pp. 98–106, 2023.
+[19] O. Manas, A. Lacoste, X. Giró-i Nieto, D. V azquez, and P . Rodriguez, “Sea-
+sonal contrast: Unsupervised pre-training from uncurated remote sensing
+data,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. , 2021, pp. 9394–9403.
+[20] Y . Wang, C. M. Albrecht, N. A. A. Braham, L. Mou, and X. X. Zhu,
+“Self-supervised learning in remote sensing: A review,” IEEE Geosci.
+Remote Sens. Mag., vol. 10, no. 4, pp. 213–247, 2022.
+[21] P . Helber, B. Bischke, A. Dengel, and D. Borth, “EuroSA T: A novel dataset
+and deep learning benchmark for land use and land cover classiﬁcation,”
+IEEE J. Sel. Topics Appl. Earth Observ. Remote Sens. , vol. 12, no. 7,
+pp. 2217–2226, Jul. 2019.
+[22] G. Cheng, J. Han, and X. Lu, “Remote sensing image scene classiﬁ-
+cation: Benchmark and state of the art,” Proc. IEEE , vol. 105, no. 10,
+pp. 1865–1883, Oct. 2017, doi: 10.1109/JPROC.2017.2675998.
+[23] G.-S. Xia et al., “Aid: A benchmark data set for performance evaluation
+of aerial scene classiﬁcation,” IEEE Trans. Geosci. Remote Sens., vol. 55,
+no. 7, pp. 3965–3981, Jul. 2017.
+[24] Y . Y ang and S. Newsam, “Bag-of-visual-words and spatial extensions
+for land-use classiﬁcation,” in Proc. 18th SIGSPATIAL Int. Conf. Adv.
+Geographic Inf. Syst., 2010, pp. 270–279.
+[25] A. Ghanbarzade and H. Soleimani, “Self-supervised in-domain repre-
+sentation learning for remote sensing image scene classiﬁcation,” 2023,
+arXiv:2302.01793.
+[26] C. J. Reed et al., “Self-supervised pretraining improves self-supervised
+pretraining,” in Proc. IEEE/CVF Winter Conf. Appl. Comput. Vis. , 2022,
+pp. 1050–1060.
+[27] C. Tao, J. Qi, M. Guo, Q. Zhu, and H. Li, “Self-supervised remote
+sensing feature learning: Learning paradigms, challenges, and future
+works,” IEEE Trans. Geosci. Remote Sens. , vol. 61, pp. 1–26, 2023,
+doi: 10.1109/TGRS.2023.3276853.
+12810 IEEE JOURNAL OF SELECTED TOPICS IN APPLIED EARTH OBSERV ATIONS AND REMOTE SENSING, VOL. 17, 2024
+[28] H. Jung, Y . Oh, S. Jeong, C. Lee, and T. Jeon, “Contrastive self-
+supervised learning with smoothed representation for remote sens-
+ing,” IEEE Geosci. Remote Sens. Lett. , vol. 19, pp. 1–5, 2022,
+doi: 10.1109/LGRS.2021.3069799.
+[29] D. Muhtar, X. Zhang, and P . Xiao, “Index your position: A novel self-
+supervised learning method for remote sensing images semantic seg-
+mentation,” IEEE Trans. Geosci. Remote Sens. , vol. 60, pp. 1–11, 2022,
+doi: 10.1109/TGRS.2022.3177770.
+[30] K. Ayush et al., “Geography-aware self-supervised learning,” in Proc.
+IEEE/CVF Int. Conf. Comput. Vis. , 2021, pp. 10161–10170.
+[31] R. Balestriero et al., “A cookbook of self-supervised learning,” 2023,
+arXiv:2304.12210.
+[32] R. Balestriero and Y . LeCun, “Contrastive and non-contrastive self-
+supervised learning recover global and local spectral embedding methods,”
+in Proc. Adv. Neural Inf. Process. Syst., 2022, vol. 35, pp. 26671–26685.
+[33] J. Zbontar, L. Jing, I. Misra, Y . LeCun, and S. Deny, “Barlow Twins:
+Self-supervised learning via redundancy reduction,” in Proc. Int. Conf.
+Mach. Learn., 2021, pp. 12310–12320.
+[34] X. Chen, H. Fan, R. Girshick, and K. He, “Improved baselines with
+momentum contrastive learning,” 2020, arXiv:2003.04297.
+[35] X. Chen and K. He, “Exploring simple Siamese representation learn-
+ing,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. , 2021,
+pp. 15745–15753.
+[36] K. He, H. Fan, Y . Wu, S. Xie, and R. Girshick, “Momentum contrast for
+unsupervised visual representation learning,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit., 2020, pp. 9726–9735.
+[37] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for image
+recognition,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. , 2016,
+pp. 770–778.
+[38] Y .-H. H. Tsai, S. Bai, L.-P . Morency, and R. Salakhutdinov, “A note on
+connecting Barlow Twins with negative-sample-free contrastive learning,”
+2021, arXiv:2104.13712.
+[39] Y . Benhammou, J. Rodríguez-Ortega, D. Alcaraz-Segura, and S. Tabik,
+“AndalUnmixingRGB: A dataset of Sentinel-2 RGB imagery acquired in
+Andalusia region of Spain, enriched with environmental ancillary data and
+annotated for blind spectral unmixing using deep learning (license CC BY
+4.0),” 2023, doi: 10.21227/y355-9h30.
+[40] R. Liaw, E. Liang, R. Nishihara, P . Moritz, J. E. Gonzalez, and I. Stoica,
+“Tune: A research platform for distributed model selection and training,”
+2018, arXiv:1807.05118.
+[41] S. Tong, Y . Chen, Y . Ma, and Y . Lecun, “EMP-SSL: Towards self-
+supervised learning in one training epoch,” 2023, arXiv:2304.03977.
+[42] G. Wang, K. Wang, G. Wang, P . H. Torr, and L. Lin, “Solving inefﬁciency
+of self-supervised representation learning,” in Proc. IEEE/CVF Int. Conf.
+Comput. Vis., 2021, pp. 9485–9495.
+[43] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei, “ImageNet:
+A large-scale hierarchical image database,” in Proc. IEEE Conf. Comput.
+Vis. Pattern Recognit., 2009, pp. 248–255.
+[44] I. Susmelj, M. Heller, P . Wirth, J. Prescott, and M. E, “Lightly,” GitHub,
+2020. [Online]. Available: https://github.com/lightly-ai/lightly
+Andres J. Sanchez-Fernandez received the B.Sc.
+degree in industrial technology engineering with a
+specialization in automatic systems and the M.Sc.
+degree in mechatronics engineering from the Univer-
+sity of Malaga, Malaga, Spain, in 2016 and 2017,
+respectively, and the Ph.D. degree in mechatronic
+engineering, focusing on parallel programming on
+heterogeneous CPU–GPU systems, receiving an ex-
+cellent, cum laude, and international doctorate dis-
+tinction from the University of Malaga, in 2022.
+From 2022 to 2023, following his Ph.D. from the
+Department of Computer Architecture, he worked with CénitS-COMPUTAEX
+on data science and machine learning projects applied to renewable energies.
+He is currently a Postdoctoral Researcher with the Department of Computer
+Systems Engineering and Telematics, University of Extremadura, Caceres,
+Spain. His research interests include data science, deep learning for satellite
+image processing, parallel programming, and large-scale data processing on
+heterogeneous systems.
+Sergio Moreno-Álvarez (Student Member, IEEE)
+received the B.Sc. degree in computer science engi-
+neering, the M.Sc. degree in computer engineering,
+and the Ph.D. degree in computer science from the
+University of Extremadura, Caceres, Spain, in 2017,
+2019, and 2022, respectively.
+He is currently a Member and Professor with the
+Department of Computer Languages and Systems,
+National University of Distance Education, Madrid,
+Spain. He has participated as author/coauthor in more
+than 15 JCR journal articles and multiple presenta-
+tions presented at international and national conferences. His research interests
+include high-performance computing, deep learning and its optimization through
+parallelism approaches, and remote sensing.
+Dr. Moreno-Álvarez was the Reviewer in multiple IEEE journals, including
+IEEE T RANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, IEEE G EO-
+SCIENCE AND REMOTE SENSING LETTERS, IEEE TRANSACTIONS ON EMERGING
+TOPICS IN COMPUTA TIONALINTELLIGENCE,o rI E E EJ OURNAL OF SELECTED
+TOPICS IN APPLIED EARTH OBSERV A TIONS AND REMOTE SENSING, among
+others. His Ph.D. has been awarded by the Geoscience and Remote Sensing
+Society’s Spanish Chapter, recognizing his achievements during this period.
+Juan Antonio Rico-Gallego (Member, IEEE) re-
+ceived the computer science engineering degree and
+the Ph.D. degree in computer science from the Uni-
+versity of Extremadura, Cáceres, Spain, in 2002 and
+2016, respectively.
+Formerly he was a Software Consultant, and he is
+currently an Associate Professor with the Department
+of Computer Systems Engineering, University of Ex-
+tremadura, Caceres, Spain, and he is the General Di-
+rector with the Foundation for Advanced Computing
+and Technologies of Extremadura (COMPUTAEX)
+and the Extremadura Supercomputing Center (CénitS). He codevelops Aze-
+quiaMPI, an efﬁcient thread-based full MPI 1.3 standard implementation on
+shared memory platforms. His research interests include analytical performance
+models on heterogeneous platforms and the usage of deep and reinforcement
+learning techniques to high-performance computing platform optimization prob-
+lems, and current message passing interface implementations and applications
+and quantum computing technologies and development.
+Siham Tabik received the B.Sc. degree in physics
+from the University Mohammed V , Rabat, Morocco,
+in 1998, and the Ph.D. degree in computer science
+from the University of Almería, Almería, Spain, in
+2006.
+She is currently Full Professor with the Department
+of Computer Science and Artiﬁcial intelligence, Uni-
+versity of Granada, Granada, Spain. Her research in-
+terests include artiﬁcial intelligence, computer vision,
+and remote sensing for biodiversity conservation and
+global climate change.

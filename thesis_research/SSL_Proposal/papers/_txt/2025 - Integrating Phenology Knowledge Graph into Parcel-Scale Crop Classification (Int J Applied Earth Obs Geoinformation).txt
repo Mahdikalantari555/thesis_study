@@ -1,0 +1,1122 @@
+Integrating phenology knowledge graph into parcel-scale crop classification 
+using multi-period deep time series modelling
+Qianhui Shen
+ , Da He *, Xiaoping Liu *, Qian Shi
+School of Geography and Planning, Sun Yat-sen University, Guangzhou 510275, China
+Guangdong Provincial Key Laboratory for Urbanization and Geo-simulation, Guangzhou 510275, China
+ARTICLE INFO
+Keywords:
+Remote sensing
+Knowledge graph
+Crop classification
+Deep learning
+Agriculture
+ABSTRACT
+Parcels are the fundamental units of agricultural management; accurate crop classification of cropland parcels is 
+crucial for the implementation of precision agriculture. Despite extensive knowledge of crop growth processes, 
+the difficulty in acquiring this knowledge and its modal differences with remote sensing data hinder its appli-
+cation in crop classification research. Moreover, the highly complex and variable growth patterns of crops 
+present significant challenges for time-series crop classification. We propose a novel crop classification frame-
+work that extracts intricate multi-period features of crop growth from remote sensing time-series signals. 
+Additionally, we introduce an automatic construction process for crop remote sensing knowledge graphs based 
+on a decision tree structure, capturing the association between crops and remote sensing time-series data. 
+Through graph convolution, knowledge graph serves as a global guide to improve crop classification. By 
+combining field survey samples with visible, near-infrared, and radar signals, we constructed a parcel-scale 
+dataset of rice and wheat crops across four cities in the middle and lower reaches of the Yangtze River using 
+zonal feature aggregation methods for evaluation. The results indicate that the proposed framework achieves 
+accuracies ranging from 89.45 % to 94.43 % across the four datasets. We conducted inferences in the four cities 
+and compared the results with county-level statistical data, achieving R2 values of 0.89 and 0.97 for wheat and 
+rice planting areas, respectively. Our proposed framework can automatically generate crop knowledge graphs 
+based on samples from different regions, overcoming the modal barriers between the knowledge space and the 
+remote sensing feature space, thus enhancing crop recognition accuracy.
+1. Introduction
+The pressing necessity to enhance agricultural production efficiency 
+and implement precision agricultural management has emerged as a 
+pivotal requirement for contemporary agricultural advancement 
+(Gebbers et al., 2010; Liaghat et al., 2010). Precision agriculture relies 
+on detailed information about cropland, among which crop type infor-
+mation is fundamental and crucial (Porter et al., 2014). Accurate crop 
+classification is essential for effective precision agriculture practices, as 
+different crop types exhibit distinct phenological stages. By accurately 
+identifying crop types, targeted monitoring and tailored agricultural 
+measures, such as optimized fertilization, irrigation, and pest control, 
+can be implemented, thereby enhancing crop yield and quality. 
+Numerous studies and practical applications have demonstrated that 
+utilizing remote sensing technology for crop classification is a highly 
+effective approach (Yang et al., 2021; Zhao et al., 2024).
+Significant improvements in the temporal and spatial resolution of 
+remote sensing data, along with advances in optical and radar imaging 
+technology, have propelled the development of crop type mapping. In 
+particular, the enhancement in temporal resolution enables more 
+frequent and intensive monitoring of crop growth dynamics, thereby 
+providing more effective data for remote sensing-based crop classifica-
+tion, exemplified by the utilization of Moderate Resolution Imaging 
+Spectroradiometer (MODIS) data (Justice et al., 2002; Pan et al., 2012). 
+Taking advantage of temporal resolution, (Gusso et al., 2014) proposed 
+a Medium Resolution Imaging Crop Detection Algorithm (MCDA) that 
+estimates soybean planting area by obtaining dense time series of 
+vegetation index from MODIS imagery. Similarly, (Peng et al., 2011) 
+introduced an EVI/LSWI threshold function based on dense time series 
+from MODIS imagery to identify rice fields in flooded conditions, 
+tailored to local agricultural management practices. However, while 
+MODIS’s high temporal resolution facilitates multi-temporal crop 
+* Corresponding authors at: School of Geography and Planning, Sun Yat-sen University, Guangzhou 510275, China.
+E-mail addresses: heda@mail.sysu.edu.cn (D. He), liuxp3@mail.sysu.edu.cn (X. Liu). 
+Contents lists available at ScienceDirect
+International Journal of Applied Earth  
+Observation and Geoinformation
+journal homepage: www.elsevier.com/locate/jag
+https://doi.org/10.1016/j.jag.2025.104809
+Received 21 February 2025; Received in revised form 22 April 2025; Accepted 20 August 2025  
+International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+Available online 2 September 2025 
+1569-8432/© 2025 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY license ( http://creativecommons.org/licenses/by/4.0/ ). 
+identification, its coarse spatial resolution is inadequate for the small 
+and fragmented farmlands that are widely distributed, leading to sig-
+nificant uncertainties due to the mixed pixel problem (Fritz et al., 2015). 
+To address this limitation, improvements in the spatial resolution of 
+Landsat and the Sentinel series satellites launched in 2015 have 
+enhanced the detailed representation of crop coverage areas. For 
+example, (Tatsumi et al., 2015) developed a multi-crop classification 
+method using EVI and its spatial statistical features derived from Landsat 
+7 Enhanced Thematic Mapper Plus (Landsat 7 ETM+). Likewise, 
+(Kobayashi et al., 2020) calculated various vegetation indices and ana-
+lysed the impact of different optical feature combinations from Sentinel- 
+2A data on crop classification. However, optical data are susceptible to 
+cloud cover, which may result in missing critical information during key 
+growing stages of crops (Arias et al., 2020). In contrast, due to the 
+advantage of microwave signals in penetrating clouds, SAR data exhibit 
+significant potential in regions with pervasive cloud cover. (Xu et al., 
+2018) constructed a temporal intensity model using multi-temporal SAR 
+backscattering responses and introduced a Spectral Similarity Value 
+(SSV) measurement method for crop identification. Furthermore, 
+(Chakhar et al., 2021) combined Sentinel-1 and Sentinel-2A data to 
+analyse the effects of synthetic aperture radar and optical data on crop 
+classification.
+Supported by abundant remote sensing data (Cao et al., 2022a,b), 
+methods for remote sensing crop classification are primarily categorized 
+into vegetation index (VI) based methods and machine learning ap-
+proaches. For instance, (Chen et al., 2023) developed a Green and Water 
+Content Composite Index (GWCCI) to map soybean using NDVI (related 
+to greenness) and shortwave infrared (SWIR) bands based on Sentinel-2 
+data. The VI-based method allows for intuitive differentiation of crops 
+without requiring samples. However, VI-based methods rely on simple 
+band calculations derived from local agricultural practices, which limits 
+their ability to fully exploit the potential information across multiple 
+bands. In contrast, machine learning methods can automatically learn 
+complex feature combinations from the data, integrating multiple bands 
+and various vegetation indices to thoroughly explore the intricate re-
+lationships between remote sensing data and crop type information. 
+Consequently, machine learning provides greater flexibility and higher 
+accuracy in remote sensing-based crop classification. For instance, 
+(Kussul et al., 2017) compared the effectiveness of CNN and MLP ar-
+chitectures for crop classification in heterogeneous environments using 
+annual Landsat-8 and Sentinel-1A data. Similarly, (Pott et al., 2022) 
+employed a random forest model to produce an accurate map of soybean 
+and corn using Sentinel-2 time series data. However, machine learning 
+models treat data from different periods as independent features, failing 
+to automatically capture temporal dependencies. This limitation hinders 
+the effective utilization of crop growth temporal patterns in crop 
+classification.
+Utilizing remote sensing time-series data allows the capture of dy-
+namic alterations in crops throughout the growing season and differ-
+entiates the distinct phenological characteristics and growth patterns of 
+diverse crops. For example, certain crops can be preliminarily identified 
+by exploiting key unique time points in the growing process. (Xiao et al., 
+2006) employed VI thresholds to identify rice during the flooding and 
+transplanting stages based on time series satellite data. However, such 
+methods heavily rely on experiential knowledge and fail to fully exploit 
+the entire time series, potentially overlooking critical information 
+beyond the selected key stages. In recent years, many studies have 
+focused on modeling complete time series data. Notably, Recurrent 
+Neural Networks (RNNs) have proven to be an effective method for 
+temporal pattern recognition. (De Castro et al., 2020) employed LSTM 
+and Bi-LSTM models for pattern recognition using Sentinel-1 SAR time 
+series data throughout the year to determine rice planting distribution. 
+(Xu et al., 2020) developed the DeepCropMapping (DCM) method, 
+introducing attention mechanisms into LSTM for dynamic corn and 
+soybean mapping. Furthermore, some researchers have also combined 
+CNN and RNN to leverage the strengths of both methods. (Zhao et al., 
+2020) established a Multi-CNN Sequence-to-Sequence (MCNN-Seq) 
+model to define the relationship between optical and SAR time series, 
+effectively mining temporal information. Despite these advances, the 
+heterogeneous nature of crops across various geographic regions and 
+climatic conditions- particularly in growing cycles, phenological stages, 
+and maturity- remains a challenge. For instance, rice in Northern China 
+grows once a season, whereas in the South, three-season rice is observed. 
+Consequently, these methods usually assume a fixed periodicity in the 
+time series, hampering the ability to capture complex multi-period 
+patterns in crop time series from different regions.
+The aforementioned crop classification methods predominantly rely 
+on data-driven models, which classify by analyzing substantial volumes 
+of remote sensing data and time-series characteristics. In contrast, 
+knowledge-driven models are more interpretable and transferable. As a 
+structured form of knowledge representation, knowledge graph can 
+systematically organize and represent domain expert knowledge 
+(Todorovski et al., 2006), such as crop growth characteristics, planting 
+patterns, and geographic distribution, providing rich semantic context 
+for remote sensing data analysis. For instance, (Peng et al., 2024) 
+developed three phenology indicators for mapping tea plantations by 
+utilizing knowledge related to tea tree cultivation management practices 
+and biochemical substance content. Similarly, (Zhao et al., 2022) con-
+structed a phenology parameter map using optimal classification fea-
+tures from machine learning, selecting the corresponding best 
+classification features based on the available image period and classi-
+fying early-stage crops through matrix segmentation. Additionally, 
+(Barriere et al., 2024) incorporated contextual data on crop rotation and 
+historical survey information as prior knowledge into a stacked LSTM 
+model, improving crop classification performance. However, there are 
+limitations in current knowledge graph-based crop classification studies. 
+First, the knowledge graphs used in these studies are not explicit graph 
+structures, which impedes the hierarchical and systematic representa-
+tion of remote sensing crop knowledge. Second, the agricultural 
+knowledge used in some studies is difficult to acquire and highly 
+dependent on complete agricultural survey systems, such as historical 
+crop rotation data, which are usually unavailable in most regions. 
+Furthermore, traditional knowledge graphs are typically constructed 
+from text repositories or corpora, such as online encyclopedias and 
+literature. This form of knowledge organization makes it challenging to 
+integrate remote sensing information, such as spatial distribution and 
+temporal changes in reflectance spectra, thereby impeding the utiliza-
+tion of knowledge graphs to directly guide remote sensing crop classi-
+fication. Moreover, the challenge lies in the inherent modality 
+heterogeneity between the structured organization of knowledge graphs 
+and the Euclidean space of remote sensing reflectance spectra, which 
+complicates their integration with existing crop classification models. 
+Due to the lack of an effective way for knowledge acquisition and 
+integration, current knowledge graph-based remote sensing crop clas-
+sification methods struggle to break through the barriers between 
+knowledge space and remote sensing space, hindering progress in 
+addressing the challenges faced in remote sensing crop classification.
+To address the challenges faced in the current field of remote sensing 
+crop classification, our study proposes a parcel-level multi-modal crop 
+classification framework that integrates auto-generated knowledge 
+graph into multi-period deep time series modelling, aiming to overcome 
+the limitations of existing methods and improve the accuracy, inter-
+pretability, and applicability of crop classification. Our work makes the 
+following key contributions: 
+1. Automated Crop Knowledge Graph Generation: In response to chal-
+lenges such as the difficulty in acquiring expert knowledge in remote 
+sensing crops and the inability of traditional knowledge graphs to 
+incorporate knowledge related to remote sensing signal responses, 
+we propose a decision tree parameter learning based method for 
+knowledge graph generation. By automatically extracting crop time- 
+spectral feature knowledge from the decision tree mechanism, we 
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+2 
+have constructed a clear and structured knowledge graph that re-
+flects the relationship between remote sensing reflectance features 
+and crop growth stages, effectively overcoming the issues of expen-
+sive and complex expert knowledge acquisition.
+2. Knowledge Embedding Based on Graph Neural Networks: We inte-
+grate graph neural network technology with remote sensing satellite 
+temporal data modeling, enabling seamless integration of knowledge 
+graphs with deep learning models. With graph neural network, 
+knowledge graph is dynamically embedded to better guide crop 
+classification. This approach not only enhances the performance of 
+the model but also improves its interpretability.
+3. Multi-modal Fusion Deep Time Series Modelling: We propose a 
+multi-period deep time series classification framework that in-
+corporates knowledge graph, achieving an organic combination of 
+knowledge graph, remote sensing temporal data, and deep learning 
+model in the process of remote sensing crop classification. With 
+multi-period time series modelling, the framework is capable of 
+capturing complex and varying growing patterns in different crops. 
+This multi-modal fusion and multi-period modelling strategy signif-
+icantly improves classification accuracy while enhancing the 
+adaptability of the crop model to crop growth cycle variations in 
+different geographic environments.
+2. Materials
+2.1. Crop samples and study area
+The crop category data involved in this study were derived from field 
+sampling, and field surveys were conducted within the study area to 
+collect accurate and detailed farmland crop samples. Specifically, the 
+main crop categories included in our sample are the two staple food 
+crops of wheat and rice, with some other crops included as category 
+complements. Crops in the “other” category mainly include non-rice and 
+non-wheat samples collected during the survey, such as corn, lotus root, 
+soybean, etc. These samples undergo strict quality control and stan-
+dardization. Our research area was selected in four cities in the middle 
+and lower reaches of the Yangtze River in China, namely Wuhan, 
+Nanjing, Jingzhou, and Yichang (Fig. 1), and the number of samples in 
+each city is shown in Table 1. These areas are important agricultural 
+growing areas for both wheat and rice.
+2.2. Earth observation and time series data
+This study uses Sentinel-1 and Sentinel-2 remote sensing data pro-
+vided by the European Space Agency’s (ESA) Copernicus program. The 
+Sentinel-1 satellite is equipped with a C-band synthetic aperture radar 
+(SAR), which enables the acquisition of surface information under all- 
+weather, all-day conditions, particularly excelling in cloud-covered 
+areas. The Sentinel-2 satellite carries a multispectral imager (MSI) that 
+provides high-resolution optical imagery. To reduce the impact of cloud 
+interference and data gaps, we applied median synthesis to the data 
+from Sentinel-1 and Sentinel-2 to obtain monthly temporal data. The 
+preprocessing of earth observation data was conducted on the Google 
+Earth Engine (GEE) platform, utilizing atmospherically corrected data-
+sets for image filtering, cloud removal, index calculation, and data 
+downloading.
+For image feature selection, we selected four spectral bands (R, G, B, 
+NIR) from the Sentinel-2 imagery and computed the NDVI and LSWI 
+indices. The NDVI index is sensitive to vegetation growth conditions and 
+chlorophyll content, effectively distinguishing between vegetated and 
+non-vegetated areas, while reflecting the intensity of photosynthesis and 
+biomass (Pettorelli et al., 2005). The LSWI, on the other hand, is a good 
+indicator of vegetation water content and soil moisture (Chandrasekar 
+et al., 2010), reflecting the moisture status and drought resistance of 
+vegetation, which is especially useful for identifying crops like rice in 
+paddy fields.
+For Sentinel-1 imagery, we selected the backscatter coefficients of 
+Fig. 1. Study area, cropland parcel, the distribution of survey sample points and corresponding field photos. Study Area includes (a) Nanjing, (b) Wuhan, (c) 
+Jingzhou, (d) Yichang.
+Table 1 
+Number of samples in four cities.
+Wheat Rice Other
+Wuhan 1403 1520 1203
+Nanjing 1730 1706 1205
+Jingzhou 1748 1687 1494
+Yichang 1437 1817 1542
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+3 
+the VV (vertical transmit, vertical receive) and VH (vertical transmit, 
+horizontal receive) polarization modes. These two polarization modes 
+have different sensitivities to vegetation structure and soil moisture 
+(Vreugdenhil et al., 2018), providing complementary surface informa-
+tion. Based on the VV and VH bands, we calculated three features: the 
+product (Mul Index), ratio (Cross Index), and Radar Vegetation Index 
+(RVI) (Holtgrave et al., 2020). These radar features are effective for 
+distinguishing between different crop types, assessing crop growth 
+stages, and monitoring agricultural land (Zhou et al., 2022). The Mul 
+Index enhances the response to vegetation structure, the RVI is sensitive 
+to changes in vegetation biomass and leaf area index, while the Cross 
+Index performs excellently in reducing soil background interference. 
+These features utilize the complementary information from VV and VH 
+polarizations, providing important insights into structural and moisture 
+changes during crop growth, especially when optical sensors are 
+affected by cloud cover.
+Due to the inevitable issue of data gaps, we applied savitzky-golay 
+(SG) filtering for interpolation to complete the time series (Cai et al., 
+2019), facilitating subsequent research. SG filtering is a smoothing 
+method based on local polynomial fitting (Savitzky et al., 1964). We 
+used a third-order polynomial with a window size of 3 to balance noise 
+removal and signal retention. A statistic of the feature used in our is 
+study is shown in Table 2.
+2.3. Parcel-scale data processing
+We chose parcel as the unit of analysis for crop mapping primarily 
+because crops are typically cultivated at the parcel level, and within a 
+single parcel, the growth environment and planting patterns are more 
+consistent, exhibiting higher homogeneity. The parcel data is sourced 
+from (Zhu et al., 2023), who used high-resolution imagery and multi- 
+level edge-aware deep learning techniques to obtain high-resolution 
+agricultural parcel vectors. The cropland parcels are shown in Fig. 1.
+For feature processing at the parcel scale, we applied three zonal 
+statistics methods—Mean, Median, and Variance—on the pixels within 
+the parcel boundaries based on the final selection of 11 bands. These 
+methods comprehensively capture the spectral and texture characteris-
+tics of the parcel. The mean provides an overall representation of the 
+parcel, reflecting the average levels of each band and index. The median, 
+as a robust measure of central tendency, offers a more accurate 
+representation of the parcel’s typical characteristics in the presence of 
+outliers. The variance quantifies the internal heterogeneity of the parcel, 
+helping to identify complex or heterogeneous agricultural structures. 
+The combined use of these three statistical metrics not only provides 
+complementary information but also enhances the robustness and 
+adaptability of the feature extraction process.
+3. Methods
+Section 3.1 first introduces the automatic generation of crop 
+knowledge and the organization of knowledge graph data. In Section 
+3.2, we explore how to design knowledge graph as global guiding fea-
+tures to assist time series models in crop classification. Then, in Section 
+3.3, we will delve into the deep learning time series classification model 
+structure. Finally, Section 3.4 outlines the knowledge graph-embedded 
+multi-period time series crop classification framework. The overall 
+flow chart is shown in Fig. 2.
+3.1. Knowledge graph automatic extraction using decision trees
+To reduce the difficulty of acquiring remote sensing crop knowledge 
+graphs, we propose an automated knowledge extraction method that 
+mines key crop recognition features from decision tree structures and 
+links them with temporal information. This approach facilitates the 
+construction of a remote sensing crop knowledge graph. Traditional 
+knowledge graphs typically represent knowledge as triplets (Lin et al., 
+2015), consisting of a subject (head), relation, and object (tail), 
+expressed as (head, relation, tail). The knowledge graph we constructed 
+adheres to the triplet form of (key recognition features, time, crop type). 
+(See Fig. 3).
+Specifically, we employed a random forest model to train the dataset. 
+Through cross-validation and parameter optimization, we achieved 
+performance above the baseline. Inspired by the tree structure of 
+random forests, we employed a node selection approach based on the 
+Gini coefficient, selecting features from decision nodes and matching 
+them with their corresponding high-probability inference results. In 
+decision trees, the selection and division of each decision node are based 
+on specific criteria, one of which is the Gini coefficient. The Gini coef-
+ficient, commonly used to measure dataset purity, is calculated as fol-
+lows: 
+Table 2 
+Composition and calculation of features used in this study.
+feature formula resolution composition
+Sentinel-1 VV \ 10 m/monthly median
+VH \ 10 m/monthly median
+Mul Index VV*VH 10 m/monthly median
+Cross Index VV/VH 10 m/monthly median
+RVI 4*VH/(VV + VH) 10 m/monthly median
+Sentinel-2 Red \ 10 m/monthly median
+Green \ 10 m/monthly median
+Blue \ 10 m/monthly median
+NIR \ 10 m/monthly median
+NDVI (NIR-Red)/(NIR + Red) 10 m/monthly median
+LSWI (NIR-SWIR)/(NIR + SWIR) 10 m/monthly median
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+4 
+Gini(t)= 1 
+∑C
+i=1
+p2
+i 
+where pi is the proportion of samples belonging to category i in the 
+dataset, and C is the number of categories. The Gini coefficient ranges 
+from 0 to 1, with lower values indicating higher node purity and 
+stronger category differentiation, while higher values denote lower node 
+purity and more mixed categories. Our goal is to reduce node confusion 
+by selecting splits with lower Gini coefficients, thereby improving the 
+model’s classification ability. Specifically, node attributes are ordered in 
+ascending Gini coefficient, with the top three nodes selected for each 
+tree. Attribute conflicts among nodes are resolved based on their 
+respective depths.
+In order to abstract the continuous form of data into knowledge 
+description, we divide the continuous values into Eleven levels (from 
+“Maximum” to “Minimum”). Specifically, decision values in the range of 
+[0.46, 0.55] are classified as “average”. They are divided at intervals of 
+0.1. Values above this range are successively classified as “Somewhat 
+Fig. 2. Detailed framework of knowledge graph-embedded multi-period time series (TSKG) crop classification.
+Fig. 3. Detailed process of crop knowledge graph auto-extraction using decision tree mechanism.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+5 
+High”, “High”, “Very High”, “Extremely High” and “Maximum”, where “ 
+Maximum ” refers to decision values with a numerical range above 0.95. 
+Values below this range are successively classified as “ Somewhat Low”, 
+“Low”, “Very Low”, “Extremely Low” and “Minimum”, where “ Mini-
+mum ” refers to decision values with a numerical range below 0.05. For 
+example, a value of 0.5 is categorized as “Average,” thus the decision 
+feature “Mean Green < 0.5” is summarized as “Mean Green value is 
+under average level”. By applying the above approach to data from 
+different months, we obtain knowledge triples in the form of (key 
+recognition features, time, crop type), such as (“Var Red Very High”, 
+January, Wheat). This enables uncovering the association patterns be-
+tween remote sensing image features, time, and crop type information, 
+thereby automating the extraction of the remote sensing crop knowledge 
+graph. Considering that different crops have specific phenological pe-
+riods, we manually incorporated phenological nodes and combined 
+them with extracted triplets to construct a more comprehensive set of 
+crop knowledge triplets.
+The final knowledge graph constructed by the proposed automated 
+generation method is shown in Fig. 4. In TSKG, knowledge graph auto- 
+generation is applied in each city to make sure the crop knowledge is 
+suitable in the local environment. The generation process of this 
+knowledge graph is fully automatic and rapid, enabling the swift gen-
+eration of targeted crop knowledge graphs for the specified area based 
+on some representative samples.
+3.2. Knowledge graph embedding based on graph convolution network
+As a heterogeneous graph structure with edge information, knowl-
+edge graphs contain nodes and edge relationships of different types 
+(Chen et al., 2020). Compared to the sparsity and computational diffi-
+culty of graph representation through adjacency matrices, Graph Neural 
+Networks (GNNs), which have emerged in recent years, inherently 
+possess strong representation capabilities. The goal of GNNs is to learn a 
+state embedding that represents the neighborhood information of each 
+node (Scarselli et al., 2008). The state embedding hv can generate output 
+vectors Ov, which can be directly used as the distribution for predicting 
+node labels or for deep representation of graph data.
+We use a Relational Graph Convolutional Network (R-GCN) 
+(Schlichtkrull et al., 2018) to perform deep representation learning on 
+the automatically constructed knowledge graph. Unlike traditional 
+GNNs, R-GCNs are more suitable for feature embedding of relational 
+data. The model’s motivation is to extend GCN to relational data by 
+using local neighborhood information in the graph. The embedding 
+computation z(l+1)
+v for a node ν is as follows: 
+z(l+1)
+v = σ(
+∑
+r∈R
+∑
+u∈Nr(v)
+1
+cv,r
+W(l)
+r hl
+u+ W(l)
+0 h(l)
+v )
+where Nr(v) denotes the set of neighbour nodes connected to ν through 
+the relationship r. cv,r is the normalization constant. W(l)
+r and W(l)
+0 are 
+Fig. 4. Crop Knowledge Graph based on remote sensing reflectance.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+6 
+learnable weight matrices, and σ is a nonlinear activation function. This 
+process propagates information through the graph structure, generating 
+high-level embedding representations for each node.
+In particular, we employ a two-layer R-GCN module to embed the 
+knowledge graph data (as shown in Fig. 5). Initially, the triplets are 
+encoded into graph data, which is then convolved through an R-GCN to 
+obtain graph embeddings. These embeddings are subsequently inte-
+grated into the overall crop classification framework within the multi- 
+period deep temporal modelling section, participating in the param-
+eter backpropagation process.
+The knowledge graph embedding process based on graph convolu-
+tion can be expressed as follows: 
+GraphData= FGraphEmbedding(KG)
+GraphFeature= FRGCN(GraphData)
+where FGraphEmbedding is the process of encoding the knowledge graph 
+triplet KG into graph data, and FRGCN represents the process of graph 
+convolution encoding of the graph data.
+3.3. Multi-period deep time series modelling
+Although it is commonly assumed that crops within a certain region 
+follow a uniform phenological cycle, the actual delineation of these 
+cycles can be variable. This variability is particularly evident in remote 
+sensing reflectance curves. Differences in soil properties, moisture and 
+other factors between parcels can lead to diverse growth patterns. Uti-
+lizing wheat samples collected in Wuhan and Nanjing, we plotted the 
+NDVI curves throughout the growing stages in these two regions (Fig. 6). 
+Significant differences were observed between the NDVI profiles of 
+wheat in Nanjing and Wuhan. In Nanjing, wheat follows a relatively 
+simple phenological pattern with stages including early stage, greening, 
+jointing, heading, and maturing. This straightforward division into five 
+stages can effectively distinguish wheat types based on the NDVI vari-
+ation curve. Conversely, the phenological pattern of wheat in Wuhan is 
+more complex, with the NDVI variation curve exhibiting two peaks. The 
+first peak corresponds to the stages of sowing-emergence-tillering- 
+overwintering, while the second peak aligns with regreening-jointing- 
+heading-maturity. In this scenario, a more granular division of the 
+remote sensing feature changes is required for accurate wheat 
+identification.
+Within the same region, the specific location of farmland parcels can 
+result in significant differences in their remote sensing phenological 
+curves, diverging from the typical local phenological pattern. For 
+instance, wheat in parcel A on a plain riverbank, benefiting from optimal 
+geographical and microclimate conditions, adheres to a simpler growth 
+pattern. In contrast, wheat in parcel B on terraced mountainous land, 
+which undergoes overwintering, conforms to a more complex multi- 
+stage growth pattern. This indicates that each farmland parcel may 
+possess unique environmental conditions, leading to distinct remote 
+sensing phenological response curves and different cyclical patterns. 
+Consequently, this variability undermines the direct applicability of 
+standard phenological models.
+Thus, it is imperative to uncover the multi-cyclical patterns 
+embedded within remote sensing feature curves. To achieve this, we 
+developed a deep time series model capable of extracting multi-cyclical 
+features. This model decouples the multi-cyclical phenological calendar 
+present in crop remote sensing curves, offering inherent advantages for 
+crop classification and demonstrating superior capability in modelling 
+dependencies within and between cycles.
+In remote sensing time series, only scalar data of several features are 
+saved at a single moment, and more information is contained in time 
+series changes. While it is often assumed that crops in a region share a 
+similar phenological cycle, the division of these cycles is not always so 
+fixed. This variability is particularly evident in remote sensing reflec-
+tance curves, which are influenced by differences in soil properties, 
+moisture content, and other factors between different cropland parcels. 
+Consequently, the crop growth cycle may exhibit various patterns. For 
+example, in Fig. 7(a), wheat in parcel A may adhere to a 2-stage growing 
+pattern, whereas wheat in parcel B may follow a 4-stage growth model. 
+Therefore, it is essential to explore the multi-period patterns in the 
+reflectance curves. Motivated by (Wu et al., 2022), we adopted a deep 
+time series model capable of extracting multi-period features of crops in 
+remote sensing time series data. This model has inherent advantages 
+when applied to crop classification, demonstrating exceptional ability to 
+model dependency patterns both within and between periods.
+For the preprocessed complete remote sensing time series, assuming 
+that the time length is T and the number of remote sensing features is C, 
+there are multi-variable time series Xrs ={xc
+1, xc
+2,..., xc
+T}. The multi- 
+variable remote sensing time series is transformed into the frequency 
+dimension by fast Fourier transform in the time dimension to extract 
+periodic information: 
+FFT(k)=
+∑N  1
+n=0
+xrse  i2πkn
+N , k= 0, 1,..., N  1 
+A= Avg(Amp(FFT(xrs)))
+Among them, A represents the intensity of each frequency compo-
+nent in xrs, and the k frequencies with the highest intensity correspond to 
+the most significant k period lengths. As shown in Fig. 7(b), we find the 
+frequency with the largest information content in the crop characteristic 
+curve through FFT. Then we select top k period lengths, divide the 
+original input sequence, and extend the one-dimensional sequence into a 
+two-dimensional feature space through stacking, as shown in Fig. 7(c). 
+Consequently, the segmentation of the time series is automatically 
+determined by the FFT process. The temporal direction of the subse-
+quence represents inter-period changes, while the stacking direction of 
+the subsequences encapsulates the relationship between periods. The 
+inter-period direction represents the temporal change pattern within the 
+period, and the intra-period direction reflects the periodic change 
+pattern.
+As shown in Fig. 7(d), in two-dimensional space, we use convolution 
+Fig. 5. Knowledge graph embedding representation based on graph convolution.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+7 
+Fig. 6. Illustration of multi-period pattern implicit in crop remote sensing curve.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+8 
+neural networks to extract features from two-dimensional time series 
+data of different frequencies to learn the dominant temporal changes in 
+a specific cycle of crop growth. Specifically, we adopted the Inception 
+model, the core of which is to improve the expressive ability of the 
+network and maintain high computational efficiency by combining 
+multiple types of convolution and pooling operations (Christian. et al., 
+2015). The Inception module includes four parallel branches, of which 
+1× 1 convolution is used to reduce dimensionality and computational 
+loss, 3× 3 convolution is used to extract medium-scale spatial features, 
+5× 5 convolution is used to extract large-scale spatial features, and 3×
+3 max pooling is used to Extract spatially invariant features and connect 
+to a 1× 1 convolution for further dimension reduction.  
+By stacking Inception modules, two-dimensional features of different 
+periods are obtained, which are decomposed into one-dimensional time 
+series space through flattening. Multi-period time series features are 
+adaptively aggregated according to frequency to fuse remote sensing 
+time series features at different scales, and finally crop classification is 
+completed by stacked fully connected layers. In the specific imple-
+mentation, three times of multi-period feature extraction were per-
+formed, and skip connections were used to fuse the features of each step 
+to obtain the final time series features.
+3.4. Knowledge graph-embedded multi-period time series crop 
+classification
+This study proposes a deep time series crop classification framework 
+integrated with knowledge graphs. In the remote sensing time series 
+classification task, since different crops have unique phenology condi-
+tions and growth cycles, the correlation pattern between remote sensing 
+feature information and crop categories is very complex. Reliance on 
+time series models alone may not fully exploit all available information. 
+Especially in many practical applications, time series data can often be 
+associated with some external knowledge. In our study, external 
+knowledge exists in the form of a knowledge graph, and the nodes and 
+edges in the graph represent the relationships between time, crops, and 
+remote sensing features respectively. To fully utilize the knowledge 
+graph, we design a fusion mechanism to combine the time series model 
+with the embedding generated by R-GCN to improve crop classification 
+performance.
+First, we encode the input time series using a Fourier transform- 
+based multi-period time series model, which captures the complex pe-
+riodic variation relationships in the time series through a multi-period 
+mapping mechanism. The temporal encoder generates a sequence of 
+hidden states H={h1, h2,..., hT}. These hidden states contain rich in-
+formation in time series, especially the periodic characteristics of crop 
+growth. 
+H= MultiPeriodTimeSeriesModel(X)
+On this basis, we further extract the last hidden state hfinal as a global 
+representation of time series features: 
+hfinal = HT 
+Next, we use the R-GCN model to encode the knowledge graph. The 
+R-GCN model generates the embedding of each node by considering 
+different types of relationship edges in the graph. In this process, we 
+select node embedding zKG related to time series tasks as the global 
+representation of the knowledge graph. 
+zKG = RGCN(KnowledgeGraph)
+In order to effectively combine time series features and knowledge 
+Fig. 7. Multi-period deep time series crop classification model based on fast Fourier transform.
+outputInception = Concat(Conv1×1(x), Conv3×3(x), Conv5×5(x), Conv1×1(MaxPool3×3(x)))
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+9 
+graph embedding, we fuse the feature embeddings of both. Specifically, 
+the splicing operation connects the final hidden state hfinal of the time 
+series model with the knowledge graph embedding zKG to form a joint 
+feature vector: 
+funion = W1hfinal+ W2zKG+ b 
+where W1 and W2 are learnable weight matrices, and b is the bias term.
+This fusion mechanism ensures that time-dependent features in time 
+series and structured relationship information in knowledge graphs can 
+interact in the same feature space, allowing the graph embedding model 
+to serve as a global guiding feature in the forward reasoning process of 
+the entire model. It assists crop classification and can ensure calculation 
+speed and convergence during the back propagation process of the 
+model.
+The fused joint feature vector funion is processed through several fully 
+Fig. 8. Results of different time series crop classification methods.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+10 
+connected layers and ReLU functions to generate the final classification 
+output. The role of the fully connected layer is to further extract and 
+combine information from different source features to make classifica-
+tion decisions. 
+y= softmax(Wfcfunion+ bfc)
+where Wfc and bfc represent the weight and bias of the fully connected 
+layer respectively, which are calculated by the following formula. The 
+softmax function ensures that the output y is a probability distribution 
+representing the probability that the input time series belongs to 
+different categories.
+3.5. Experiment settings
+3.5.1. Environment
+The TSKG models of four cities are trained on a server with NVIDIA 
+RTX 4060 graphics processing unit (GPU) accelerators (with 8-GB 
+memory), and were implemented in PyTorch 1.2.0, and Python 3.8.
+3.5.2. Parameter settings
+For TSKG and other deep learning models, the epoch is uniformly set 
+to 150, the learning rate is 1e-3, the Adam optimizer is used, and the 
+batch size is 16. For Random Forest, the number of trees is set to 200 
+after parameter grid search optimization. To evaluate different methods, 
+we divided the dataset into train set, test set and val set according to the 
+ratio of 6:2:2.
+4. Results
+4.1. Qualification and quantitative results on parcel-scale crop dataset
+Fig. 8 shows the results of different time series crop classification 
+methods on the parcel time series data set. The positions marked with 
+red dots in satellite images are verification samples collected on the spot. 
+The verification curve shows the comparison between the NDVI curve of 
+the verification sample and the crop standard curve. We employed 
+Random Forest (Breiman, 2001), Transformer (Vaswani, 2017), 
+Informer (Zhou et al., 2021), and DLinear (Zeng et al., 2023) as 
+comparative methods. Random Forest is a widely used machine learning 
+algorithm for crop classification (Sheykhmousa et al., 2020), while 
+Transformer serves as a foundational sequence learning model. Informer 
+enhances Transformer with sparse computation improvements, and 
+DLinear is a simple yet efficient algorithm for time-series learning.
+As can be seen from Fig. 8, the TSKG method has high consistency 
+and accuracy in time series crop classification. The red dots in the sat-
+ellite imagery represent the locations of validation samples. The vali-
+dation curve compares the NDVI curves of these validation samples with 
+the standard crop curves. Case#1 and Case#4 show a continuous rice 
+planting area. It can be seen from the phenological curve that the crop 
+type of the parcel where the verification point is located is rice. The 
+TSKG method can accurately classify, while other methods will cause a 
+certain degree of misjudgment. In Case #2, for other crops other than 
+rice and wheat, TSKG can also accurately judge the planting situation of 
+the parcel. In Case #3, in an obvious wheat planting area, TSKG can 
+ensure the consistency and accuracy of classification, while the other 
+methods have a certain degree of misclassification. Furthermore, the 
+figure delineates the relationship between the knowledge graph and 
+phenological period. For example, in Case#1, the phenological knowl-
+edge depicted in the knowledge graph aligns with the remote sensing 
+features observed in the validation samples and standard time series, 
+underscoring the guiding role of the knowledge graph in crop 
+classification.
+Table 3 shows the classification accuracy of different methods on 
+four urban parcel-scale crop data sets. OA classified by TSKG performed 
+best on the data sets of each city, with OA reaching 94.43 %, 91.26 %, 
+89.45 %, and 92.91 % respectively, which was significantly higher than 
+RF. Because traditional machine learning models such as RF are difficult 
+to handle the implicit temporal relationships between data features, 
+their accuracy is relatively low. The structure of DLinear network might 
+be too concise to learn complex growing patterns of crops, leading to 
+lower accuracy than RF in some cases. Compared with Transformer and 
+Informer, who usually view time series data as fixed length series, TSKG 
+can better handle the multi-period patterns implicit in time series and 
+globally guide crop classification by integrating knowledge graph fea-
+tures, achieving the best overall performance among these models.
+4.2. Ablation study
+Fig. 9 shows the impact of knowledge graph embedding on parcel- 
+scale crop classification. After integrating the embedded features of 
+the knowledge graph, the accuracy and consistency of the model’s 
+classification of parcel crops have been significantly improved. For areas 
+that are similar in visual judgment, a model that incorporates the 
+embedded features of the knowledge graph can maintain spatial 
+Table 3 
+Crop classification accuracy results of different methods in four cities. (OA stands for Overall Accuracy, P stands for Precision, R stands for Recall, F1 stands for F1 
+score).
+RF Transformer Informer DLinear TSKG (w/o KG) TSKG (w KG)
+Wuhan OA 92.97 93.7 93.82 92.37 93.94 94.43
+F1 92.93 93.67 93.79 92.38 93.92 94.42
+P 92.92 93.66 93.77 92.43 93.87 94.37
+R 93.07 93.68 93.84 92.37 94.03 94.48
+Nanjing OA 88.81 90.52 90.2 89.03 91.05 91.26
+F1 88.83 90.33 90.18 89.04 90.90 91.17
+P 89.01 90.35 90.04 89.37 90.69 91.08
+R 88.74 90.34 90.38 88.78 91.18 91.28
+Jingzhou OA 88.23 88.03 89.04 86.91 88.64 89.45
+F1 88.25 88.01 89.05 86.92 88.62 89.49
+P 88.29 88.02 89.08 86.95 88.84 89.54
+R 88.38 88.19 89.24 86.91 88.55 89.56
+Yichang OA 89.17 92.29 92.08 92.08 92.39 92.91
+F1 88.97 91.99 91.82 92.03 92.10 92.65
+P 89.26 92.43 92.26 92.07 92.48 92.81
+R 88.87 91.78 91.69 92.08 91.89 92.53
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+11 
+consistency. For example, in Case #2, two adjacent farmland parcels at 
+the verification point have highly similar visual features. However, 
+without the guidance of knowledge graph features, the model misjudged 
+the parcel. By comparing the verification curve with the crop standard 
+curve, it can be seen that these should be two adjacent rice parcels. 
+Similarly, in Case#3 and Case#4, in a continuous wheat planting area, 
+after introducing the knowledge graph feature, the model’s judgment of 
+the parcel type is more accurate and more consistent with visual 
+intuition.
+Fig. 10 shows the distribution of the NDVI/LSWI standard curves and 
+predicted data of wheat and rice crops. On the NDVI and LSWI standard 
+curves, wheat showed double-peak characteristics, while rice showed 
+single-peak characteristics. In the prediction situation, the peak 
+appearance time nodes and data distribution of the two crop curves 
+maintained a high degree of consistency with the standard curve, indi-
+cating that the model has excellent learning ability for remote sensing 
+phenology curves of crops.
+4.3. Large-scale results
+Figs. 11–14 show the parcel-scale crop distribution map generated 
+based on the TSKG method. Wuhan City is dominated by rice cultivation, 
+showing a mixed distribution of wheat and rice. Crop planting distri-
+bution in Yichang City is mainly concentrated in the eastern plain area, 
+with wheat and rice being planted separately and contiguously. The rice 
+cultivation area in Nanjing City is wider, while wheat cultivation is 
+mainly distributed in the plains on the north bank of the Yangtze River. 
+Wheat in Jingzhou City is mainly distributed along the Yangtze River in 
+the west, while rice is mainly grown in the east.
+Fig. 15 shows the comparison between the agricultural census data 
+and the wheat and rice planting areas estimated by TSKG. Specifically, 
+we used the county-level crop planting area data in the 2020 statistical 
+yearbook released by the statistical bureaus of Wuhan, Yichang, Nanj-
+ing, and Jingzhou. The crop area obtained by TSKG has a high corre-
+lation with the agricultural census data. The R2 of wheat and rice are 
+0.8944 and 0.9783, respectively. Overall, the fitted curve of wheat 
+Fig. 9. Effects of crop knowledge graph embedding on classification results.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+12 
+Fig. 10. Consistency of predicted results with standard curve.
+Fig. 11. Parcel-scale crop classification results of Wuhan.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+13 
+planting area is above the 1:1 line, which is somewhat overestimated 
+compared with the agricultural census data. The predicted data of rice 
+planting area is numerically closer to the agricultural census data, but its 
+fitting line is below the 1:1 line, showing a more obvious underestima-
+tion overall.
+4.4. Cluster analysis
+In this study, we compared the crop classification effect before and 
+after adding knowledge graph encoding. We evaluate the performance 
+of these models using t-distributed stochastic neighbour embedding (t- 
+SNE) analysis, which visualizes the high-dimensional feature space 
+before the model projection layer into a three-dimensional representa-
+tion. Fig. 16 shows the three-dimensional clustering representation 
+before (Fig. 16(a)) and after (Fig. 16(b)) embedding the knowledge map 
+respectively. It can be seen that before adding the knowledge map, there 
+is a certain degree of separation between the three crop categories, but 
+there are still obvious differences in some areas. Overlapping. After 
+adding knowledge graph encoding, the feature space is more compact, 
+and the points representing each crop type are clustered more closely 
+together, indicating higher intra-class similarity. At the same time, the 
+degree of class separation improved significantly, and the three crop 
+types formed clear, independent clusters. This shows that the addition of 
+the knowledge graph has significantly improved the ability to distin-
+guish features for time-series crop classification.
+5. Discussion
+The knowledge graph fused deep time series crop classification 
+framework proposed in this study has made progress in the field of 
+remote sensing crop classification. Through automated knowledge 
+graph construction, application of graph convolution neural network 
+technology and multi-period deep time series modelling, crop classifi-
+cation has been effectively improved in accuracy, interpretability, and 
+applicability.
+The proposed framework has good applicability in crop classification 
+tasks. It outperforms other models such as RF, Transformer, Informer, 
+and DLinear by effectively handling multi-period patterns in time series 
+and incorporating knowledge graph features to globally guide crop 
+classification, achieving the best classification accuracy. By automating 
+the construction of remote sensing crop knowledge maps, we effectively 
+avoid the cumbersome process of relying on manual expert knowledge, 
+which is especially important for large-scale and dynamically changing 
+remote sensing data sets. In traditional methods, expert knowledge often 
+requires in-depth domain knowledge and long-term accumulation, 
+while our knowledge graph construction method can automatically 
+extract the relationship between crop growth stages and remote sensing 
+features through decision trees, which is in the absence of support from 
+domain experts. Unlike fixed parameters of knowledge (Zhao et al., 
+2022), graph neural networks, as a flexible structured data modelling 
+method, can dynamically encode knowledge to best fit the crop classi-
+fication. Specifically, R-GCN effectively combines remote sensing time 
+series data with knowledge graphs, further enhancing the model’s 
+adaptability to crop growth patterns in complex geographical environ-
+ments and improving classification accuracy.
+By combining time series data, knowledge graphs, and deep learning 
+models, the framework can simultaneously capture crop growth 
+knowledge and temporal change characteristics, overcoming the limi-
+tations of single-modal data. This method is especially suitable for areas 
+with high geographical information diversity, such as different climate 
+zones or agricultural areas. Compared to knowledge from a developed 
+agricultural census system (Barriere et al., 2024), knowledge graph can 
+be easily updated by the auto-extraction at low cost with local data. It 
+can be adaptively adjusted according to different growth cycles and 
+Fig. 12. Parcel-scale crop classification results of Yichang.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+14 
+Fig. 13. Parcel-scale crop classification results of Nanjing.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+15 
+regional characteristics to provide more accurate classification results.
+However, although this method demonstrates quite good perfor-
+mance, there are still several limitations and challenges. First, although 
+the construction of the knowledge graph can automatically extract the 
+relationship between crop growth and remote sensing signals, in some 
+complex environments, feature extraction based on decision trees may 
+not be able to capture sufficiently detailed or high-dimensional remote 
+sensing signal responses. For example, remote sensing data may contain 
+more nonlinear relationships or environmental factors, which may lead 
+to incomplete information provided by the knowledge graph, thereby 
+affecting the classification performance of the model. Future research 
+can explore how to combine more complex feature extraction methods 
+to further improve the accuracy and detail of the map. Additionally, 
+when applying in different areas, we still need extra representative 
+samples in local to best update our knowledge graph. Future research 
+can also take the zero-shot method into account.
+Secondly, although graph neural networks have significant advan-
+tages in structured data modelling, their computational complexity is 
+Fig. 14. Parcel-scale crop classification results of Jingzhou.
+Fig. 15. Comparison of crop areas between estimated and agricultural census data.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+16 
+high on large-scale remote sensing data sets. Especially in the task of 
+crop classification of high-resolution satellite images or large-scale 
+agricultural areas, the training and inference process of graph neural 
+networks may require a large amount of computing resources and time. 
+Therefore, in practical applications, how to optimize the training effi-
+ciency of graph neural networks and reduce computing costs has become 
+a problem that needs to be further solved. Some possible optimization 
+directions include using more lightweight graph neural network models 
+or combining other deep learning methods to reduce calculations.
+Our study classifies crops on the parcel scale and extracts features 
+such as mean, median, and variance through zonal calculation of parcel 
+vectors. However, the accuracy of the parcel vector can vary signifi-
+cantly in practical applications. If the vector data of cropland parcels is 
+not accurate enough, it may lead to the inclusion of redundant non- 
+agricultural areas or the omission of some crop growth areas in the 
+calculation process, thus affecting the accuracy of statistical feature 
+extraction. Especially in the edge areas of the parcel, the mixed pixel 
+effect may lead to deviations in the spectral characteristics of the remote 
+sensing band and affect the performance of the classification model. In 
+areas where cropland is severely fragmented, the parcel shape is com-
+plex, or the area is small, the statistical features extracted by zonal 
+calculation of the parcel vector may not fully represent the growth of the 
+entire crop, affecting the classification effect of the model. In this case, in 
+the future, we can try to introduce high-precision parcel vector data or 
+combine it with automatic parcel segmentation methods to improve the 
+accuracy of parcel boundaries.
+This study used 6 common spectral bands and 5 SAR bands in the 
+selection of remote sensing bands. Although these bands can provide 
+basic spectral and structural characteristics of crops, they may not be 
+able to capture more detailed crops. Spectral reflectance characteristics, 
+especially at certain critical stages of crop growth, specific narrow 
+bands, or thermal infrared bands, may contribute more to crop classi-
+fication. With the rapid development of remote sensing sensor tech-
+nology, new hyperspectral sensors and multi-polarization SAR sensors 
+can provide richer and more detailed spectral and structural informa-
+tion. Future research can explore more complex band combinations, 
+such as the rich narrow bands in hyperspectral data or multi-temporal, 
+multi-polarization SAR data, to dig deeper into crop remote sensing 
+characteristics and enhance the accuracy and stability of classification.
+In addition, although multi-modal fusion can improve classification 
+accuracy, its effect is also strongly affected by data quality and pre-
+processing methods. In practical applications, remote sensing data are 
+usually interfered by clouds, image occlusion, noise, and other factors. 
+Low data quality may lead to reduced effectiveness of knowledge graphs 
+and models. In order to fully realize the advantages of multi-modal 
+fusion, it is necessary to ensure the strict execution of data acquisi-
+tion, preprocessing, and quality control, which is crucial to the gener-
+alization ability and accuracy of the model.
+6. Conclusion
+This study develops a parcel-level multi-modal crop classification 
+framework that integrates auto-generated knowledge graph into multi- 
+period deep time series modelling (TSKG), aiming to overcome the 
+limitations of existing remote sensing crop classification methods in 
+terms of accuracy, interpretability, and applicability. Through the tree- 
+based structure, we automatically constructed a remote sensing crop 
+knowledge map. By introducing graph neural networks, we achieved 
+dynamic embedding of knowledge. With multi-period time series 
+modelling, implicit growing patterns of crops are captured to improve 
+the performance of crop classification. The classification performance is 
+evaluated using independent ground truth data and agricultural census 
+data, and compared with other common time series models. The results 
+show that the TSKG method has better accuracy than the comparative 
+methods on the crop datasets. From the visual effect and time series 
+comparison, the results of TSKG are more consistent and accurate. In 
+addition, the estimated crop area of TSKG agrees well with county-level 
+agricultural census data. After adding the feature guidance of the 
+knowledge map, the boundaries of crop classification are clearer, and 
+the consistency of features of the same crop is higher. Overall, TSKG 
+performs well on time series crop classification. This method explores 
+the combination of knowledge graphs and remote sensing classification, 
+and has great potential for knowledge-driven remote sensing time series 
+classification in more areas.
+Fig. 16. Visualization of t-SNE feature space without and with knowledge graph embedding.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+17 
+CRediT authorship contribution statement
+Qianhui Shen: Writing – original draft, Methodology, Formal 
+analysis, Data curation, Conceptualization. Da He: Writing – review & 
+editing, Validation, Supervision, Resources. Xiaoping Liu: Writing – 
+review & editing, Supervision, Project administration, Funding acqui-
+sition. Qian Shi: Supervision, Writing – review & editing, Funding 
+acquisition.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgements
+Our deepest gratitude goes to the editor and anonymous reviewers 
+for their careful work and thoughtful suggestions that have helped 
+improve this manuscript. This work was supported by the National 
+Natural Science Foundation of China for Excellent Young Scientists Fund 
+under Grant No. 42222106, the National Key R&D Program of China 
+under Grant No. 2022YFB3903402, the National Natural Science 
+Foundation of China for Distinguished Young Scholars under Grant No. 
+42225107, and the Natural Science Foundation of China under Grant 
+No. 42201340.
+Data availability
+Data will be made available on request.
+References
+Arias, M., Campo-Besc´os, M.´A., ´Alvarez-Mozos, J., 2020. Crop classification based on 
+temporal signatures of sentinel-1 observations over Navarre province, Spain. Remote 
+Sens. 12 (2), 278. https://doi.org/10.3390/rs12020278.
+Barriere, V., Claverie, M., Schneider, M., Lemoine, G., Andrimont, D., R.,, 2024. Boosting 
+crop classification by hierarchically fusing satellite, rotational, and contextual data. 
+Remote Sens. Environ. 305, 114110. https://doi.org/10.1016/j.rse.2024.114110.
+Breiman, L., 2001. Random forests. Mach. Learn. 45, 5–32. https://doi.org/10.1023/A: 
+1010933404324.
+Cai, Y., Lin, H., Zhang, M., 2019. Mapping paddy rice by the object-based random forest 
+method using time series sentinel-1/sentinel-2 data. Adv. Space Res. 64 (11), 
+2233–2244. https://doi.org/10.1016/j.asr.2019.08.042.
+Cao, Z., Guo, G., Xu, Y., Wu, Z., Zhou, W., 2022. Detecting sinks and sources of 
+transportation energy consumption at multi spatiotemporal scales and driving forces 
+using trajectory data. Appl. Geogr. 148, 102807. https://doi.org/10.1016/j. 
+apgeog.2022.102807.
+Cao, Z., Wu, Z., Guo, G., Ma, W., Wang, H., 2022. Quantifying spatial associations 
+between effective green spaces and cardiovascular and cerebrovascular diseases by 
+applying volunteered geo-referenced data. Environ. Res. Lett. 17 (1), 014055. 
+https://doi.org/10.1088/1748-9326/ac40b3.
+Chakhar, A., Hern´andez-L´opez, D., Ballesteros, R., Moreno, M.A., 2021. Improving the 
+accuracy of multiple algorithms for crop classification by integrating sentinel-1 
+observations with sentinel-2 data. Remote Sens. 13 (2), 243. https://doi.org/ 
+10.3390/rs13020243.
+Chandrasekar, K., Sesha Sai, M., Roy, P.S., Dwevedi, R.S., 2010. Land surface water index 
+(lswi) response to rainfall and ndvi using the modis vegetation index product. Int. J. 
+Remote Sens. 31 (15), 3987–4005. https://doi.org/10.1080/01431160802575653.
+Chen, H., Li, H., Liu, Z., Zhang, C., Zhang, S., Atkinson, P.M., 2023. A novel greenness 
+and water content composite index (gwcci) for soybean mapping from single 
+remotely sensed multispectral images. Remote Sens. Environ. 295, 113679. https:// 
+doi.org/10.1016/j.rse.2023.113679.
+Chen, Z., Wang, Y., Zhao, B., Cheng, J., Zhao, X., Duan, Z., 2020. Knowledge graph 
+completion: a review. IEEE Access 8, 192435–192456. https://doi.org/10.1109/ 
+ACCESS.2020.3030076.
+Christian., S., Wei, L., Yangqing, J., P., S., S., R., D., A., D., E., V., V., A., R., 2015. Going 
+deeper with convolutions., 2015 IEEE Conference on Computer Vision and Pattern 
+Recognition (CVPR), pp. 1-9. Doi: 10.1109/CVPR.2015.7298594.
+De Castro, C., Filho, H., De Carvalho, A., Júnior, O., Ferreira De Carvalho, O.L., Pozzobon 
+De Bem, P., Moura, D.S.D.R., Olino De Albuquerque, A., Rosa Silva, C., Guimaraes 
+Ferreira, P.H., Fontes Guimar˜aes, R., Trancoso Gomes, R.A., 2020. Rice crop 
+detection using lstm, bi-lstm, and machine learning models from sentinel-1 time 
+series. Remote Sens. 12 (16), 2655. https://doi.org/10.3390/rs12162655.
+Fritz, S., See, L., McCallum, I., You, L., Bun, A., Moltchanova, E., Duerauer, M., 
+Albrecht, F., Schill, C., Perger, C., 2015. Mapping global cropland and field size. 
+Glob. Chang. Biol. 21 (5), 1980–1992. https://doi.org/10.1111/gcb.12838.
+Gebbers, R., Adamchuk, V.I., 2010. Precision agriculture and food security. Science 327 
+(5967), 828–831. https://doi.org/10.1126/science.1183899.
+Gusso, A., Arvor, D., Ricardo Ducati, J., Veronez, M.R., Da Silveira, L.G., 2014. Assessing 
+the modis crop detection algorithm for soybean crop area mapping and expansion in 
+the mato grosso state, brazil. Scient. World J. 2014 (1), 863141. https://doi.org/ 
+10.1155/2014/863141.
+Holtgrave, A., R¨oder, N., Ackermann, A., Erasmi, S., Kleinschmit, B., 2020. Comparing 
+sentinel-1 and-2 data and indices for agricultural land use monitoring. Remote Sens. 
+12 (18), 2919. https://doi.org/10.3390/rs12182919.
+Justice, C.O., Townshend, J., Vermote, E.F., Masuoka, E., Wolfe, R.E., Saleous, N., 
+Roy, D.P., Morisette, J.T., 2002. An overview of modis land data processing and 
+product status. Remote Sens. Environ. 83 (1–2), 3–15. https://doi.org/10.1016/ 
+S0034-4257(02)00084-6.
+Kobayashi, N., Tani, H., Wang, X., Sonobe, R., 2020. Crop classification using spectral 
+indices derived from sentinel-2a imagery. J. Inform. Telecommun. 4 (1), 67–90. 
+https://doi.org/10.1080/24751839.2019.1694765.
+Kussul, N., Lavreniuk, M., Skakun, S., Shelestov, A., 2017. Deep learning classification of 
+land cover and crop types using remote sensing data. IEEE Geosci. Remote Sens. Lett. 
+14 (5), 778–782. https://doi.org/10.1109/LGRS.2017.2681128.
+Liaghat, S., Balasundram, S.K., 2010. A review: the role of remote sensing in precision 
+agriculture. Am. J. Agric. Biol. Sci. 5 (1), 50–55.
+Lin, Y., Liu, Z., Sun, M., Liu, Y., Zhu, X., 2015. Learning entity and relation embeddings 
+for knowledge graph completion.
+Pan, Y., Li, L., Zhang, J., Liang, S., Zhu, X., Sulla-Menashe, D., 2012. Winter wheat area 
+estimation from modis-evi time series data using the crop proportion phenology 
+index. Remote Sens. Environ. 119, 232–242. https://doi.org/10.1016/j. 
+rse.2011.10.011.
+Peng, D., Huete, A.R., Huang, J., Wang, F., Sun, H., 2011. Detection and estimation of 
+mixed paddy rice cropping patterns with modis data. Int. J. Appl. Earth Obs. Geoinf. 
+13 (1), 13–23. https://doi.org/10.1016/j.jag.2010.06.001.
+Peng, Y., Qiu, B., Tang, Z., Xu, W., Yang, P., Wu, W., Chen, X., Zhu, X., Zhu, P., Zhang, X., 
+2024. Where is tea grown in the world: a robust mapping framework for agroforestry 
+crop with knowledge graph and sentinels images. Remote Sens. Environ. 303, 
+114016. https://doi.org/10.1016/j.rse.2024.114016.
+Pettorelli, N., Vik, J.O., Mysterud, A., Gaillard, J., Tucker, C.J., Stenseth, N.C., 2005. 
+Using the satellite-derived ndvi to assess ecological responses to environmental 
+change. Trends Ecol. Evol. 20 (9), 503–510. https://doi.org/10.1016/j. 
+tree.2005.05.011.
+Porter, J.R., Xie, L., Challinor, A.J., Cochrane, K., Howden, S.M., Iqbal, M.M., Lobell, D. 
+B., Travasso, M.I., 2014. Food security and food production systems.
+Pott, L.P., Amado, T.J.C., Schwalbert, R.A., Corassa, G.M., Ciampitti, I.A., 2022. Crop 
+type classification in southern Brazil: integrating remote sensing, crop modelling and 
+machine learning. Comput. Electron. Agric. 201, 107320. https://doi.org/10.1016/j. 
+compag.2022.107320.
+Savitzky, A., Golay, M.J., 1964. Smoothing and differentiation of data by simplified least 
+squares procedures. Anal. Chem. 36 (8), 1627–1639. https://doi.org/10.1021/ 
+ac60214a047.
+Scarselli, F., Gori, M., Tsoi, A.C., Hagenbuchner, M., Monfardini, G., 2008. The graph 
+neural network model. IEEE Trans. Neural Netw. 20 (1), 61–80. https://doi.org/ 
+10.1109/TNN.2008.2005605.
+Schlichtkrull, M., Kipf, T.N., Bloem, P., Van Den Berg, R., Titov, I., Welling, M., 2018. 
+Modelling relational data with graph convolutional networks. Springer 593–607.
+Sheykhmousa, M., Mahdianpari, M., Ghanbari, H., Mohammadimanesh, F., Ghamisi, P., 
+Homayouni, S., 2020. Support vector machine versus random forest for remote 
+sensing image classification: a meta-analysis and systematic review. IEEE J Sel. Top. 
+Appl. Earth Observ. Remote Sens. 13, 6308–6325. https://doi.org/10.1109/ 
+JSTARS.2020.3026724.
+Tatsumi, K., Yamashiki, Y., Torres, M.A.C., Taipe, C.L.R., 2015. Crop classification of 
+upland fields using random forest of time-series landsat 7 etm+ data. Comput. 
+Electron. Agric. 115, 171–179. https://doi.org/10.1016/j.compag.2015.05.001.
+Todorovski, L., Dˇzeroski, S., 2006. Integrating knowledge-driven and data-driven 
+approaches to modeling. Ecol. Model. 194 (1–3), 3–13. https://doi.org/10.1016/j. 
+ecolmodel.2005.10.001.
+Vaswani, A., 2017. Attention is all you need. Arxiv Preprint. Arxiv:1706.03762. 
+Vreugdenhil, M., Wagner, W., Bauer-Marschallinger, B., Pfeil, I., Teubner, I., Rüdiger, C., 
+Strauss, P., 2018. Sensitivity of sentinel-1 backscatter to vegetation dynamics: an 
+Austrian case study. Remote Sens. 10 (9), 1396. https://doi.org/10.3390/ 
+rs10091396.
+Wu, H., Hu, T., Liu, Y., Zhou, H., Wang, J., Long, M., 2022. Timesnet: temporal 2d- 
+variation modelling for general time series analysis. Arxiv. https://doi.org/ 
+10.48550/arXiv.2210.02186. Preprint Arxiv:2210.02186. 
+Xiao, X., Boles, S., Frolking, S., Li, C., Babu, J.Y., Salas, W., Moore III, B., 2006. Mapping 
+paddy rice agriculture in south and Southeast Asia using multi-temporal modis 
+images. Remote Sens. Environ. 100 (1), 95–113. https://doi.org/10.1016/j. 
+rse.2005.10.004.
+Xu, J., Zhu, Y., Zhong, R., Lin, Z., Xu, J., Jiang, H., Huang, J., Li, H., Lin, T., 2020. 
+Deepcropmapping: a multi-temporal deep learning approach with improved spatial 
+generalizability for dynamic corn and soybean mapping. Remote Sens. Environ. 247, 
+111946. https://doi.org/10.1016/j.rse.2020.111946.
+Xu, L., Zhang, H., Wang, C., Zhang, B., Liu, M., 2018. Crop classification based on 
+temporal information using sentinel-1 sar time-series data. Remote Sens. 11 (1), 53. 
+https://doi.org/10.3390/rs11010053.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+18 
+Yang, G., Yu, W., Yao, X., Zheng, H., Cao, Q., Zhu, Y., Cao, W., Cheng, T., 2021. Agtoc: a 
+novel approach to winter wheat mapping by automatic generation of training 
+samples and one-class classification on google earth engine. Int. J. Appl. Earth Obs. 
+Geoinf. 102, 102446. https://doi.org/10.1016/j.jag.2021.102446.
+Zeng, A., Chen, M., Zhang, L., Xu, Q., 2023. Are transformers effective for time series 
+forecasting? Proc. AAAI Conf. Artif. Intell. 37 (9), 11121–11128. https://doi.org/ 
+10.1609/aaai.v37i9.26317.
+Zhao, L., Li, Q., Chang, Q., Shang, J., Du, X., Liu, J., Dong, T., 2022. In-season crop type 
+identification using optimal feature knowledge graph. Isprs-J. Photogramm. Remote 
+Sens. 194, 250–266. https://doi.org/10.1016/j.isprsjprs.2022.10.017.
+Zhao, W., Qu, Y., Chen, J., Yuan, Z., 2020. Deeply synergistic optical and SAR time series 
+for crop dynamic monitoring. Remote Sens. Environ. 247, 111952. https://doi.org/ 
+10.1016/j.rse.2020.111952.
+Zhao, Z., Dong, J., Zhang, G., Yang, J., Liu, R., Wu, B., Xiao, X., 2024. Improved 
+phenology-based rice mapping algorithm by integrating optical and radar data. 
+Remote Sens. Environ. 315, 114460. https://doi.org/10.1016/j.rse.2024.114460.
+Zhou, H., Zhang, S., Peng, J., Zhang, S., Li, J., Xiong, H., Zhang, W., 2021. Informer: 
+beyond efficient transformer for long sequence time-series forecasting. Proc. AAAI 
+Conf. Artif. Intell. 35 (12), 11106–11115. https://doi.org/10.1609/aaai. 
+v35i12.17325.
+Zhou, X., Wang, J., He, Y., Shan, B., 2022. Crop classification and representative crop 
+rotation identifying using statistical features of time-series sentinel-1 GRD data. 
+Remote Sens. 14 (20), 5116. https://doi.org/10.3390/rs14205116.
+Zhu, J., Chai, Z., Song, Z., Chen, Z., Shi, Q., 2023. A fuzzy-boundary enhanced trident 
+network for parcel extraction in the urban–rural area. IEEE J. Sel. Top. Appl. Earth 
+Observ. Remote Sens. 16, 2654–2667. https://doi.org/10.1109/ 
+JSTARS.2023.3247875.
+Q. Shen et al.                                                                                                                                                                                                                                    International Journal of Applied Earth Observation and Geoinformation 143 (2025) 104809 
+19 

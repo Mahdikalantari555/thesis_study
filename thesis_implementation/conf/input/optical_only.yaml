@@ -1,0 +1,5 @@
+name: optical_only
+bands: [SR_B2, SR_B3, SR_B4, SR_B5, SR_B6, SR_B7]
+indices: [NDVI, NDWI, NDMI]
+drop: [ST_B10]
+include_date_dt: true

@@ -1,0 +1,1187 @@
+Academic Editor: Pei Wang
+Received: 10 March 2026
+Revised: 8 April 2026
+Accepted: 10 April 2026
+Published: 12 April 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Article
+Label-Free Deep Learning with Feature Adaptation for Crop
+Anomaly Detection on Small Datasets
+Ming-Der Yang 1,2,3
+ , Tzu-Han Lee 1, Hsin-Hung Tseng 1,2,3, *
+ , T ung-Ching Su2,4 and Yu-Chun Hsu 5
+1 Department of Civil Engineering, National Chung Hsing University, Taichung 40227, Taiwan;
+mdyang@nchu.edu.tw (M.-D.Y.)
+2 Smart Sustainable New Agriculture Research Center (SMARTer), National Chung Hsing University,
+Taichung 40227, Taiwan; spcyj@nqu.edu.tw
+3 Innovation and Development Center of Sustainable Agriculture (IDCSA), National Chung Hsing University,
+Taichung 40227, Taiwan
+4 Department of Civil Engineering and Engineering Management, National Quemoy University,
+Kinmen 892, Taiwan
+5 Department of Forestry, National Chun Hsing University, Taichung 40227, Taiwan; bigq@dragon.nchu.edu.tw
+* Correspondence: d108062001@mail.nchu.edu.tw; Tel.: +886-4-22840440 (ext. 305)
+Abstract
+Efficient crop health monitoring is crucial for global food security. Supervised deep learn-
+ing approaches are often impractical due to the scarcity of large, labeled datasets. To
+address this limitation, this study adapts EfficientAD, an unsupervised, label-free anomaly
+detection framework originally designed for industrial inspection, for agricultural imagery
+on small datasets. The method utilizes a Patch Description Network (PDN) for localized
+feature extraction, a student network for local anomalies, and an autoencoder for global
+structural constraints. Benchmarked against AnoGAN, Pix2Pix, InTra, and Teacher–Student
+models, the framework demonstrated superior performance on the MVTec AD, PlantVil-
+lage, Coffee Leaf, and a custom real-world Sweet Potato dataset. The model achieved
+perfect area under the receiver operating characteristic curve (AUROC) scores of up to
+100% in categories like “Pongamia”, “Potato”, and “Coffee Leaf”. While image-level clas-
+sification was exceptionally robust, pixel-level localization (AUPRO) proved sensitive to
+complex agricultural backgrounds. To overcome this, a background interference analysis
+was conducted using Background Removed (BGRM) and out-of-distribution Background
+Replaced-Green (BGRP-G) strategies on the custom dataset. Notably, the BGRP-G strategy
+remarkably improved the image-level AUROC from 88.9% to 99.5% and substantially
+boosted the pixel-level AUPRO from 47.1% to 61.9%, successfully preserving the boundary
+integrity of severe structural defects. Achieving millisecond-level latency without complex
+data augmentation, this adapted label-free framework offers a versatile, highly efficient
+solution for real-time crop health diagnostics on resource-constrained Edge AI devices.
+Keywords: anomaly detection; agricultural imagery; knowledge distillation; unsupervised
+learning; defect localization
+1. Introduction
+With the continual growth of the global population, food security and production
+efficiency have emerged as critical issues, posing considerable challenges for crop disease
+detection and health management. Conventional agricultural anomaly detection involves
+human experts performing manual visual inspections and is affected by various limitations,
+Agriculture 2026, 16, 854 https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 2 of 25
+including reliance on human resources and temporal constraints. Given the wide variety of
+crop diseases, manual observation alone often falls short in achieving rapid and precise
+diagnoses of crop diseases. To address the challenges of conventional agricultural anomaly
+detection, computer vision and image-based detection techniques have been developed.
+These techniques leverage image processing and machine learning algorithms for rapid
+and accurate identification of crop anomalies. These techniques reduce reliance on manual
+effort and enhance detection precision, such as detecting and localizing rice seedlings
+in the early stage to estimate the survival rate after planting [ 1], building an irrigation
+model for field management, and monitoring broccoli growth using an unmanned aerial
+vehicle for broad field management [2]. Anomaly detection based on image analysis has
+demonstrated noticeable potential to improve agricultural productivity and quality [ 3].
+Supervised learning approaches require extensive annotated datasets, which are both costly
+and challenging to acquire in the agricultural domain [4,5]. This difficulty is exacerbated
+by the heterogeneity and diversity of crop diseases. To mitigate the high data demands of
+supervised learning, this study developed models optimized for small datasets. The study
+used simplified model architectures optimized in terms of feasibility and scalability for
+the practical application of image-based anomaly detection under resource-constrained
+conditions. The proposed approach sought to achieve detection accuracy comparable
+to models trained on large datasets and provide effective solutions to the diversity and
+uncertainty inherent in agricultural anomaly detection.
+This study leveraged label-free image-based anomaly detection technologies from
+the industrial domain. Trained with transfer learning, the proposed model comprises
+the EfficientAD framework, which possesses robust feature extraction capabilities via a
+distilled Patch Description Network and high detection throughput, and enables the precise
+identification of subtle anomalies across various image types. Accordingly, the framework
+is well-suited for addressing the challenges posed by agricultural imagery, including the
+diversity of crop species, variability in environmental conditions, and heterogeneity of
+disease characteristics. Moreover, this study collected image data from field-grown sweet
+potatoes to validate the practical applicability of the model in actual field environments.
+This allowed for evaluating the model’s detection and localization performance under
+non-laboratory conditions, thereby assessing and extending the real-world value of the
+proposed detection methodology.
+The objectives of this study were as follows:
+1. Adapt and Apply Label-Free Anomaly Detection Models: Based on technologically
+mature and advanced models used in industrial settings, anomaly detection algorithms
+were adapted and tailored to agricultural imagery.
+2. Enhance Detection Accuracy: Transfer learning techniques were refined and tested
+to improve the accuracy and processing speed of detection, enabling the rapid and
+precise identification and localization of crop anomalies.
+3. Compare Across Diverse Datasets and Models: The proposed models were trained
+and tested on multiple publicly available standard datasets. The performance and
+generalization capabilities of the proposed models were compared with other anomaly
+detection methods.
+4. Validate Real-World Applicability: The image data from field-grown sweet potatoes were
+collected to assess the model’s suitability and feasibility in actual field environments.
+2. Literature Review (Related Work)
+Agricultural production efficiency is primarily influenced by several key factors, in-
+cluding the adoption of mechanization and automation technologies, the use of fertilizers
+and pesticides, the cultivation of superior crop varieties, advancements in irrigation sys-
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 3 of 25
+tems, and improvements in agricultural management techniques. The Internet of Things
+has enabled agricultural monitoring systems to perform real-time tracking of critical pa-
+rameters such as soil moisture and nutrient content, assisting farmers in making decisions.
+In addition, artificial intelligence and big data analytics have facilitated the processing and
+analysis of extensive agricultural datasets, providing predictive and targeted recommenda-
+tions that enhance productivity and sustainability [6,7].
+The integration of precise data, convenient access to information, efficient resource
+management, and intelligent decision-support systems has greatly improved agricultural
+production efficiency. The evolution of pest and disease detection from conventional meth-
+ods to artificial intelligence-driven technologies has brought substantial advancements
+in identification accuracy, further improving detection efficiency and strengthening the
+capacity to manage crop diseases effectively. Conventional approaches to defect identifi-
+cation rely on visual inspections by experts and basic biochemical tests. These methods
+are heavily dependent on human expertise, requiring plant symptoms to be assessed by
+experts or farmers through direct observation. Such approaches are labor-intensive and
+inefficient when applied to large-scale operations [8].
+With the development of computer vision technologies, digital image analysis and
+spectral analysis have emerged as innovative tools for agricultural defect detection. Digital
+image analysis employs computational techniques to process plant images, extracting
+anomalous features for evaluation. Spectral analysis uses data from various wavelengths
+to assess plant health, considerably enhancing accuracy and efficiency in defect detection
+by reducing reliance on visual inspection. Several studies have found that using extra
+indices enhances the accuracy in identification [9] and regression [10] tasks. While data
+accumulation and computational capacity continue to improve, machine learning has
+assumed a pivotal role in the identification of agricultural pests and diseases. Machine
+learning algorithms offer data-driven solutions for pest and disease classification. Artificial
+neural networks, inspired by biological neural networks, enable models to detect complex
+defect features, thereby improving identification precision [ 8]. For instance, the graph
+pyramid attention network achieved nearly 99.0% supervised classification accuracy on
+multiple agricultural datasets [ 11]. Furthermore, transfer learning and object detection
+methods, including YOLO and Faster R-CNN, have been widely applied to agricultural
+defect detection, facilitating simultaneous localization and classification while maintaining
+robust performance on small datasets [8,12–14].
+Deep learning presents a powerful alternative for agricultural defect detection, sup-
+ported by established convolutional neural network (CNN) architectures widely ap-
+plied in tasks like leaf and tuber disease classification (e.g., EfficientNet and ResNet
+variants) [15–18]. In the industrial domain, unsupervised, label-free anomaly detection has
+achieved remarkable success by learning exclusively from defect-free samples. However,
+its adoption in agriculture remains limited. Unlike standardized manufactured goods,
+agricultural products exhibit massive intra-class variance due to natural growth, making
+it highly challenging to establish a strict, pure “normal” baseline without inadvertently
+teaching the model to flag natural biological variations as anomalies.
+Anomaly detection and localization techniques predominantly rely on unsupervised
+methods that do not require large volumes of annotated anomaly data. Agricultural
+image anomaly detection models can be broadly categorized into three types: conventional
+image processing models, generative adversarial network (GAN) models, and feature
+extraction-based models.
+Conventional image processing techniques, such as edge detection and image en-
+hancement, identify defects by analyzing edge features or color differences in images [19].
+Although these methods are straightforward and intuitive, they face challenges in ad-
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 4 of 25
+dressing the diversity and complexity of agricultural imagery. GANs effectively generate
+synthetic images to mitigate the need for extensive manual annotation and address the
+imbalance in anomalous sample distributions. However, GANs exhibit limitations when
+dealing with the diverse and unpredictable characteristics of real-world defects. Feature
+extraction methods, which employ deep learning models to derive image features for
+anomaly detection, are considered among the most promising approaches.
+Artificial neural networks are widely applied in computer vision algorithms and have
+made significant contributions to models used in plant disease detection and crop classifica-
+tion. These networks provide robust support for the automation of agricultural production.
+In the agricultural domain, defect detection models often focus on identifying a single
+species, with subsequent refinements enhancing their accuracy and efficiency for specific
+crops. GANs and image enhancement techniques are predominantly used to address the
+scarcity of image data in agriculture. Lu et al. [ 20] reviewed the applications of GANs
+in agriculture and food systems, covering crop health monitoring, weed detection, and
+precision livestock management, and highlighted the effectiveness of GANs in generating
+synthetic images to increase training sample sizes and enhance detection accuracy. Zhang
+et al. [21] employed a convolutional neural network to detect defects in pears and integrated
+a GAN for data augmentation to improve model accuracy.
+In crop health monitoring, GAN variants such as conditional GAN and deep convolu-
+tional GAN are widely applied to augment image datasets, effectively improving disease
+detection accuracy. Hu et al. [22] used a conditional deep convolutional GAN to enhance
+tea leaf disease images, considerably increasing the accuracy of the VGG16 model. Cycle-
+GAN demonstrated strong image transformation capabilities across agricultural imagery
+of various species, generating images of diseased and healthy crops and enhancing disease
+detection accuracy [23].
+Anomaly detection techniques are divided into three types based on whether they
+involve reconstruction, synthetic anomalies, or feature representation. Reconstruction
+techniques use autoencoders or GANs to reconstruct input images, detecting anomalies
+through reconstruction errors. The models are trained to fully reconstruct normal samples;
+when presented with anomalous samples, the generator fails to effectively reconstruct
+the abnormal regions, leading to larger reconstruction errors, which are used for anomaly
+detection. Synthetic anomaly techniques address the imbalance between anomalous and
+normal samples by generating synthetic anomalous images to supplement the dataset.
+Feature representation techniques leverage the powerful feature extraction capabilities of
+deep learning models to identify anomalies in the feature space rather than at the image
+level. Unlike the previous two techniques, they rely on deep feature extraction to determine
+sample anomalies.
+Examples of reconstruction techniques are AE-SSIM [24] and RIAD [25]. Examples
+of synthetic anomaly techniques are Draem [26] and CutPaste [27]. Examples of feature
+representation techniques are CS-Flow [28], PaDiM [29], and PatchCore [30]. The Inpainting
+Transformer (InTra) technique [31], which was developed for anomaly detection, uses image
+inpainting and self-attention mechanisms. AnoGAN [32] is a synthetic anomaly method
+that trains on normal samples and evaluates anomalies by calculating reconstruction errors
+and discriminator feature discrepancies. Pix2Pix GAN [ 33] detects anomalies through
+image transformation and color-based reconstruction techniques. The Teacher–Student
+model [34] is a feature representation method that employs a teacher model to learn the
+distribution of normal sample features and a student model to replicate the teacher’s
+outputs, identifying anomalies by comparing the discrepancies between their outputs.
+Each anomaly detection technique offers distinct advantages. Reconstruction methods
+are well-suited for scenarios with scarce anomalous samples. Synthetic anomaly methods
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 5 of 25
+enable the recognition of anomalies through the generation of additional synthetic data.
+Feature representation methods excel in flexibility and interpretability for anomaly detec-
+tion tasks. This study employed the EfficientAD framework [35], integrating the strengths
+of feature reconstruction and student–teacher learning. By leveraging knowledge distil-
+lation, the approach minimizes domain-specific feature biases during feature extraction.
+Additionally, an autoencoder is incorporated to detect logical anomalies (such as structural
+violations), while a student network is trained to regress the features of a pretrained teacher,
+ensuring greater precision and robustness in anomaly detection.
+GANs are effective for data augmentation. Images generated by GANs are not al-
+ways generalizable. Feature representation methods demonstrate superior performance in
+anomaly detection, particularly when addressing the heterogeneity of agricultural imagery.
+This study evaluated and compared four representative methods in the field of anomaly
+detection: the Teacher–Student model, AnoGAN, Pix2Pix, and InTra. Each method exhibits
+specific advantages depending on its application context, highlighting the versatility and
+scope of these techniques in addressing diverse anomaly detection scenarios.
+3. Materials and Methods
+3.1. Dataset
+This study used four datasets—MVTec AD [ 24,36], PlantVillage [ 37–39], Plant
+Leaves [40,41], and the Coffee Leaf Disease Dataset [42,43]—as sources for model training
+and testing (Table 1). While the full MVTec AD dataset was utilized to validate the funda-
+mental architectural soundness of the model against standard industrial benchmarks, this
+study strategically selected representative subsets from the PlantVillage and Coffee Leaf
+datasets. This selective approach aims to test the “small dataset” hypothesis across distinct
+morphological challenges (e.g., distinct localized spots vs. blurry gradual lesions) without
+redundant computation, which is highly relevant for edge-AI development.
+The MVTec AD dataset contains 5354 images divided into five texture types and
+10 object categories. Each category includes defect-free training images and both defective
+and defect-free testing images, enabling models to learn to distinguish between normal
+and anomalous patterns. The MVTec AD dataset is frequently used as a benchmark for
+evaluating performance in anomaly detection tasks.
+To comprehensively evaluate the model’s generalization capabilities across diverse
+leaf morphologies, we constructed a combined Plant Leaf evaluation pool by strategically
+sampling from two distinct public repositories. The majority of the agricultural crop
+classes (such as Apple, Cherry, Grape, and Potato) were sampled from the well-established
+PlantVillage dataset [37–39] (Data for: Identification of Plant Leaf Diseases Using a 9-layer
+Deep Convolutional Neural Network). It consists of 54,303 high-resolution images of plant
+leaves from 14 crop species that have been divided into 38 health status categories. The
+dataset encompasses a wide variety of plant disease types, supporting the generalization
+capabilities of machine learning models across different plant diseases. However, to
+introduce more complex structural variations and test the model’s robustness on medicinal
+plants, we supplemented this pool with the Arjun and Pongamia classes. These were
+sampled from a separate repository: A Database of Leaf Images: Practice towards Plant
+Conservation with Plant Pathology [40,41] (indexed as plant_leaves in TensorFlow datasets).
+By merging these standard crops and extended medicinal leaf datasets, we created a
+rigorous, multi-species testbed (referred to collectively under the PlantVillage umbrella
+in our results for brevity). To ensure strict evaluation protocols aligned with our “small
+dataset” objective, only a highly constrained subset of images was selected for each class
+(see Table 1), and testing sets were completely sequestered during the feature extraction
+and model training phases.
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 6 of 25
+Table 1. Dataset details. The testing set column represents the Total/Normal/Anomaly.
+Dataset Class Training Set Testing Set (Normal/Anomaly)
+MVTec AD
+Carpet 280 117 (28/89)
+Grid 264 78 (21/57)
+Leather 245 124 (32/92)
+Tile 230 117 (33/84)
+Wood 247 79 (19/60)
+Bottle 209 83 (20/63)
+Cable 224 150 (58/92)
+Capsule 219 132 (23/109)
+Hazelnut 391 110 (40/70)
+Metal Nut 220 115 (22/93)
+Pill 267 167 (26/141)
+Screw 320 160 (41/119)
+Toothbrush 60 42 (12/30)
+Transistor 213 100 (60/40)
+Zipper 240 151 (32/119)
+PlantVillage
+Apple 140 40 (20/20)
+Arjun 200 41 (20/21)
+Cherry 100 37 (17/20)
+Grape 402 40 (20/20)
+Pongamia 302 40 (20/20)
+Potato 132 40 (20/20)
+Coffee Coffee leaf 79 51 (10/41)
+Sweet Potato Sweet Potato 157 105 (30/75)
+The Coffee Leaf Disease dataset [ 43] was developed by Esgario et al. to assess the
+performance of deep learning algorithms in plant disease recognition. The original dataset
+comprises 1747 images of Arabica coffee leaves, covering several common biotic stresses.
+The original authors structured the data into a “Leaf dataset” (1685 whole leaves) and a
+“Symptom dataset” (2722 cropped symptom images). In this study, we focused exclusively
+on whole-leaf anomaly detection. To strictly align with our research objective of evaluating
+model robustness under extremely data-scarce conditions (“small datasets”), we intention-
+ally sampled a highly constrained subset of only 130 images from the original Leaf dataset.
+As detailed in Table 1, this subset was divided into 79 images for training and 51 images
+for testing, providing a rigorous test of the models’ generalization capabilities on complex
+agricultural backgrounds. The disease severity labels in this dataset were quantitatively
+measured based on the percentage of the leaf area affected by lesions, which were anno-
+tated at the pixel level by agricultural experts. Detailed sample counts, including healthy
+and diseased samples for training and testing stages, support performance evaluation for
+anomaly detection and disease classification.
+Finally, to validate the practical applicability of the model in real agricultural settings,
+we constructed a custom Sweet Potato dataset. Sweet potato images were collected within
+the processing factory of K.K.ORCHARD Co., Ltd. (Tainan, Taiwan). The shooting format
+used RGB cameras, specifically Fujifilm (Tokyo, Japan) GFX100s and X100F, with a shutter
+speed of 1/40 s, aperture setting f/8, and ISO set to 250. The camera lens was directed
+vertically downwards at the sweet potato from a distance of 450 mm. LED strip lights
+were used as the light source, vertically illuminating the sweet potato surface with a color
+temperature of 4500 K.
+To rigorously evaluate the model’s robustness against complex, real-world environ-
+mental noise (e.g., shadows and processing factory backgrounds), the collected images were
+curated into two distinct datasets during the preprocessing phase: the “Original” dataset,
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 7 of 25
+which consisted of the raw, unmodified images retaining their natural backgrounds, and
+the “Background-Removed” (BGRM) dataset, generated by applying foreground image
+segmentation techniques to extract the sweet potato instance and mask all extraneous
+background pixels with pure black. Following this preprocessing, there were 157 training
+images and 105 testing images, as detailed in Table 1.
+3.2. Method Architecture
+This study employed the EfficientAD framework (Figure 1) [35] to perform agricultural
+disease image detection. Integrating student–teacher learning and autoencoder–based
+techniques, the framework enables effective and precise agricultural imagery anomaly
+detection with millisecond-level latency. The framework consists of three main components:
+a Patch Description Network (PDN) for feature extraction, a student–teacher pair for local
+anomaly detection, and an autoencoder for logical anomaly detection.
+Figure 1. Architecture of the Patch Description Network (PDN) for lightweight feature extraction
+(redrawn from [35]).
+3.2.1. Feature Extraction
+Instead of a heavy backbone, the framework utilizes a Patch Description Network
+(PDN) for efficient feature extraction. The PDN, distilled from a pretrainedWideResNet-101
+on the ImageNet dataset, was specifically chosen over other architectures like Vision Trans-
+formers (ViTs) or EfficientNet because its convolutional structure excels at extracting dense,
+localized, and low-level texture descriptors. While ViTs focus on global context—which
+may overlook fine-grained local anomalies, the WideResNet-based PDN maintains a strict
+and narrow receptive field (e.g., 33× 33 pixels). This property is crucial for agricultural
+imagery, where early-stage diseases manifest as minute, localized texture variations. An
+input image I is processed to generate a feature map where each vector corresponds to a
+specific patch of the input image. This ensures that the receptive field is tightly controlled,
+allowing for the precise localization of anomalies. The teacher networkT (the PDN) extracts
+feature T(I) from the normal training image.
+3.2.2. Student–Teacher Learning
+To detect anomalous features, a student network (S) is employed. The student has the
+same architecture as the teacher (PDN) but is initialized randomly. In the training phase,
+the output of the teacher model and the student model can be denoted asT(I)∈ RC×W×H
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 8 of 25
+and S(I)∈ RC×W×H. During training, the student is optimized to predict the features
+output by the teacher for normal, anomaly-free images. Since the student observes only
+normal data during training, it fails to predict the teacher’s features when presented with
+anomalous regions during inference. The squared difference between the teacher’s output
+T(I) and the student’s prediction S(I) serves as the anomaly signal. The squared difference
+Dc,w,h for each tuple (c, w, h) is expressed as:
+Dc,w,h =
+
+T(I)c,w,h− S(I)c,w,h
+2
+(1)
+To compute the training loss, the framework introduces a hard example mining factor.
+The loss is calculated based on the phard-quantile dhard, where Dc,w,h≥ dhard. When the
+phard = 0, the loss yields to the standard S–T loss, and the original EfficientAD study [35]
+set phard = 0.999. The hard loss (Lhard) focuses optimization on the most difficult patches:
+Lhard = (CWH )−1
+∑c
+
+Dc,w,h
+ Dc,w,h≥ dhard
+
+(2)
+The architecture also uses a loss penalty during training to hinder the student model
+from imitating the teacher model on non-target data. This penalty is computed via a
+randomly sampled pretraining dataset P from ImageNet. In summary, the student loss is
+expressed as:
+LST = Lhard + (CWH )−1
+∑c∥S(P)c∥2
+F (3)
+3.2.3. Logical Anomaly Detection
+While the student–teacher pair excels at local defects, it may miss logical anomalies
+(e.g., structural violations in the crop). It is important to note that this study relied solely
+on RGB imagery. Although the PDN extracts features at a fixed patch size, the Efficien-
+tAD framework inherently captures multi-scale information by combining localized patch
+discrepancies (via the student–teacher difference) with global structural constraints (via
+the autoencoder bottleneck). Furthermore, to mitigate environmental challenges such as
+uneven illumination and shadows, background removal (BGRM) preprocessing strate-
+gies are explored in subsequent sections. The autoencoder passes the image (denoted
+as A(I)∈ RC×W×H) through a bottleneck, learning the global configuration of normal
+samples. During training, the autoencoder minimizes the reconstruction error against the
+teacher’s features:
+LAE = (CWH )−1
+∑c∥T(I)c− A(I)c∥2
+F (4)
+A large reconstruction error indicates a logical anomaly that violates the structural
+constraints learned during training. To prevent false-positive detections caused by the
+autoencoder’s inability to reconstruct fine-grained patterns, the framework doubles the
+student’s output channels to predict the output of the autoencoder in addition to the teacher.
+Let the additional output channels of the student model be denoted as S′(I)∈ RC×W×H;
+the additional loss is expressed as:
+LSTAE = (CWH )−1
+∑c∥A(I)c− S′(I)c∥2
+F (5)
+3.2.4. Inference and Scoring
+During the inference phase, an anomaly map is computed by combining the local
+anomaly map (from the student–teacher difference) and the global anomaly map (from the
+autoencoder reconstruction error). The local and the global maps are defined as:
+MLocal = C−1
+∑c∥T(I)c− S(I)c∥2 (6)
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 9 of 25
+MGlobal = C−1
+∑c∥S′(I)c− A(I)c∥2 (7)
+These maps are normalized using quantile-based normalization to ensure robust com-
+bination. To ensure fair and accurate evaluation, the thresholds for this quantile-based
+normalization are determined independently for each specific species or subset (per-species)
+rather than globally, aligning with the standard protocol of the original EfficientAD frame-
+work [35]. This accommodates the vastly different baseline feature distributions across
+different crops. The final anomaly score is the maximum value of the combined normalized
+map, providing both an image-level score and a pixel-level localization map.
+3.3. Evaluation Metrics
+The confusion matrix is a standard tool for evaluating the performance of classification
+models, utilizing true positive (TP), true negative (TN), false positive (FP), and false nega-
+tive (FN) metrics to calculate various quantitative measures. In anomaly detection tasks,
+the number of normal samples typically far exceeds that of anomalous samples, resulting in
+highly imbalanced datasets. This imbalance biases conventional evaluation metrics, such as
+accuracy, making them ineffective. For instance, a model might classify a majority of inputs
+as normal, achieving high accuracy while completely failing to identify anomalies. To
+address this issue, this study employed the area under the receiver operating characteristic
+curve (AUROC) and the area under the per-region overlap curve (AUPRO) as the primary
+evaluation metrics for image-level classification and pixel-level localization, respectively.
+3.3.1. Image-Level Evaluation (AUROC)
+The AUROC is highly effective for binary classification on imbalanced datasets because
+it evaluates model performance across all possible decision thresholds. It quantifies the
+trade-off between the true positive rate (TPR, or sensitivity) and the false positive rate (FPR,
+or 1—specificity). These are calculated as follows:
+TPR = TP
+TP + FN (8)
+FPR = FP
+FP + TN (9)
+To construct the ROC curve, all possible probability thresholds (0 to 1) are applied
+to the anomaly scores, plotting FPR on the x-axis and TPR on the y-axis. The AUROC
+represents the integral of this curve, yielding a value between 0 and 1. An AUROC close
+to 1 indicates excellent discriminative ability, while a value of 0.5 suggests that the model
+performs no better than random guessing.
+3.3.2. Pixel-Level Localization (AUPRO)
+While AUROC effectively evaluates whether an image contains an anomaly, it does
+not adequately measure how well the model localizes the exact shape and boundaries of the
+defect. Therefore, this study utilizes the per-region overlap (PRO) metric. Unlike standard
+pixel-wise intersection-over-union, PRO weights ground-truth anomalous regions equally,
+regardless of their size, ensuring that small but critical defects are not overshadowed by
+larger ones. For a given threshold, PRO is calculated as the average overlap across all
+connected ground-truth anomaly regions (Tk):
+PRO(T, P) = 1
+K
+K
+∑
+k=1
+|P∩ Tk|
+|Tk| (10)
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 10 of 25
+where K is the total number of ground-truth anomaly regions, Tk represents the pixels
+of the k-th ground-truth region, and P represents the pixels predicted as anomalous by
+the model.
+By calculating the PRO across a range of thresholds, a PRO curve is generated as a
+function of the pixel-wise FPR. Following standard industrial anomaly detection bench-
+marks, the AUPRO is defined as the normalized area under this PRO curve, integrated up
+to a specific FPR limit. In this study, an FPR limit of 0.3 was utilized to focus the evaluation
+on practical, low-false-alarm operational scenarios.
+3.4. Experimental Environment
+The core training and validation of the models in this study were conducted on a local
+testbed equipped with an AMD Ryzen 7 7800X3D CPU @4.20 GHz, 64 GB DDR5 RAM, and
+an NVIDIA GeForce RTX 4070 GPU, running on Windows 11 with Python 3.10.12, PyTorch
+2.2.0, and CUDA 12.3 (as detailed in Table 2).
+Table 2. Hardware and software environment.
+Item Specification
+CPU AMD Ryzen7 7800X3D @4.20 GHz
+RAM DDR5 64 GB
+OS Windows 11
+GPU NVIDIA GeForce RTX4070
+Libraries Python 3.10.12, PyTorch 2.2.0, CUDA 12.3, numpy 1.24.4,
+scikit-image 0.23.2, OpenCV 4.7.0
+Furthermore, to rigorously benchmark the absolute maximum inference throughput
+(frames per second, FPS) and latency for potential industrial deployment, additional
+performance testing was conducted on professional-grade Workstation GPUs (NVIDIA
+RTX 6000 Ada and RTX 5000 Ada). This methodology aligns with the hardware standards
+evaluated by the original authors of the EfficientAD framework.
+To ensure a fair and consistent evaluation, the EfficientAD framework was imple-
+mented based on the lightweight student–teacher and autoencoder architecture. For feature
+extraction, the Teacher network utilized a Patch Description Network (PDN) distilled
+from a WideResNet-101 model pretrained on the ImageNet dataset. The Student network
+mirrored the convolutional architecture of the Teacher but was initialized randomly. To
+capture global logical constraints, the Autoencoder was configured with an information
+bottleneck to compress and reconstruct the Teacher’s spatial feature maps.
+Input images across all datasets were resized to 256× 256 pixels during preprocessing,
+and the PDN was configured to evaluate localized patches of 33× 33 pixels. The training
+was optimized using the Adam optimizer with a learning rate of 10−4 and a weight decay
+of 10−5. To align with standard label-free anomaly detection protocols and ensure robust
+convergence, the model was trained without complex data augmentation. As reflected in
+the training loss curves (Figure 2), each subset underwent training for 70,000 iterations
+with a batch size of 1. During inference, anomaly maps were generated by normalizing and
+combining the local anomaly map (derived from the student–teacher squared difference)
+and the global anomaly map (derived from the autoencoder reconstruction error) using a
+predefined quantile-based normalization.
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 11 of 25
+Figure 2. Iteration–loss curve of EfficientAD training on the PlantVillage dataset.
+4. Result and Discussion
+This study evaluated the performance of the Teacher–Student [ 34], InTra [ 31],
+AnoGAN [32], Pix2Pix GAN [33], and EfficientAD [35] models in anomaly detection tasks.
+The evaluation was conducted using three datasets: MVTec AD [24,36], PlantVillage [37],
+and the Coffee Leaf Disease dataset [43]. To ensure fairness and avoid metric distortion
+caused by imbalanced data distributions, AUC was used as the primary evaluation metric.
+Table 3 presents the performance results of the models across the three datasets. The AUC
+values indicate the models’ anomaly detection capabilities, with higher scores representing
+stronger performance.
+Table 3. Model performance in AUROC (%) evaluated on the testing set.
+Method Reconstruction-Based Synthetic
+Anomaly-Based Feature Representation-Based
+Dataset Class
+Model AnoGAN Pix2Pix
+Gan
+Teacher
+Student InTra EfficientAD
+MVTec AD
+Carpet 86.9 57.9 59.2 84.2 96.7
+Grid 15.3 39.6 50.9 98.8 99.8
+Leather 68.5 38.4 57.7 99.4 100.0
+Tile 69.5 48.6 78.8 89.1 98.6
+Wood 59.1 88.3 61.3 85.8 98.8
+Bottle 41.1 28.2 53.3 98.4 100.0
+Cable 53.8 46.4 57.4 81.9 94.4
+Capsule 57.5 49.9 54.9 88.4 98.2
+Hazelnut 91.4 43.4 57.8 83.3 99.8
+Metal Nut 61.2 56.1 50.8 88.5 97.8
+Pill 37.4 68.9 58.2 83.8 99.3
+Screw 100.0 0.0 50.6 84.5 97.6
+Toothbrush 46.7 56.1 81.6 98.9 100.0
+Transistor 22.6 31.8 57.3 87.7 99.9
+Zipper 35.3 58.8 61.5 97.8 97.5
+PlantVillage
+Apple 72.2 64.7 66.7 46.1 77.5
+Arjun 11.6 48.8 85.0 53.0 98.6
+Cherry 51.0 61.7 90.0 72.6 94.1
+Grape 87.0 59.8 100.0 61.9 98.7
+Pongamia 48.0 98.7 80.0 59.5 100.0
+Potato 43.0 75.0 85.5 38.9 99.0
+Coffee Coffee leaf 59.7 54.4 100.0 67.7 99.8
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 12 of 25
+4.1. Validation on the MVTec AD Benchmark
+To validate the correctness of our implementation and establish a performance base-
+line, we first evaluated the EfficientAD framework on the MVTec AD dataset [24,36]. This
+dataset serves as a standard benchmark in the industrial anomaly detection domain, com-
+prising 15 categories of textures and objects. As shown in Table 3, EfficientAD achieved
+superior performance compared to identifying methods, achieving a mean AUROC of
+98.6% (EfficientAD-S). It demonstrated exceptional robustness, achieving 100% AUROC
+in categories such as “Leather”, “Bottle”, and “Toothbrush”. Unlike the GAN-based ap-
+proaches (AnoGAN, Pix2Pix), which exhibited training instability and lower performance
+in complex texture categories (e.g., “Grid” and “Wood”), EfficientAD maintained consistent
+high performance across all categories. For visual examples of the model’s localization
+performance on these industrial categories, please refer to Figure A1 in Appendix A. These
+results confirm that the student–teacher architecture with the distilled PDN effectively
+captures both local and global anomalies. Having validated the model’s capability on
+standard industrial benchmarks, we extended the evaluation to agricultural domains to
+assess its effectiveness in crop health monitoring.
+4.2. Performance on the PlantVillage Dataset
+As shown in Figure 2 (training loss), the EfficientAD framework demonstrated highly
+stable training dynamics across all subsets. Unlike the fluctuations often observed in
+GAN-based methods, the student–teacher loss ( LST) decreased smoothly, and the Au-
+toencoder loss (LAE) remained consistently low, demonstrating stable convergence within
+the first 5000 iterations for categories such as “Arjun”, “Pongamia”, and “Potato”. The
+“Grape” subset, which previously posed challenges for other architectures, showed stable
+convergence without significant loss spikes.
+During testing and inference, EfficientAD demonstrated outstanding performance,
+achieving perfect or near-perfect results across most categories. As indicated in the results
+(Table 3), the model attained an AUROC of 100.0% in “Pongamia” and 99.0% in “Potato”,
+underscoring its exceptional adaptability for detecting distinct crop disease features. While
+the “Apple” category presented a slight challenge (AUROC 77.5%), likely due to lower
+contrast between early-stage lesions and the leaf surface, the overall performance remained
+superior to comparative methods. Figure 3 illustrates selected results from EfficientAD
+applied to the PlantVillage dataset, highlighting the model’s ability to accurately localize
+lesions in the anomaly maps while suppressing noise in the healthy background regions.
+While PlantVillage images are acquired under controlled, laboratory-like conditions, real
+field environments feature complex backgrounds and varying illumination. To bridge this
+gap, we constructed and evaluated a custom real-world Sweet Potato dataset in Section 4.5.
+4.3. Performance on the Coffee Leaf Disease Dataset
+During the training phase on the Coffee Leaf Disease dataset, the loss curve (Figure 4)
+demonstrated that the proposed model effectively achieved stable loss convergence. In the
+testing and inference phases, the Teacher–Student model achieved a perfect AUC score of
+100.0%. EfficientAD closely followed with a highly competitive score of 99.8%, indicating
+its exceptional and robust anomaly detection capability for identifying the presence of
+diseases on coffee leaves at the image level. In contrast, reconstruction-based models like
+InTra (67.7%), AnoGAN (59.7%), and Pix2Pix GAN (54.4%) attained relatively lower scores,
+likely because typical generative models struggle to faithfully reconstruct the intricate
+biological textures and varying lighting conditions present in agricultural imagery.
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 13 of 25
+Figure 3. Examples of EfficientAD detection on the PlantVillage dataset: (upper a, lower a) original
+images, (upper b, lower b) ground truth, and (upper c, lower c) anomaly map.
+Figure 4. Iteration–loss curve of EfficientAD training on the Coffee Leaf dataset.
+Beyond image-level classification, we qualitatively assessed the model’s ability to
+highlight diseased regions. Figure 5 presents selected sample results of EfficientAD applied
+to the Coffee Leaf Disease dataset. The generated anomaly maps (Figure 5c) successfully
+activated around the primary regions of rust spots and necrotic lesions, aligning well with
+the ground truth masks (Figure 5b). However, a visual inspection also revealed that the
+model’s local feature extractor can occasionally be distracted by the natural waxy surface
+of the coffee leaves. Specular reflections from the lighting can cause minor high-intensity
+activations in the background healthy tissue. This qualitative observation highlights the
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 14 of 25
+inherent challenges of precise defect delineation in such environments, which will be
+quantitatively explored in the subsequent anomaly localization section.
+Figure 5. Examples of the Coffee dataset: (a) original images, (b) ground truth, and (c) anomaly map.
+4.4. Performance of EfficientAD in Anomaly Localization
+In addition to evaluating the anomaly detection performance at the whole-image
+level, this study focused on pixel-level anomaly localization capability. Based on the
+EfficientAD architecture’s ability to assign corresponding anomaly scores to pixels during
+inference, this study further used AUPRO (area under per-region overlap) as the evaluation
+metric for localization. The AUPRO metric focuses on the overlap degree of anomalous
+regions, summarizing the overlap rate between predicted and ground truth regions for
+each anomalous area, which reflects the model’s overall detection quality for target defect
+regions. Table 4 presents the localization results at the region level (AUPRO values).
+Table 4. Performance of EfficientAD in AUPRO (%).
+Dataset Class AUPRO
+MVTec AD
+Carpet 89.0
+Grid 89.6
+Leather 98.2
+Tile 93.3
+Wood 89.8
+Bottle 96.0
+Cable 87.3
+Capsule 97.8
+Hazelnut 94.9
+Metal Nut 92.8
+Pill 96.7
+Screw 96.0
+Toothbrush 95.5
+Transistor 89.7
+Zipper 93.6
+PlantVillage
+Apple 84.1
+Arjun 96.7
+Cherry 84.8
+Grape 94.8
+Pongamia 89.8
+Potato 97.6
+Coffee Coffee leaf 75.3
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 15 of 25
+Observing the differences in anomaly region localization accuracy across subsets
+allows for simultaneous evaluation of the cross-domain application effectiveness of this
+research method. For the MVTec AD dataset in the industrial domain, the PlantVillage
+dataset and Coffee Leaf Disease dataset in an agricultural domain, the AUPRO values for
+most subsets were concentrated between 87% and 98%. Categories with definitive structural
+boundaries performed particularly outstandingly, such as Leather (98.2%) and Capsule
+(97.8%), indicating very precise localization of regional areas. Conversely, subsets like
+Cable (87.3%) and Wood (89.8%) were relatively lower, suggesting room for improvement
+in delineating the boundaries for complex textual or wire-like surface defects.
+In the PlantVillage dataset, the AUPRO metric showed more significant differences.
+Categories like Apple (84.1%) and Cherry (84.8%) yielded relatively lower scores, indicating
+that the model is more prone to deviations when detecting the boundaries of the entire
+lesion area on these specific leaves. However, in subsets like Potato (97.6%) and Arjun
+(96.7%), the AUPRO values were significantly improved, suggesting highly accurate lesion
+localization. A possible reason is that the leaf lesions of these plants are more concentrated
+with distinct, high-contrast boundaries, allowing the model to better learn the localized
+characteristics of these diseases. Furthermore, a deeper failure case analysis reveals that
+this performance gap is directly exacerbated by inherent inequalities within the public
+dataset itself. Unlike the highly successful “Potato” subset, which features artificially
+pre-masked, pure black backgrounds and large, high-contrast necrotic lesions, the original
+“Apple” images (which frequently resulted in false negatives or weak boundary detection)
+suffer from low overall illumination, noisy unmasked backgrounds, and extremely small,
+low-contrast early-stage lesions. Because the label-free model relies on sharp feature
+discrepancies to flag anomalies, these soft gradients smoothly blend into the healthy crop
+tissue, occasionally failing to trigger the required anomaly threshold.
+Finally, in the Coffee Leaf Disease dataset, the performance showed an AUPRO of
+75.3%, which was the lowest among the three major datasets. This result indicates that
+certain features or boundaries of actual lesions on coffee leaves are difficult to precisely
+delineate. This limitation is potentially driven by factors such as irregular lesion shapes or
+specular reflections on the waxy leaf surface, which interfere with the feature extractor and
+lead to a decrease in the regional overlap predicted by the model.
+4.5. Practice of EfficientAD on Sweet Potato
+To isolate the impact of cluttered backgrounds on the model’s anomaly scoring, we
+compared the performance of the EfficientAD framework on the Original and BGRM
+Sweet Potato datasets. In unsupervised feature-reconstruction models like EfficientAD,
+the autoencoder may inadvertently dedicate representational capacity to reconstructing
+the background rather than focusing entirely on the crop. By comparing the original
+and BGRM datasets, this study investigated whether eliminating background interference
+forces the student–teacher network to extract more highly discriminative features from the
+crop’s surface, thereby improving the fine-grained localization of defects such as black rot,
+southern blight, cracks, and mechanical damage.
+As illustrated in the iteration–loss curves in Figure 6, both dataset variants achieved
+stable convergence. However, the image-level AUROC (Table 5) reached 88.9% and 91.0%,
+demonstrating an excellent ability to judge “whether there is an anomaly” regardless of
+background presence. Despite this high image-level accuracy, the region-level localization
+(AUPRO) reached only 47.1% and 48.3%. Shown as Figure 7, the background-removed
+(BGRM) images generally provided cleaner localization boundaries by eliminating false-
+positive activations in the background. Nevertheless, the overall AUPRO score indicates
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 16 of 25
+that improvement is still needed in the model’s fine-grained localization and lesion bound-
+ary recognition.
+Figure 6. Iteration–loss curve of EfficientAD training on the Sweet Potato dataset.
+Table 5. EfficientAD performance on the Sweet Potato dataset.
+Metric Dataset
+Original BGRM BGRP-G
+AUROC (%) 88.9 91.0 99.5
+AUPRO (%) 47.1 48.3 61.9
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Figure 7. Examples of the Sweet Potato dataset: (a) original image, (b) background-removed image,
+(c) ground truth, ( d) anomaly map of the original image, ( e) anomaly map of the BGRM image,
+(f) background-replaced image (BGRP-G, green mask), and (g) anomaly map of the BGRP-G image.
+Note how the out-of-distribution green mask in (g) preserves the anomaly activations for dark lesions
+(Black Rot) and structural defects (Mechanical Damage) compared to the black mask in (e).
+A deeper analysis of the defect-specific localization performance (Table 6) reveals
+how the physical characteristics of agricultural anomalies influence the model’s feature
+representation. Defect types with sharp, distinct edge gradients and high structural contrast
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 17 of 25
+against the normal sweet potato skin, such as “Crack” (AUPRO improving from 68.52%
+to 82.30% with BGRM), were localized with reasonable accuracy. In contrast, anomalies
+characterized by blurry, gradual color transitions or irregular surface textures—such as
+“Black Rot” (37.70% BGRM) and “Mechanical Damage” (53.88% BGRM)—proved signif-
+icantly more challenging for the model to precisely delineate. The background-removal
+(BGRM) preprocessing step uniformly improved AUPRO across almost all defect cate-
+gories, most notably increasing “Southern Blight” localization by nearly 10%. This confirms
+that mitigating edge-noise between the crop boundary and the background allows the
+student–teacher network to allocate its feature extraction capacity more efficiently toward
+subtle surface anomalies.
+Table 6. EfficientAD anomaly localization performance (AUPRO) by defect type.
+Metric Dataset Black Rot Southern
+Blight Crack Mechanical
+Damage Rat Bite
+AUPRO (%)
+Original 49.96 60.71 68.52 17.77 28.41
+BGRM 37.70 70.53 82.30 53.88 63.54
+BGRP-G 47.64 83.86 65.51 76.29 72.24
+To rigorously evaluate the model’s robustness against complex, real-world envi-
+ronmental noise (e.g., shadows and processing factory backgrounds), we deliberately
+curated the dataset into three distinct preprocessing variants: Original (retaining natu-
+ral backgrounds), Background-Removed (BGRM) (masking the background with pure
+black), and Background-Replaced Green (BGRP-G) (masking the background with an
+out-of-distribution pure green, RGB: 0, 255, 0).
+The performance improvements achieved by the BGRP-G strategy were remarkable.
+As updated in Table 5, the overall image-level AUROC surged to 99.5%, and the pixel-level
+AUPRO nearly doubled to 61.9% compared to the original and black-masked versions.
+More importantly, as detailed in Table 6, the out-of-distribution green mask successfully
+preserved the dark boundary integrity of “Black Rot”, recovering its AUPRO from 37.70%
+(BGRM) to 47.64%. Furthermore, defect categories with previously ambiguous bound-
+aries, such as “Southern Blight” (83.86%), “Mechanical Damage” (76.29%), and “Rat Bite”
+(72.24%), experienced massive localization gains. These findings demonstrate that utilizing
+out-of-distribution color masking is a highly effective, data-centric optimization strategy
+for label-free anomaly detection in agriculture.
+This advanced preprocessing analysis also highlights the distinct and collaborative
+roles of the Autoencoder (AE) and Student–Teacher (S–T) modules within the EfficientAD
+architecture. While standard public datasets like PlantVillage and Coffee Leaf primar-
+ily feature localized texture lesions (where the S–T network excels), our custom Sweet
+Potato dataset introduces severe structural defects such as “Crack”, “Rat Bite”, and
+“Mechanical Damage”.
+As visually demonstrated in Figure 7, “Mechanical Damage” presents a unique chal-
+lenge. Because this damage often occurs during harvesting, the exposed inner flesh is fresh
+and lacks the high-contrast necrotized (black) tissues typical of diseases. Consequently,
+the S–T network, which relies on local texture discrepancies, struggles to identify the
+anomaly. Furthermore, when using a pure black background mask (BGRM, Figure 7e),
+the AE also fails to capture the structural loss because of the black background. However,
+by applying the out-of-distribution green mask (BGRP-G, Figure 7g), the AE is forced
+to recognize the massive volumetric deformation against the stark green boundary. The
+resulting high-intensity heatmaps successfully capture these global structural violations,
+proving that the integration of logical anomaly detection (AE) and out-of-distribution
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 18 of 25
+background masking is essential for identifying severe, non-discolored structural damage
+in agricultural products.
+To provide a more comprehensive view of the localization performance dynamics, the
+full AUPRO curves for each defect type are detailed in Appendix B (Figure A2). Following
+standard anomaly detection evaluation protocols, these curves integrate the per-region
+overlap across false-positive rates up to 0.3. The visual comparison between the original
+and background-removed (BGRM) datasets explicitly highlights the steep early-curve
+performance gains in categories like “Crack”, “Mechanical Damage”, and “Rat Bite”.
+Interestingly, the curves reveal that “Black Rot” experienced a noticeable decrease in
+AUPRO following background removal. This phenomenon likely occurs because the
+dark, necrotic edges of the black rot lesions share pixel intensity similarities with the
+pure black mask introduced during the background removal process. Consequently, the
+feature extractor’s activations for these specific dark boundary regions are inadvertently
+suppressed. This finding provides valuable insight for future preprocessing strategies,
+suggesting that using a non-black, out-of-distribution color (e.g., solid green or magenta)
+for background masking may preserve the integrity of dark lesion boundaries.
+To further understand the distribution of sweet potato data in the deep feature space,
+this study additionally performed dimensionality reduction and clustering analysis on the
+features extracted from “normal” samples in the training set. As shown in Figures 8 and 9,
+these visualizations employed t-SNE, alongside K-means and DBSCAN clustering mapped
+onto principal component analysis (PC 1 and PC 2) axes. In the t-SNE visualizations, the
+deep feature vectors of normal sweet potatoes did not form a single monolithic group; in-
+stead, they were scattered into distinct, relatively independent sub-clusters. This illustrates
+that the model is capturing highly detailed, diverse features due to intrinsic variations in
+crop shape, surface appearance, and shooting conditions.
+ 
+Figure 8. Visualization of dimensionality reduction and clustering analysis results on the Sweet Potato
+dataset using t-SNE, K-means, and DBSCAN (left to right). The color in the K-means depicts normal
+object and five different defect types. The black point in the DBSCAN depicts unclustered outlier.
+This high intra-class variance is primarily driven by the intrinsic biological diversity of
+the crops (e.g., natural variations in shape, skin texture, and color), rather than just shooting
+conditions or lighting. Furthermore, DBSCAN identified a significant portion of the normal
+samples as “unclustered outliers” (depicted as black points). This does not indicate that the
+training data contain high levels of noise or mislabeled samples; rather, it suggests that the
+feature extractor is highly sensitive to the natural, benign morphological variations of the
+sweet potatoes. The model rigorously treats extreme but normal biological variations as
+outliers in the latent space, highlighting the delicate trade-off between anomaly sensitivity
+and tolerance for natural agricultural variance.
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 19 of 25
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Figure 9. Visualization of dimensionality reduction and clustering analysis results on the Sweet
+Potato BGRM dataset using t-SNE, K-means, and DBSCAN (left to right). The color in the K-means
+depicts normal object and five different defect types. The black point in the DBSCAN depicts
+unclustered outlier.
+This scattered feature topology explains the discrepancy between the model’s
+image-level and pixel-level performance. Because the model maintains a high recognition
+accuracy near 100% at the image level, it successfully bounds this diverse “normal” space
+away from severe anomalies. However, in terms of fine-grained localization (AUPRO), the
+high diversity of normal local features causes the model to be easily influenced by minor
+environmental variations and individual crop differences, blurring the predicted edges of
+diseased regions. This phenomenon highlights that further optimization is needed in data
+format preprocessing and model feature adjustment strategies to achieve higher precision
+anomaly localization in practical applications.
+4.6. Computational Efficiency and Deployment Feasibility
+A critical requirement for automated agricultural sorting lines is high-throughput,
+real-time inference. While the core models were trained on a consumer-grade RTX 4070
+(Section 3.3), we sought to evaluate the absolute deployment potential of the adapted
+EfficientAD framework. To align our benchmark methodology with the original authors
+(who tested on RTX A6000/A5000 architectures) and to simulate high-end industrial edge
+environments, inference evaluations were additionally conducted using the next-generation
+NVIDIA RTX 6000 Ada and RTX 5000 Ada GPUs.
+As detailed in Table 7, the framework demonstrates an exceptionally lightweight
+footprint. The “S” model requires only 8.06 M parameters and 104.04 MiB of GPU memory,
+operating at just 75.94 GFLOPs. Even the higher-capacity “M” model remains highly
+efficient, utilizing 20.74 M parameters and 227.10 MiB of GPU memory while operating at
+235.47 GFLOPs. During inference, the “S” model achieved a striking average latency of
+just 1.153 ms per image on the RTX 6000 Ada, translating to a remarkable throughput of
+867 frames per second (FPS), and maintained a high speed of 476 FPS on the RTX 5000 Ada.
+Notably, even with the increased complexity of the “M” model, the framework still achieved
+an impressive latency of 2.255 ms (443 FPS) on the RTX 6000 Ada and 3.334 ms (299 FPS)
+on the RTX 5000 Ada. These benchmark results confirm that the proposed label-free
+framework completely eliminates the computational bottlenecks typically associated with
+heavy supervised detection models, making it exceptionally well-suited for deployment on
+resource-constrained Edge AI devices and real-time agricultural inspection systems.
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 20 of 25
+Table 7. Computational footprint and inference benchmark of the EfficientAD framework.
+Model Parameters (M) GFLOPs GPU Memory (MiB) Device Latency (ms) Throughput (FPS)
+S 8.06 75.94 104.04 RTX 6000 Ada 1.153 867
+RTX 5000 Ada 2.097 476
+M 20.74 235.47 227.10 RTX 6000 Ada 2.255 443
+RTX 5000 Ada 3.334 299
+5. Conclusions
+This study successfully applied industrial anomaly detection methods to the field of
+agricultural imagery. By leveraging pretrained networks for feature extraction and incor-
+porating feature transformation adjustments, the extracted features were more accurately
+aligned with the target task’s data distribution. This study established and validated a
+comprehensive process for anomaly detection and localization across multiple agricul-
+tural species. A systematic comparative analysis of various anomaly detection models
+was conducted using representative datasets, including MVTec AD, PlantVillage, and
+the Coffee Leaf Disease dataset, to evaluate the performance of Teacher–Student, InTra,
+AnoGAN, Pix2Pix GAN, and EfficientAD. The results from the training and inference
+phases demonstrated that the adapted EfficientAD framework exhibited superior and
+consistent performance across most datasets and categories. Its simplified yet effective
+student–teacher structure achieved strong generalization capabilities without excessive
+reliance on complex data augmentation techniques.
+Compared to prevailing paradigms in the existing agricultural deep learning literature
+that heavily rely on supervised convolutional neural networks (CNNs) and object detectors
+(e.g., ResNet, YOLO), the EfficientAD framework demonstrates three distinct advantages.
+First, it operates entirely label-free, circumventing the massive labor costs associated with
+pixel-level or bounding-box annotations required by supervised models. Second, it exhibits
+exceptional viability on small datasets; while existing studies typically require thousands
+of annotated diseased images to prevent overfitting, the framework achieved near-perfect
+AUROC scores (up to 99.5%) using only 100 to 200 normal training samples. Finally, unlike
+computationally heavy multi-stage detection pipelines, the adapted framework operates
+with an exceptionally lightweight footprint (as low as 8.06 M parameters), making it highly
+advantageous for the current landscape of smart agriculture.
+An analysis of the training process revealed that EfficientAD’s training loss, TPR, and
+TNR followed a highly stable trend. Although some subsets exhibited occasional minor
+fluctuations in the loss function during early training, the model was able to quickly adjust
+and achieve effective convergence, including the model’s robust capability in distinguish-
+ing between normal and anomalous samples. At the image-level (AUROC), the framework
+demonstrated near-perfect identification of anomalies across different domains. How-
+ever, regarding fine-grained regional localization (AUPRO), values were more sensitive
+to categories with complex backgrounds, specular reflections, or irregular lesion shapes
+(e.g., Coffee Leaf and early-stage Apple diseases). To overcome these challenges posed by
+waxy and reflective agricultural surfaces, future feature extractors could integrate spatial
+attention mechanisms designed to identify and mask high-intensity specular highlights dy-
+namically. Furthermore, at the data-acquisition level, utilizing cross-polarization imaging
+could physically suppress reflections.
+To further test practical applicability, a background interference analysis utilizing
+a custom Sweet Potato dataset revealed that while background noise does not hinder
+image-level classification, background-removal preprocessing (BGRM) is a critical step
+for reducing false-positive pixel activations and improving the precision of defect bound-
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 21 of 25
+ary localization. This study demonstrates the advantages of label-free frameworks in
+anomaly detection tasks, highlighting their potential as simplified, high-efficiency models.
+Given its millisecond-level latency and lack of reliance on massive labeled datasets, the
+adapted framework holds significant promise for deployment on resource-constrained
+Edge AI devices.
+While the current model performs exceptionally well on sharp texture discontinuities,
+it is sensitive to “blurry” or “gradual” lesion boundaries (such as Black Rot). Future research
+should focus on optimizing the student–teacher network by integrating multi-scale feature
+fusion to capture broader contextual information around blurry edges, and implementing
+boundary-aware loss functions to force attention on soft gradient transitions. Furthermore,
+to bridge the gap between controlled laboratory datasets and realistic field conditions
+with complex backgrounds and occlusions, incorporating domain adaptation strategies
+and multi-modal data (e.g., multispectral imagery) will be crucial for advancing practical,
+end-to-end anomaly detection technologies in smart agriculture.
+Author Contributions: Conceptualization, M.-D.Y. and T.-H.L.; methodology, M.-D.Y. and T.-H.L.;
+software, T.-H.L. and H.-H.T.; validation, T.-H.L. and H.-H.T.; formal analysis, M.-D.Y. andT.-H.L.;
+investigation, M.-D.Y. and H.-H.T.; resources, M.-D.Y.; writing—original draft preparation,M.-D.Y.
+and T.-H.L.; writing—review and editing, M.-D.Y. and H.-H.T.; supervision, M.-D.Y.; project adminis-
+tration, M.-D.Y.; funding acquisition, M.-D.Y., T.-H.L., T.-C.S. and Y.-C.H. All authors have read and
+agreed to the published version of the manuscript.
+Funding: This work was funded in part by the National Science and Technology Council, Taiwan,
+under grant numbers 114-2121-M-005-002 and 114-2634-F-005-002.
+Data Availability Statement:Data contained within the article are available at the link: MVT ecAD [24,36]:
+https://www .mvtec.com/company/research/datasets/mvtec-ad (accessed on4 December 2024); PlantVil-
+lage [37–39]: https://data.mendeley .com/datasets/tywbtsjrjv/1 (accessed on4 December 2024); Plant
+Leaves [40,41]: https://data.mendeley.com/datasets/hb74ynkjcn/5 (accessed on 4 December 2024);
+Coffee Leaf [42,43]: https://github.com/esgario/lara2018 (accessed on 4 December 2024). Due to the
+proprietary restrictions applying to the processing factory’s mechanical sorting line design, specific
+illumination configurations, and the background environment, the custom Sweet Potato dataset
+presented in this article is not currently publicly available. Requests for academic collaboration and
+data access should be directed to the corresponding author.
+Acknowledgments: The authors would like to express their sincere gratitude to K.K.ORCHARD Co.,
+Ltd. for their generous support in facilitating the data collection for this study. We are especially
+thankful for their provision of the workspace, facilities, and the diverse sweet potato samples (both
+normal and defective) that were essential for constructing the custom image dataset.
+Conflicts of Interest: The authors declare no conflicts of interest.
+Abbreviations
+The following abbreviations are used in this manuscript:
+AUPRO Area Under the Per-Region Overlap Curve
+AUROC Area Under the Receiver Operating Characteristic Curve
+BGRM Background Removed
+BGRP-G Background Replaced—Green
+CNN Convolutional Neural Network
+FPR False Positive Rate
+GAN Generative Adversarial Network
+PCA Principal Component Analysis
+PDN Patch Description Network
+PRO Per-Region Overlap
+TNR True Negative Rate
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 22 of 25
+TPR True Positive Rate
+UAV Unmanned Aerial Vehicle
+Appendix A. Visual Results on the Industrial Benchmark (MVTec AD)
+To validate the generalizability of the adapted EfficientAD framework, we performed
+qualitative evaluations on the MVTec AD dataset. While the primary focus of this study
+was agricultural imagery, these results confirm the model’s ability to accurately localize
+anomalies across diverse textures and objects. Figure A1 displays a selection of original
+images, ground truth annotations, and the anomaly maps generated by our method.
+Figure A1. Qualitative results on the MVTec AD dataset. The rows represent different industrial
+object categories. The columns correspond to: ( upper a, center a, lower a) original input images;
+(upper b, center b, lower b) ground truth anomaly masks; and ( upper c, center c, lower c) the
+predicted anomaly maps generated by EfficientAD.
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 23 of 25
+Appendix B. AUPRO Curves for Sweet Potato Defect Localization
+To transparently illustrate the impact of background-removal preprocessing on fine-
+grained anomaly localization, the per-region overlap (PRO) curves for each specific defect
+category in the custom Sweet Potato dataset are presented below. The x-axis represents the
+false positive rate (FPR) capped at a limit of 0.3, adhering to standard industrial anomaly
+detection evaluation metrics.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Figure A2. PRO curves comparing localization performance on the Original dataset (left column), the
+Background-Removed dataset (center column), and the Background Replaced—Green (right column)
+across five defect types: Black Rot, Southern Blight, Crack, Mechanical Damage, and Rat Bite. The
+area under the PRO curve (AUPRO) is reported in the bottom right of each subplot.
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 24 of 25
+References
+1. Tseng, H.-H.; Yang, M.-D.; Saminathan, R.; Hsu, Y.-C.; Yang, C.-Y.; Wu, D.-H. Rice Seedling Detection in UAV Images Using
+Transfer Learning and Machine Learning. Remote Sens. 2022, 14, 2837. [CrossRef]
+2. Lee, C.-J.; Yang, M.-D.; Tseng, H.-H.; Hsu, Y.-C.; Sung, Y.; Chen, W.-L. Single-Plant Broccoli Growth Monitoring Using Deep
+Learning with UAV Imagery.Comput. Electron. Agric. 2023, 207, 107739. [CrossRef]
+3. Arumuga Arun, R.; Umamaheswari, S. Effective Multi-Crop Disease Detection Using Pruned Complete Concatenated Deep
+Learning Model. Expert Syst. Appl. 2023, 213, 118905. [CrossRef]
+4. Fan, S.; Liang, X.; Huang, W.; Zhang, V .J.; Pang, Q.; He, X.; Li, L.; Zhang, C. Real-Time Defects Detection for Apple Sorting Using
+NIR Cameras with Pruning-Based YOLOV4 Network. Comput. Electron. Agric. 2022, 193, 106715. [CrossRef]
+5. Jia, Y.; Fu, K.; Lan, H.; Wang, X.; Su, Z. Maize Tassel Detection with CA-YOLO for UAV Images in Complex Field Environments.
+Comput. Electron. Agric. 2024, 217, 108562. [CrossRef]
+6. Basso, B.; Antle, J. Digital Agriculture to Design Sustainable Agricultural Systems. Nat. Sustain. 2020, 3, 254–256. [CrossRef]
+7. Padhiary, M.; Saha, D.; Kumar, R.; Sethi, L.N.; Kumar, A. Enhancing Precision Agriculture: A Comprehensive Review of Machine
+Learning and AI Vision Applications in All-Terrain Vehicle for Farm Automation.Smart Agric. Technol. 2024, 8, 100483. [CrossRef]
+8. Li, L.; Zhang, S.; Wang, B. Plant Disease Detection and Classification by Deep Learning—A Review. IEEE Access 2021,
+9, 56683–56698. [CrossRef]
+9. Luo, X.; Sun, C.; He, Y.; Zhu, F.; Li, X. Cross-Cultivar Prediction of Quality Indicators of Tea Based on VIS-NIR Hyperspectral
+Imaging. Ind. Crops Prod. 2023, 202, 117009. [CrossRef]
+10. Yang, M.-D.; Hsu, Y.-C.; Tseng, W.-C.; Tseng, H.-H.; Lai, M.-H. Precision Assessment of Rice Grain Moisture Content Using UAV
+Multispectral Imagery and Machine Learning. Comput. Electron. Agric. 2025, 230, 109813. [CrossRef]
+11. Lin, S.; Xiu, Y.; Kong, J.; Yang, C.; Zhao, C. An Effective Pyramid Neural Network Based on Graph-Related Attentions Structure
+for Fine-Grained Disease and Pest Identification in Intelligent Agriculture. Agriculture 2023, 13, 567. [CrossRef]
+12. Yang, M.-D.; Hsu, Y.-C.; Liu, T.-T.; Huang, H.-H. Enhancing Grain Moisture Prediction in Multiple Crop Seasons Using Domain
+Adaptation AI. Comput. Electron. Agric. 2025, 231, 110058. [CrossRef]
+13. Liu, Z.; Rasika, D.; Abeyrathna, R.M.; Mulya Sampurno, R.; Massaki Nakaguchi, V .; Ahamed, T. Faster-YOLO-AP: A Lightweight
+Apple Detection Algorithm Based on Improved YOLOv8 with a New Efficient PDWConv in Orchard. Comput. Electron. Agric.
+2024, 223, 109118. [CrossRef]
+14. Wang, Z.; Jin, L.; Wang, S.; Xu, H. Apple Stem/Calyx Real-Time Recognition Using YOLO-v5 Algorithm for Fruit Automatic
+Loading System. Postharvest Biol. Technol. 2022, 185, 111808. [CrossRef]
+15. Toda, Y.; Okura, F. How Convolutional Neural Networks Diagnose Plant Disease.Plant Phenomics 2019, 2019, 9237136. [CrossRef]
+16. Wang, C.; Xiao, Z. Potato Surface Defect Detection Based on Deep Transfer Learning. Agriculture 2021, 11, 863. [CrossRef]
+17. Hassan, S.M.; Maji, A.K. Plant Disease Identification Using a Novel Convolutional Neural Network. IEEE Access 2022,
+10, 5390–5401. [CrossRef]
+18. Kalaimanivel, S.; France, K. Crop Disease and Pest Detection Using Convolutional Neural Networks (CNN). In Proceedings of
+the 2024 5th International Conference on Image Processing and Capsule Networks (ICIPCN), Dhulikhel, Nepal, 3–4 July 2024;
+pp. 377–382.
+19. Yang, M.-D.; Su, T.-C.; Pan, N.-F.; Liu, P . Feature Extraction Of Sewer Pipe Defects Using Wavelet Transform and Co-Occurrence
+Matrix. Int. J. Wavelets Multiresolut. Inf. Process. 2011, 9, 211–225. [CrossRef]
+20. Lu, Y.; Chen, D.; Olaniyi, E.; Huang, Y. Generative Adversarial Networks (GANs) for Image Augmentation in Agriculture:
+A Systematic Review. Comput. Electron. Agric. 2022, 200, 107208. [CrossRef]
+21. Zhang, M.; Liu, S.; Yang, F.; Liu, J. Classification of Canker on Small Datasets Using Improved Deep Convolutional Generative
+Adversarial Networks. IEEE Access 2019, 7, 49680–49690. [CrossRef]
+22. Hu, G.; Wu, H.; Zhang, Y.; Wan, M. A Low Shot Learning Method for Tea Leaf’s Disease Identification.Comput. Electron. Agric.
+2019, 163, 104852. [CrossRef]
+23. Tian, Y.; Yang, G.; Wang, Z.; Li, E.; Liang, Z. Detection of Apple Lesions in Orchards Based on Deep Learning Methods of
+CycleGAN and YOLOV3-Dense. J. Sens. 2019, 2019, 7630926. [CrossRef]
+24. Bergmann, P .; Fauser, M.; Sattlegger, D.; Steger, C. MVTec AD—A Comprehensive Real-World Dataset for Unsupervised Anomaly
+Detection. In Proceedings of the 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), Long Beach,
+CA, USA, 15–20 June 2019; pp. 9584–9592.
+25. Zavrtanik, V .; Kristan, M.; Skoˇ caj, D. Reconstruction by Inpainting for Visual Anomaly Detection. Pattern Recognit. 2021,
+112, 107706. [CrossRef]
+26. Zavrtanik, V .; Kristan, M.; Skoˇ caj, D. DRÆM—A Discriminatively Trained Reconstruction Embedding for Surface Anomaly
+Detection. In Proceedings of the 2021 IEEE/CVF International Conference on Computer Vision (ICCV), Montreal, QC, Canada,
+10–17 October 2021; pp. 8310–8319.
+https://doi.org/10.3390/agriculture16080854
+
+=== PAGE BREAK ===
+
+Agriculture 2026, 16, 854 25 of 25
+27. Li, C.-L.; Sohn, K.; Yoon, J.; Pfister, T. CutPaste: Self-Supervised Learning for Anomaly Detection and Localization. In Proceedings
+of the 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), Nashville, TN, USA, 20–25 June 2021;
+pp. 9659–9669.
+28. Rudolph, M.; Wehrbein, T.; Rosenhahn, B.; Wandt, B. Fully Convolutional Cross-Scale-Flows for Image-Based Defect Detection.
+In Proceedings of the 2022 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), Waikoloa, HI, USA,
+3–8 January 2022; pp. 1829–1838.
+29. Defard, T.; Setkov, A.; Loesch, A.; Audigier, R. PaDiM: A Patch Distribution Modeling Framework for Anomaly Detection
+and Localization. In Proceedings of the Pattern Recognition. ICPR International Workshops and Challenges ; Del Bimbo, A., Cuc-
+chiara, R., Sclaroff, S., Farinella, G.M., Mei, T., Bertini, M., Escalante, H.J., Vezzani, R., Eds.; Springer International Publishing:
+Cham, Switzerland, 2021; pp. 475–489.
+30. Roth, K.; Pemula, L.; Zepeda, J.; Schölkopf, B.; Brox, T.; Gehler, P . Towards Total Recall in Industrial Anomaly Detection. In
+Proceedings of the 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), New Orleans, LA, USA,
+18–24 June 2022; pp. 14298–14308.
+31. Pirnay, J.; Chai, K. Inpainting Transformer for Anomaly Detection. In Proceedings of the Image Analysis and Processing—ICIAP 2022;
+Sclaroff, S., Distante, C., Leo, M., Farinella, G.M., Tombari, F., Eds.; Springer International Publishing: Cham, Switzerland, 2022;
+pp. 394–406.
+32. Schlegl, T.; Seeböck, P .; Waldstein, S.M.; Schmidt-Erfurth, U.; Langs, G. Unsupervised Anomaly Detection with Generative
+Adversarial Networks to Guide Marker Discovery. In Proceedings of the Information Processing in Medical Imaging; Niethammer, M.,
+Styner, M., Aylward, S., Zhu, H., Oguz, I., Yap, P .-T., Shen, D., Eds.; Springer International Publishing: Cham, Switzerland, 2017;
+pp. 146–157.
+33. Katafuchi, R.; Tokunaga, T. Image-based Plant Disease Diagnosis with Unsupervised Anomaly Detection Based on Recon-
+structability of Colors. arXiv 2021, arXiv:2011.14306. [CrossRef]
+34. Brahimi, M.; Mahmoudi, S.; Boukhalfa, K.; Moussaoui, A. Deep Interpretable Architecture for Plant Diseases Classification. In
+Proceedings of the 2019 Signal Processing: Algorithms, Architectures, Arrangements, and Applications (SPA), Poznan, Poland,
+18–20 September 2019; pp. 111–116.
+35. Batzner, K.; Heckler, L.; König, R. EfficientAD: Accurate Visual Anomaly Detection at Millisecond-Level Latencies. In Proceedings
+of the 2024 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV); IEEE: Waikoloa, HI, USA, 2024; pp. 127–137.
+36. Bergmann, P .; Batzner, K.; Fauser, M.; Sattlegger, D.; Steger, C. The MVTec Anomaly Detection Dataset: A Comprehensive
+Real-World Dataset for Unsupervised Anomaly Detection. Int. J. Comput. Vis. 2021, 129, 1038–1059. [CrossRef]
+37. Hughes, D.P .; Salathe, M. An open access repository of images on plant health to enable the development of mobile disease
+diagnostics. arXiv 2016, arXiv:1511.08060. [CrossRef]
+38. Mohanty, S.P .; Hughes, D.P .; Salathé, M. Using Deep Learning for Image-Based Plant Disease Detection.Front. Plant Sci. 2016,
+7, 1419. [CrossRef] [PubMed]
+39. Geetharamani, G.; Pandian, A. Identification of Plant Leaf Diseases Using a 9-Layer Deep Convolutional Neural Network.Comput.
+Electr. Eng. 2019, 76, 323–338.
+40. Chouhan, S.S.; Koul, A.; Singh, U.P .; Jain, S. A Database of Leaf Images: Practice Towards Plant Conservation with Plant
+Pathology. In Proceedings of the 2019 IEEE 4th International Conference on Information Systems and Computer Networks
+(ISCON), Mathura, India, 21–22 November 2019.
+41. Chouhan, S.S.; Singh, U.P .; Sharma, U.; Jain, S. Leaf Disease Segmentation and Classification ofJatropha curcas L. and Pongamia
+pinnata L. Biofuel Plants Using Computer Vision Based Approaches. Measurement 2021, 171, 108796. [CrossRef]
+42. Esgario/Lara2018: This Repository Is Intended to Develop the Work Supported by the Latin America Research Awards 2018.
+Available online: https://github.com/esgario/lara2018 (accessed on 30 March 2026).
+43. Esgario, J.G.M.; Krohling, R.A.; Ventura, J.A. Deep Learning for Classification and Severity Estimation of Coffee Leaf Biotic Stress.
+Comput. Electron. Agric. 2020, 169, 105162. [CrossRef]
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/agriculture16080854

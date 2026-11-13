@@ -1,0 +1,827 @@
+C-SHAP for time series: An approach to high-level temporal
+explanations
+Annemarie Jutte*1,2,
+ Faizan Ahmed1,2,
+ Jeroen Linssen1, and
+ Maurice van Keulen2
+1Saxion University of Applied Sciences, Enschede, The Netherlands
+2University of Twente, Enschede, The Netherlands
+Abstract
+In high-stakes domains, such as healthcare and industry, the explainability of AI-based decision-
+making has become crucial. Without insight into model reasoning, the reliability of these models
+cannot be ensured. Applications often rely on the time series data type which, unlike the image data
+type, is underexplored with respect to the development of explainable AI (XAI) techniques. Most
+existing XAI techniques for time series are focused on point- or subsequence-based explanations.
+This limits their usability since points and subsequences do not capture all relevant patterns
+and may not result in human-interpretable explainability. In this paper, we close this gap and
+propose a concept-based XAI approach (C-SHAP), where concepts are defined as high-level
+patterns extracted from the time series data. C-SHAP leverages the SHAP method to determine
+the influence of these concepts on predictions. The effectiveness of the developed framework is
+illustrated for use cases from healthcare and industry, in the form of Human Activity Recognition
+(HAR) and predictive maintenance.
+KeywordsExplainable AI · time series· concept-based· SHAP· predictive maintenance· human
+activity recognition
+1 Introduction
+As the adoption of artificial intelligence (AI) systems becomes increasingly prominent in various domains,
+awareness of the opaque nature of many of the underlying models is becoming more widespread [Schwalbe
+and Finzel, 2024]. This lack of transparency in these ‘black box’ models prevents the reliable use of AI and can
+lead to user distrust. To increase trust in AI models, users need insight into the models’ reasoning [Gunning
+et al., 2019]. The field of explainable AI (XAI) aims to uncover the reasoning of AI models by providing
+explanations [Adadi and Berrada, 2018].
+This paper considers XAI for time series. AI has been successfully applied in a wide range of tasks involving
+time series, for example, in domains such as healthcare [Morid et al., 2023] and industry [Jan et al., 2023].
+Traditionally, most XAI methods for time series are point- or subsequence-based [Theissler et al., 2022].
+Point-based approaches determine the contribution of individual points in time towards an AI model’s
+prediction [Schlegel et al., 2019, Wang et al., 2017]. Subsequence-based approaches determine the contribution
+of groups of, generally sequential, points towards a model’s prediction [Cho et al., 2021, Nayebi et al., 2023].
+Both approaches offer valuable insight into a model’s reasoning regarding local patterns. However, a model
+might not only leverage local patterns, but also higher-level patterns for decision making. Consider, for
+example, the global trend of a signal. The trend does not manifest itself in a single point or a subsequence of
+points, rather, it manifests itself globally across the points in the signal. Consequently, the attribution of the
+∗a.m.p.jutte@saxion.nl
+arXiv:2504.11159v2  [cs.AI]  23 Apr 2026
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+feature towards model reasoning is spread over points, and its importance cannot be expressed in terms of
+the attribution of individual points or subsequences. Hence, this paper will consider an alternative approach,
+providing attribution scores in terms of high-level features such as the trend of a signal, changes in variance,
+and its frequency components.
+These high-level features can be referred to as ‘concepts’. While the term ‘concept’ is often used in literature on
+XAI [Poeta et al., 2023], an agreed-upon definition does not yet exist. In this paper, we follow the interpretation
+by Goyal et al. [Goyal et al., 2019], of a concept as a “higher level unit than low-level individual input features”.
+For time series, it has been shown that in some cases, concepts such as trend and frequency may better explain
+the behaviour of a model than point-based attribution [Küsters et al., 2020]. In addition to the technical
+possibilities of concept-based explanations, human interpretable high-level concepts may better align with
+user understanding [Poeta et al., 2023].
+However, technological advancement to detect and explain these high-level concepts is lagging behind. Our
+proposed method is a step in this direction, where we explain a model’s predictions using high-level concepts
+that are understandable for domain experts or lay users. To this end, we present C-SHAP for time series.
+C-SHAP is based on SHapley Additive exPlanation (SHAP) [Lundberg and Lee, 2017], which is a post-hoc
+model-agnostic method that measures the contribution of features to model predictions. Whereas standard
+practice defines these features as low-level model input features, we define these features as concepts.
+An example of a C-SHAP explanation can be found in Figure 2a. Using C-SHAP. We offer the explanation in
+terms of the attribution scores found for different concepts. The C-SHAP explanation uncovers the importance
+of the concept ‘Trend’ to the model’s prediction. For comparison, an explanation in terms of point-based
+attribution scores (using KernelSHAP [Lundberg and Lee, 2017]) is shown in Figure 2b. This point-based
+explanation provides little insight due to the spread of attribution across points.
+We present two variants of C-SHAP: a fully post-hoc approach and a partially ante-hoc approach. The former
+approach assumes a concept-agnostic model trained without regard for the concepts under inspection, as
+illustrated in the top workflow in Figure 1. The latter assumes a concept-informed model trained directly on
+the concepts, as illustrated in the bottom of Figure 1.
+The fully post-hoc approach is specifically suited for use cases where modularity is desired, for example, in
+MLOps pipelines [Ruf et al., 2022]. This approach does not require any modifications to the model being
+explained, facilitating a seamless introduction in such pipelines. An advantage of the latter approach is that
+model performance could be increased by explicitly providing the model with concepts. Since the concepts
+are assumed to be important for model reasoning, steering the reasoning in their direction could be beneficial.
+For example, training deep learning models on time series decompositions has been shown to increase model
+performance in certain applications [Liu et al., 2013, Yang and Chen, 2019].
+For both approaches, concepts need to be constructed from the time-series data. In this paper, we construct
+concepts using time series decomposition, due to its straightforward interpretation and implementation. We
+demonstrate the effectiveness of C-SHAP using the Discrete Wavelet Transform (DWT) decomposition [Heil
+and Walnut, 1989]. Additionally, we present and demonstrate the effectiveness of a custom decomposition
+approach, designed for human-interpretability.
+The C-SHAP approach for concept-agnostic models is similar to approaches generating SHAP values in the
+frequency domain using Fourier filtering [Herwig and Borghesani, 2023, Brüsch et al., 2025]. However, we
+expand this approach by including features from both the time and frequency domains. The C-SHAP approach
+for concept-informed models is a formalisation and generalisation of methods in literature which apply SHAP
+to models trained on decomposition components [Han et al., 2024, Cu et al., 2025].
+In this paper, we conceptualise the C-SHAP generalisation of both approaches. Furthermore, we mitigate
+the gap between theory and practice by applying C-SHAP to use cases from two different domains: Human
+Activity Recognition (HAR) and predictive maintenance. Specifically, we apply C-SHAP to a locomotion
+classification task (HAR), and a remaining useful life prediction task (predictive maintenance). We aim to
+illustrate how C-SHAP can provide user-friendly explanations for end-users and domain experts.
+Summarising, this research makes the following contributions to the state of the art:
+1. The formalisation of two approaches to concept-based explanations for time series using SHAP: one
+2
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+Figure 1: In this paper, we present two approaches to concept-based explanations for time series using SHAP.
+One fully post-hoc concept-agnostic approach (top) and one partially post-hoc approach relying on a concept-
+informed model (bottom). The latter model is trained on the concepts under inspection. The approaches rely on
+the construction of high-level features (concepts) from time series. The attribution of concepts is determined
+using SHAP, where attribution scores are calculated by masking concepts.
+fully model-agnostic post-hoc approach and one approach relying on a concept-informed model.
+2. A demonstration of the use of time series decomposition in concept-based explanations.
+3. The design of a custom time series decomposition algorithm aimed at human-centred interpretability.
+4. The application of C-SHAP to use cases from the Human Activity Recognition and predictive mainte-
+nance domains.
+The remainder of this article is structured as follows: in Section 2 we provide an overview of the state of the
+art, in Section 3 we provide the formal conceptualisation of C-SHAP, in Section 4 we describe how we have
+implemented C-SHAP using time series decomposition, in Section 5 we discuss the experimental setup for the
+application of C-SHAP, and in Section 6 we present the resulting explanations.
+2 Related work
+A substantial portion of literature on XAI for time series is centred around so-called point-based explana-
+tions [Theissler et al., 2022]. Point-based explanations provide relevance scores to individual points in a series.
+Relevance scores can be inherently implemented into models for time series, for example using attention
+mechanisms [Vaswani et al., 2017] in recurrent neural networks (RNNs) [Karim et al., 2017, Li et al., 2019].
+Another option, not requiring any modifications to the models, is the use of post-hoc methods to calculate
+the attribution of points. These attribution-based methods are either model-specific, such as gradient-based
+methods [Sundararajan et al., 2017, Wang et al., 2017] or model-agnostic, such as the application of the
+3
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+popular SHAP [Lundberg and Lee, 2017] or LIME [Ribeiro et al., 2016] algorithms to time series [Schlegel
+et al., 2019, Meng et al., 2024].
+SHAP [Lundberg and Lee, 2017] is a post-hoc XAI method which determines the contribution of features
+towards model predictions. To this end, SHAP measures the change in model prediction when features are
+excluded from the data. To take cooperation between features into account, SHAP considers the effect when
+including or excluding features in coalitions: groups of features ‘working together’. We will discuss the details
+of SHAP in Section 3. To generate a point-based explanation, SHAP can be directly applied to a time series,
+when defining each point in the series as a feature.
+A disadvantage of SHAP is its computational cost. SHAP considers all possible coalitions of features. As a
+consequence, the computational cost of SHAP increases exponentially with the number of features. Since
+point-based XAI approaches for time series consider each point in time to be an individual feature, this
+computational complexity is specifically limiting for long time series. KernelSHAP [Lundberg and Lee, 2017]
+mitigates this approach by randomly sampling a subset of coalitions to consider. However, to obtain qualitative
+results, KernelSHAP may remain computationally expensive. Additionally, KernelSHAP does not take the
+sequentiality of recurrent models into account [Bento et al., 2021].
+TimeSHAP [Bento et al., 2021], is a SHAP-based approach specifically designed for time series. TimeSHAP
+operates under the assumption that RNNs mainly rely on the latter points of a sequence, and reduces com-
+putational cost by combining the initial points into a single feature. This assumption may not be true for all
+use cases. WindowSHAP [Nayebi et al., 2023] instead mitigates issues with KernelSHAP for time series by
+considering subsequences of points, windows, rather than individual points.
+While point- or subsequence-based approaches can uncover relevant details regarding model reasoning, they
+are limited to explanations in terms of local patterns. High-level approaches, using so-called ‘concepts’, can
+expand the XAI toolbox. Recently, concept-based explanations have become popular across data types [Poeta
+et al., 2023]. Testing with Concept Activation Vectors (TCA V) [Kim et al., 2018] is a leading approach
+in concept-based XAI, also for time series [Mincu et al., 2021, Brenner et al., 2024]. TCA V provides
+explanations based on Concept Activation Vectors, representing a model’s response to predefined concepts.
+ConceptSHAP [Yeh et al., 2020] combines TCA V and SHAP. A completeness score is used to evaluate the
+concepts used in TCA V .
+A disadvantage of TCA V is that it relies on manually annotated examples and counterexamples of concepts. The
+collection of such an annotated dataset can be a labour-intensive task. Similarly, Concept Bottleneck Models
+(CBMs) [Koh et al., 2020] are interpretable-by-design models which explicitly link a model’s activations in
+the bottleneck layer to concepts, generally using annotated datasets.
+Sun et al. [Sun et al., 2024] take a different approach, where they define a concept as an image segment. They
+apply SHAP to automatically extracted image segments. This is similar to the approach presented in this
+article. We define concepts using mathematical constructs, as will be demonstrated in Section 4. Through this
+approach, C-SHAP does not require annotated concepts, yet still provides control over the concepts used in
+the explanation.
+Our approach for concept-agnostic models is similar to methods that use localized attribution to provide
+explanations in the frequency domain [Herwig and Borghesani, 2023, Brüsch et al., 2025]. Local features
+in the frequency domain correspond to global features in the time domain, i.e. concepts. However, unlike
+these methods, C-SHAP is not restricted to either the time or frequency domain, C-SHAP can combine the
+two. For example, the custom decomposition presented in Section 4.1.2, includes a component capturing the
+low-frequency behaviour of the signal, and also a component capturing changes in amplitude over time.
+Our decomposition-based approach also relates to existing work that embeds time series decomposition
+in model training and applies feature-attribution to determine component attribution [Han et al., 2024, Cu
+et al., 2025, Cleveland et al., 1990]. We generalize these SHAP-based methods by formalizing C-SHAP
+and explicitly relating it to concept-based XAI. Additionally, while state-of-the-art approaches are typically
+application-specific, we demonstrate the wider applicability of the C-SHAP approach.
+4
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+3 Conceptualisation
+Shapley values [Shapley, 1952] are an approach from game theory to determine the contribution of variables
+to a function output. Given a black box data-driven model, SHAP [Lundberg and Lee, 2017] is a method
+that estimates Shapley values for data features as their contribution to the model output. These estimated
+Shapley values are called SHAP values. In this section, we discuss SHAP and its extension C-SHAP for
+time series, which determines the SHAP values of concepts. For an overview of the C-SHAP approach, see
+Figure 1. We start this section by expanding the definition of SHAP values. We then discuss the required
+concept construction and concept masking algorithms for both concept-informed and concept-agnostic models.
+We finish by imposing a condition on the concept construction to ensure valid SHAP values.
+3.1 SHAP values for C-SHAP
+For univariate time series, consider an input sample y(t) = (x 1,x 2,...,x n)∈R n. SHAP values are based
+on coalitions, ifG={g 1,g 2,...,g m} is the full set of features, a coalition is defined as a subset of features
+(S⊆G ). For each coalitionS, a coalition vector zS∈{0,1} m is defined, wherezi = 0 ifgi /∈Sandzi = 1
+ifg i∈S.
+To determine the SHAP values, the model f under inspection is applied to a masked model input hy(zS),
+where any features in y(t) which are not in coalitionS are masked, i.e. ‘toggled off’. Features can be masked
+by replacing their value with an uninformative background value. We denote the model output of the masked
+input asf y(zS) =f(h y(zS)).
+The SHAP valueϕi for featuregi is calculated as a weighted average, over all coalitions, of the difference in
+model output wheng i is either included or excluded in the coalition [Lundberg and Lee, 2017]:
+ϕi(f,y) =
+X
+S⊆G\gi
+|S|(m−|S|−1)!
+m! [fy(zS∪gi)−f y(zS)].(1)
+Previous methods applying SHAP to time series consider featuresgi to be data points or subsequences [Bento
+et al., 2021, Nayebi et al., 2023]. For C-SHAP we follow Sun et al. [2024] and consider a set of high-level
+conceptsCas features, i.e.G=C.
+We define a conceptci as a feature of a higher level of abstraction than input features [Goyal et al., 2019].
+Furthermore, we defineC={c 1,c 2,···,c m} to be a set of concepts. Consequently, coalitionS is a subset of
+concepts, i.e.S⊆C. Then, we can adapt (1) by substitutingG=C, and it follows that the SHAP valuesϕ i
+for conceptc i are given by:
+ϕi(f,y) =
+X
+S⊆C\c i
+|S|(m−|S|−1)!
+m! [fy(zS∪ci)−f y(zS)].(2)
+Note that since we follow (1), the properties of local accuracy, missingness and consistency [Lundberg and
+Lee, 2017] are satisfied.
+To obtain the SHAP values for C-SHAP using (2), we need a concept construction algorithm to obtain the
+set of concepts C and we need a concept masking algorithm to obtain the masked model output fy(zS).
+For SHAP, features are masked by setting them to an uninformative value. Point-based attribution methods
+mask features by changing the values of specific points or segments [Bento et al., 2021, Nayebi et al., 2023].
+C-SHAP instead masks conceptsc i.
+For C-SHAP we consider two types of models that can be trained, concept-agnostic and concept-informed
+models, see Figure 1. A concept-agnostic model is trained using the raw model inputy(t). A concept-informed
+model is trained directly on the conceptsC, where each concept is passed to an input channel of the model.
+As will be discussed in the next section, the model type affects the concept masking.
+3.2 Concept construction and masking
+The concept construction algorithm does not depend on the choice of a concept-agnostic or a concept-informed
+model. For the concept construction, to obtain the set of concepts C, a function d(·) needs to be selected
+5
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+which extracts the set of conceptsC={c 1,c 2,···,c m} from an input sample y(t), i.e.C=d(y(t)) . In the
+next section, we will pose a condition on this function. Note, for the concept-informed model, the concepts do
+need to be constructed before training. For the concept-agnostic model, all C-SHAP steps can be executed in a
+post-hoc manner.
+The concept masking does depend on the choice for a concept-agnostic or concept-informed model. For the
+concept-informed model, masked concepts can be passed directly to the model. For the concept-agnostic
+model, the masked concepts should be aggregated into a univariate signal in which the concepts are toggled
+off, see Figure 1.
+Concretely, for the concept-informed approach, the masked model input is given by:
+hinformed
+y (zS) = [h1,h 2,···,h m],(3)
+where, given an uninformative replacement concept¯ci forc i:
+hi =
+ci ifi∈S,
+¯ci ifi /∈S.
+A demonstration of how this masking is implemented will be given in Section 4.3.
+For the concept-informed approach, the model input should be a univariate signal. Hence, we require a function
+r:R m×n→R n that recombines the masked concepts:
+hagnostic
+y (zS) =r(h 1,h 2,···,h m).(4)
+3.3 Conditions
+In this section we pose a condition on the concept construction algorithm. The masked model inputhy(zS)
+for coalitionS represents the sample y(t) where any conceptsci /∈Sare removed. This means that if we have
+a coalitionC=S , including all concepts in y(t), we needhy(zS) =y(t) . We formalize this in the following
+condition.
+Condition 1 Given coalitionS=C , representing the full set of concepts, the masked model inputhy(zC)
+needs to be equal to the model input. For concept-agnostic models this means hagnostic
+y (zC) =y(t) . For
+concept-informed models this meansh informed
+y (zC) = [c1,c 2,···,c m].
+For the concept-informed approach, if we have coalition S=C , we have hi =c i fori∈{1,2,···,m} .
+Hence, it follows from (3) that hinformed
+y (zS) = [c 1,c 2,···,c m]. Therefore, Condition 1 will be satisfied
+regardless of the chosen construction and masking algorithms.
+However, for the concept-agnostic approach, Condition 1 poses a specific condition onr in (4). For coalition
+S=C , we again have hi =c i fori∈{1,2,···,m} . Furthermore, for the masked model input we have,
+from (4):
+hagnostic
+y (zC) =r(h 1,h 2,···,h m) =r(c 1,c 2,···,c m) =r(d(y(t))),
+whered(·)is the concept construction function. Hence, by Condition 1, we require:
+r(d(y(t))) =y(t).
+Therefore,r needs to be the inverse of d. As a consequence, we pose the following condition on concept
+construction.
+Condition 2 For C-SHAP for concept-agnostic models, the concept construction functiond(·) needs to be
+invertible.
+In the next section, we present an implementation for concept construction, satisfying Condition 2, and
+we present an implementation for concept masking. Our concept construction implementation is based on
+time series decomposition. Time series decomposition approaches are generally invertible, since invertibility
+ensures recoverability of the original time series. Note that C-SHAP is not limited to time series decomposition.
+Future research should explore other concept construction approaches.
+6
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+4 Implementation
+In this section, we present an implementation of the conceptualisation of C-SHAP. As previously discussed,
+we need to select an algorithm for concept construction and an algorithm for concept masking. Additionally,
+depending on the choice of a concept-agnostic or concept-informed model (see Figure 1), model training is
+explicitly part of the explanation process. For the concept construction, we use identical implementations for
+the concept-agnostic and -informed approaches, while the concept masking algorithm is slightly different for
+the two.
+4.1 Concept construction
+For this implementation, we consider concept construction through time series decomposition. By Condition 2,
+for the C-SHAP approach relying on a concept-agnostic model, the concept construction needs to be invertible.
+Time series decomposition offers this invertibility by its definition in terms of component aggregation.
+Definition 1 Given a time series y(t)∈F n, where F is a (real or complex) field, we define its decomposition
+into a set of componentsC={y 1(t),y 2(t),···,y n(t) :y i(t)∈F n}such that:
+y(t) =
+n
+⊗
+i=1
+αi yi(t),(5)
+where⊗ is an aggregation operator andαi are the component weights. For this implementation of C-SHAP ,
+we define the set of components as our concept setCin (2).
+In this research, different decompositions are explored. The most popular approach for time series decomposi-
+tion is arguably the Fourier transform, which separates a signal into global frequency components [Bracewell,
+1989]. While concept construction relying on the Fourier transformation is applicable to C-SHAP and can be
+beneficial for certain applications, we argue it would be a limiting decision for the demonstration in this paper.
+Fourier transforms are not able to localise frequencies in time. As a consequence, Fourier decompositions
+might result in physically non-interpretable components if the data is not strictly periodic or stationary [Huang
+et al., 1998]. We do not want to put these restrictions on the data, therefore we turn to different decomposition
+approaches. Namely, we consider the Discrete Wavelet Transform (DWT) and a custom decomposition.
+4.1.1 Discrete Wavelet Transform
+The Discrete Wavelet Transform [Heil and Walnut, 1989] relies on localised wavelet functions of different
+scales. Wavelets are a set of functions that adhere to specific properties [Heil and Walnut, 1989]. By sliding
+wavelets of different scales along a time series, DWT can extract local frequency components. This localisation
+makes DWT appropriate for non-periodic signals. However, by Heisenberg’s uncertainty principle [Heisenberg,
+1927], DWT loses resolution in the frequency domain due to this detailed localization [Chui, 1992]. Therefore,
+rather than extracting components of specific frequencies, DWT extracts components of different ‘levels of
+detail’.
+More concretely, the Discrete Wavelet Transform (DWT) splits a signal into an ‘Approximation’ and ‘Detail’
+component using high and low-pass filters. The DWT can be iteratively applied to the ‘Detail’ signal to obtain
+more components. We denote the DWT decomposition of detail levelN Detail as follows:
+y(t) =y Approximation(t) +
+NDetailX
+i = 1
+yDetail-i(t).(6)
+Using this decomposition, we can define concepts for our explanations. We define the concept ‘Approximation’,
+and the concepts ‘Detail-i’, fori∈{1,···,N Detail}.
+4.1.2 Custom decomposition
+While DWT is used in technical applications, its interpretation may still be challenging, specifically for non-
+experts. Therefore, we also present an alternative custom decomposition. Rather than defining mathematical
+7
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+properties and relating these to real-world phenomena, we start by defining concepts meaningful to humans
+and relating these to mathematical properties that can be used to extract them as components. The defined
+concepts can be found in Table 1.
+Table 1: Concepts defined for the custom decomposition. Per concept, its definition and the mathematical
+notation of the component are listed. Additionally, it is indicated whether the corresponding component is
+additive (+) or multiplicative (×).
+Concept Notation Definition Operation
+Trendy Trend(t)The increase or decrease of a time series over time.+
+Biasy Bias(t)The average level of a time series.+
+Scaley Scale(t)The scale of the amplitude of a time series.×
+Variancey Var(t)Changes in amplitude over time in a time series.×
+Low frequencyy LF(t)Slow changes over time in a time series.+
+High frequencyy HF(t)Rapid changes over time in a time series.+
+In contrast to the DWT, which is additive, the custom decomposition is hybrid, meaning it has both additive as
+well as multiplicative components, see Table 1. This makes the decomposition order-dependent. We define the
+following ordering in the decomposition:
+y(t) =y Trend(t) +y Bias(t) +y Scale(t)×(y LF(t) +y Var(t)×y HF(t)).
+While this ordering might not be the only valid option, it was chosen for pragmatic reasons. The order defines
+how components should be extracted. First extracting the components for the ‘Trend’ and ‘Bias’ concepts
+simplifies the extraction of the wave-based concepts. For these concepts, ‘Scale’ describes the amplitude of
+the remaining signal, ‘Variance’ describes the changes in the amplitude of the ‘High frequency’ part of the
+signal. Further research could explore the effects of alternative orderings.
+Using the definitions of the concepts, we propose algorithms to extract them as components. We emphasise
+that the proposed decomposition is a heuristic-based approach. The choices made for this decomposition
+are pragmatic and may not be unique. For example, for the definitions of the concepts ‘Low frequency’ and
+‘High frequency’, the difference between slow and rapid changes is subjective. Do note that the proposed
+decomposition is deterministic. When fixing the hyperparameters, the decomposition will consistently yield
+the same components. We describe our decisions regarding the decomposition in the remainder of this section.
+The components are extracted iteratively fromy(t), matching their order in the equation, from left to right. The
+first component yTrend(t) is extracted from y(t), then the next component is extracted from the residual signal
+yr1(t) =y(t)−y Trend(t), and so on. After extracting the other components, including the ‘Low frequency’
+component, we define the ‘High frequency’ component as the residual.
+We will now discuss the extraction of the components. We assume ‘Trend’ to be a linear line. Therefore, we
+define the component yTrend(t) as the slope of the linear least squares fit to y(t). ‘Bias’ is implemented as the
+average level of the signal, yBias(t) =mean(y r1(t)). We implement ‘Scale’ as the maximum amplitude of
+the signal, yScale(t) = maxt|yr2(t)|. Note, we implement ‘Scale’ to be a multiplicative component. Hence,
+yr3(t) =y r2(t)/yScale(t).
+The component for the ‘Low frequency’ concept is implemented using DWT filtering to extract low frequency
+components from the signal yr3(t). As previously discussed, DWT decomposes a series into a low-pass
+approximation series A and high-pass detail series{D1,D 2,···,D k}. High absolute values in the detail
+series indicate a strong presence in the original series, low values are assumed to relate to noise. The set of
+detail series can be thresholded, and the result can be split into the ‘Low frequency’ component yLF(t) and
+detail yr4(t) [Donoho and Johnstone, 1994]. The threshold hyperparameter influences how much detail is
+filtered from the signal.
+To extract the component for the concept ‘Variance’ fromyr4(t), a sliding window approach is applied. Given
+a window sizewsize, we slide a window over the signal. For each pointxi in yr4(t), we calculate the standard
+deviation of the window of sizewsize withxi as the middle point. For the points where the window extends
+over the boundary of the series, we crop the window to the start or end of the series. To stabilise the result, a
+8
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+moving average is applied to the resulting standard deviation values, using the same window sizewsize and
+middle pointsx i. The result is normalised through division by the maximum value, resulting iny Var(t).
+Finally, the component corresponding to the concept ‘High frequency’ is defined as yHigh freq(t) =y r5(t), the
+residual after the other components are extracted.
+4.2 Model training
+As discussed in Section 3, the models used in C-SHAP can be trained without regard for the concepts under
+inspection (the concept-agnostic approach) or using the constructed concepts as input features (the concept-
+informed approach). For the concept-agnostic approach, a black box model is trained on the raw input data. For
+the concept-informed approach, a multi-channel model is trained, where each channel receives the component
+corresponding to a concept.
+4.3 Concept masking
+For the calculation of SHAP values, a masking algorithm is needed to obtain masked model outputfy(zS). In
+this section, we discuss an implementation of the approach described in Section 3.
+For SHAP, features are masked by replacing them with ‘uninformative’ data. In our case, this means concepts
+should be replaced by ‘uninformative’ concepts. There are multiple approaches to simulate uninformative
+data [Lundberg, 2018]. In this paper, we use the approach where uninformative data is approximated by
+repeatedly replacing concepts with concepts sampled from the training data.
+For the concept-informed approach, each input channel receives a concept, i.e. a component. Concepts are
+masked by replacing the associated components with their counterparts from the training data. Concretely,
+given input sample y(t) and a randomly selected sample from the training data yb(t), we decompose the
+samples as y(t) = (y 1(t),y 2(t),···,y m(t)) and yb(t) = (y b
+1(t),y b
+2(t),···,y b
+m(t)). Based on (3), and
+given coalition vectorz S, we define the masked model input as:
+hinformed
+y (zS,y b(t)) = [h1,h 2,···,h m],
+where:
+hi =
+yi(t)ifi∈S,
+yb
+i(t)ifi /∈S.
+To obtain an approximation of the masked model output,N training samples{yb1(t),y b2(t),···,y bN (t)}
+are sampled. This results in the following approximation of the masked model output:
+fy(zS)≈ 1
+N
+NX
+j=1
+f(h informed
+y (zS,y bj(t))).
+This approach can be expanded to the concept-agnostic version, requiring one additional step where the
+masked components are composed into the required univariate model input form (cf. (5)), see (4):
+hagnostic
+y (zS,y b(t)) =
+m
+⊗
+i=1
+αi·h i.
+5 Experimental setup
+To demonstrate and validate the C-SHAP implementation, we apply C-SHAP to black box models trained on
+two tasks: Human Activity Recognition (HAR) and remaining useful life estimation in predictive maintenance.
+These tasks were selected to showcase the generalizability of C-SHAP across domains. In this section, we
+describe the setup in our experiments.
+5.1 Data
+In this section, we detail the datasets used and their preparation for the experiments in this paper. Each of the
+datasets is normalised using the mean and the standard deviation of the training data.
+9
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+5.1.1 OPPORTUNITY
+The OPPORTUNITY dataset [Roggen et al., 2010] is a dataset for Human Activity Recognition(HAR). The
+dataset contains sensor data collected from four subjects undertaking sequences of daily activities. The dataset
+contains different types of annotations, we only consider the locomotion annotations. There are four classes of
+locomotion in the dataset: ‘Stand’, ‘Walk’, ‘Sit’ and ‘Lie’.
+For each subject, five runs of activities are available, four runs of daily activities (ADL) and one drill run. For
+subject 4, two ADL runs were distorted for additional challenge, these are not considered for our experiments.
+We use the ADL runs of subjects 2 and 3 as test data. All other non-excluded runs are used as training data.
+Multiple sensors were placed on the subjects. In our univariate experiments, we selected the y-axis of the
+accelerometer placed above the right knee since in pre-analysis it turned out to be most influential for the
+selected activities. Sensor measurements are available at a frequency of approximately 30Hz.
+Rows with missing values are removed. The remaining rows are divided into sets of consecutive rows. We
+segment the consecutive rows into samples of 90 data points (approximately 3s each). To increase the number
+of training samples, we use a sliding window approach, with an overlap of 50% with the previous and next
+window. This results in 11,517 training and 1,967 testing samples.
+5.1.2 Turbofan
+The Turbofan dataset [Saxena et al., 2008] contains data regarding a simulation model of an aircraft turbofan.
+Experiments were run where damage was introduced into the system and propagated over time. Experiments
+are run until the damage grows into failure. The task is to predict the remaining useful life of the machine in
+cycles.
+Data is available for different types of degradation and environmental conditions. In this paper, only HPC
+degradation under sea level conditions is considered. A wide range of sensor measurements is available. For
+the univariate experiments in this paper, we use the P30 measurements: the total pressure at the HPC outlet.
+The data consists of training runs, which contain data until breakdown of the turbofan, and shorter test runs,
+that stop at some cycle before breakdown. We split the training runs into windows of 100 cycles, with an
+overlap of five cycles between windows. For each window, we set the number of cycles until breakdown as the
+target variable. For the test data, we trim all runs to 100 cycles, cutting off the start of longer runs. Runs that
+are shorter than 100 cycles are discarded. This results in 2,086 training samples and 70 testing samples.
+5.2 Decompositions
+5.2.1 Discrete Wavelet Transform
+For the Discrete Wavelet Transform decomposition, we use the Daubechies wavelet with six vanishing
+moments. The decomposition is performed at a detail level of three, i.e. Ndetail = 3 in (6), resulting in four
+components. The PyWavelets package [Lee et al., 2019] is used for the implementation.
+5.2.2 Custom decomposition
+For the custom decomposition, we use the decomposition and ordering of components from (7). The
+decomposition requires a few hyperparameters. For the extraction of theyLF(t) component, we use DWT-based
+filtering, as described in Section 4.1.2. As previously for the DWT decomposition, the Daubechies wavelet with
+six vanishing moments is used. For the filtering of the detail coefficients, we use soft thresholding [Donoho
+and Johnstone, 1994] with a threshold ofT=σ
+p
+2·log(n) , wheren is the length of our sample y(t) and
+we set σ= 1 . For the sliding windows used to extract yVar(t), we use a window size of 27 points for the
+OPPORTUNITY dataset and 30 points for the Turbofan dataset.
+5.3 Black box models
+For each dataset, black box models were developed using PyTorch [Paszke et al., 2019]. We emphasise
+that C-SHAP is applicable regardless of the choice of model. In our experiments, we consider GRU-based
+10
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+models [Cho et al., 2014].
+For the concept-informed approach, models were trained for the different decompositions. For the concept-
+agnostic approach, models were trained on the raw univariate samples. For all types, ten models were trained.
+The model architectures are the same for the concept-agnostic and -informed models, only the number of input
+channels differs.
+Each model consists of multiple GRU layers followed by a single fully connected layer. Depending on the task,
+the model uses uni- or bidirectional GRU layers. For each model, all GRU layers have the same hidden size.
+For some models, dropout is used. The configuration of the models for each dataset can be found in Table 2.
+The mean performance on the training and testing data for the different models can be found in Table 3. For
+the OPPORTUNITY classification model, the performance is given as the accuracy, weighted over the classes,
+in percentage. For the Turbofan regression model, the performance is given as the RMSE in cycles.
+Table 2: Configuration of the models trained on each dataset.
+Dataset Layers Hidden neurons Dropout Bidirectional
+OPPORTUNITY4 64 0.2 True
+Turbofan1 64 0.0 False
+5.4 SHAP
+The SHAP values for C-SHAP are calculated for the test samples. For the masking of concepts, the component
+masking, described in Section 4.3, is applied using N= 100 background samples from the training data.
+These samples were selected randomly, where for the classification task, the sampling was weighted per class.
+This results in 25 samples per class for the OPPORTUNITY dataset. The same background samples are used
+for all models trained on the same dataset, regardless of the model type.
+The computational cost of SHAP scales exponentially with the number of features. This is why generally
+methods for estimation, such as KernelSHAP [Lundberg and Lee, 2017], are used to calculate the SHAP
+values. Since only a limited number of concepts are used, we calculate the SHAP values exactly.
+6 Results
+In this section, we present and discuss the explanations generated by C-SHAP and relate these to human
+intuition. We show examples of local, sample-level, explanations and global explanations, where SHAP values
+are aggregated to estimate the influence of concepts across the datasets. Note that as a result of normalization
+of the data, the signals and decompositions shown in this section are dimensionless.
+6.1 Local explanations
+In Figure 2, we show a C-SHAP explanation alongside an explanation generated using point-based Ker-
+nelSHAP [Lundberg and Lee, 2017]. The explanations are generated for a concept-agnostic model trained
+on the Turbofan data. It can be seen that, while C-SHAP clearly indicates the importance of ‘Trend’ for the
+model’s reasoning, KernelSHAP is not able to uncover this due to the global nature of the concept.
+For a sample from the OPPORTUNITY dataset, local explanations generated using each of the decomposition
+methods are shown in Figure 3. The explanations are generated for a concept-agnostic model.
+The explanations in Figure 3 demonstrate how different decompositions can be used to generate explanations.
+From the explanation generated using the custom decomposition, we find ‘Scale’ as the most influential
+concept, followed by ‘Trend’ and ‘Bias’. The importance of ‘Scale’ indicates that the high fluctuations are
+important for the model’s reasoning. However, this is not due to the specific shape of the oscillation, since
+the ‘High frequency’ concept is not considered important, nor is it the change of the fluctuations over time,
+since the ‘Variance’ component is not considered important either. Rather, it is the extent of the amplitude that
+affects model reasoning.
+11
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+Table 3: Performance (mean ± std over 10 runs) for the concept-agnostic models and the variants of the
+concept-informed models.
+Agnostic Concept-informed
+Dataset / metric–Custom DWT
+OPPORTUNITY
+Weighted acc. (%) 75.78±3.57 76.87±1.24 73.59±1.45
+Turbofan
+RMSE (cycles) 20.87±1.08 21.83±1.38 22.45±1.46
+For the explanations generated using the Discrete Wavelet Transform (DWT), the ‘Approximation’ component
+is shown to be the most influential. Notably, the component capturing the high-frequency oscillation, ‘Detail-3’,
+results in relatively low SHAP values. This is likely due to the additive nature of the DWT, which distributes
+the maximum amplitude over multiple components, rather than capturing it in an individual component. In our
+custom decomposition, ‘Scale’ explicitly captures this behaviour.
+(a) C-SHAP
+ (b) KernelSHAP
+Figure 2: Local explanations using C-SHAP and KernelSHAP for a concept-agnostic model trained on the
+Turbofan dataset. The C-SHAP explanation has been generated using the custom decomposition.
+6.2 Global explanations
+In this section, we present global explanations generated using the custom decomposition for each of the
+datasets. We discuss which concepts were found to be most important and how these relate to human intuition.
+For each of the models trained on the datasets, we calculated the mean absolute SHAP value over the test
+samples. The average and standard deviation of these values over the models are shown in Figure 4.
+For the models trained on the OPPORTUNITY data, the models classify samples as ‘Stand’, ‘Walk’, ‘Sit’
+and ‘Lie’ using accelerometer measurements from the subjects’ right knee. The SHAP values indicate that
+the models mainly rely on the concepts ‘Bias’ and ‘Scale’. We defined ‘Bias’ as the average level of a signal,
+hence ‘Bias’ represents the average angle of the subjects’ knee. It seems reasonable that the model would
+12
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+(a) Custom decomposition
+ (b) DWT
+Figure 3: Local explanations using the different decompositions, for a concept-agnostic model trained on the
+OPPORTUNITY dataset. Results are shown for the custom decomposition and Discrete Wavelet Transform.
+use the angle of the knee to distinguish between the classes in the dataset. When a subject is standing, their
+knee is expected to be at a different angle, with respect to the normal axis of the accelerometer, than when
+they’re sitting or lying. ‘Scale’ captures the amplitude of the highest fluctuation in the signal. When a subject
+is walking, the maximum amount of movement in a window is expected to be higher than for the other classes.
+Hence, reliance on ‘Scale’ seems reasonable as well.
+For the Turbofan models, the SHAP values identify ‘Trend’ as the most influential concept. For these models,
+the pressure at the high-pressure compressor (HPC) outlet is used to predict the number of cycles the engine is
+still useful. The SHAP values indicate that the linear change in pressure is most indicative of remaining life.
+7 Discussion
+In our experiments, we applied C-SHAP to concept-informed and concept-agnostic models. While the
+performances and explanations we found seem comparable for the considered datasets and models, this does
+not need to hold for all applications. In literature, it has been shown that some decomposition-informed models
+reach higher performance levels [Liu et al., 2013, Yang and Chen, 2019]. Whether explicitly providing models
+with concept information increases performance might depend on the complexity of the task and the model
+architecture used.
+For the concept-agnostic models, we limited our scope to models trained directly on the raw data. However,
+the ‘black box’ concept-agnostic model in Figure 1 could also include manual feature extraction. This allows
+the explicit use of features (concepts) during model training that may be beneficial for model performance, but
+which might not necessarily be interpretable by end users. Consider, for example, an application featuring a
+model trained using the DWT decomposition, but explained to lay users using the custom decomposition. This
+illustrates the flexibility and ease of application of the fully post-hoc approach.
+The drawback of the flexible post-hoc approach for concept-agnostic models, is that it poses conditions on
+the concept construction. In this paper, we proposed that the construction algorithm needs to be invertible,
+see Condition 2. In this paper, we focus on concept construction through time series decomposition, which
+13
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+(a) OPPORTUNITY
+ (b) Turbofan
+Figure 4: The absolute normalised SHAP values for models trained on the OPPORTUNITY and Turbofan
+datasets using the custom decomposition. Results are shown as the average and standard deviation over 10
+runs. For the OPPORTUNITY dataset, results for the concept-agnostic and -informed models are included.
+For the Turbofan dataset, only results for the concept-agnostic models are shown.
+is invertible. In future research, it should be explored whether other concept construction methods exist that
+satisfy invertibility, and whether the proposed condition is strictly necessary. For the concept-informed models,
+we are not limited by this restriction. Any feature-extraction method can be considered as concept construction.
+For example, statistical features such as autoregression may be considered.
+In this research, we defined concepts in terms of time series decomposition and considered two types of
+decomposition approaches. The decision for a decomposition is highly dependent on the application area for
+which an explanation is designed and its stakeholders. The custom decomposition might be easier to interpret
+for lay users. Consider, for example, the different explanations in Figure 3. However, decompositions such
+as DWT may be more informative to experts in the field. Future research should explore the use of different
+decompositions in a range of domains. This would further validate the generalizability of C-SHAP.
+We presented the custom decomposition as an approach designed from a human-centred perspective. Its
+construction and implementation stemmed from application-driven considerations. However, its mathematical
+validity as a decomposition should be further proven. Additionally, to validate the interpretability of explana-
+tions generated using this decomposition, and other decompositions, C-SHAP should be evaluated through
+user study evaluations with domain experts and lay users.
+The explanations generated using C-SHAP rely on the selected concept construction method and its hyper-
+parameters. Changing this order may have significant effects on the generated explanations. Furthermore, a
+filtering threshold and a wavelet are selected to extract the ‘Low frequency’ component, as well as a window
+size to extract the ‘Variance’ component. For this paper, we manually selected the hyperparameters through
+visual inspection. The effect of changes in hyperparameters on the explanations should be evaluated in future
+research. Additionally, methods to automatically select or optimise the hyperparameters could be explored.
+8 Conclusion
+Concept-based explanations can uncover high-level patterns used in the internal reasoning of black-box models.
+Furthermore, they may provide explanations in terms matching human understanding. In this article, we
+presented C-SHAP as an approach for concept-based explanations for time series. We defined two approaches
+for C-SHAP, one fully post-hoc approach, applicable to any time series model, and one partially ante-hoc
+approach, in which the model is informed by the concepts under inspection. C-SHAP offers custom control
+over concept selection. To demonstrate how C-SHAP can be applied, we presented an implementation using
+time series decomposition.
+14
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+To bridge the gap between theory and application, we applied C-SHAP to a Human Activity Recognition and a
+predictive maintenance use case. We used C-SHAP to uncover the importance of the bias and scale of signals
+in models trained for a locomotion classification task and the importance of trend in a predictive maintenance
+regression task.
+We emphasise the generalizability of our methodology to other time series use cases and concept construction
+approaches. In future work, C-SHAP should be applied to a wide range of domains to explore the effectiveness
+of different concept construction approaches. Furthermore, to further validate its interpretability, C-SHAP
+should be evaluated among end users.
+Acknowledgements
+This publication is part of the project ZORRO with project number KICH1.ST02.21.003 of the research
+programme Key Enabling Technologies (KIC) which is partly financed by the Dutch Research Council (NWO).
+This research is part of the SPRONG DEMAND. This research is partly financed by Taskforce for Applied
+Research SIA, part of the Dutch Research Council (NWO).
+References
+Amina Adadi and Mohammed Berrada. Peeking Inside the Black-Box: A Survey on Explain-
+able Artificial Intelligence (XAI).IEEE Access, 6:52138–52160, 2018. ISSN 21693536.
+doi:https://doi.org/10.1109/ACCESS.2018.2870052.
+João Bento, Pedro Saleiro, André F Cruz, Mário AT Figueiredo, and Pedro Bizarro. Time-
+SHAP: Explaining Recurrent Models through Sequence Perturbations. InProceedings of the 27th
+ACM SIGKDD Conference on Knowledge Discovery & Data Mining, pages 2565–2573, 2021.
+doi:https://doi.org/10.1145/3447548.3467166.
+Ronald N Bracewell. The Fourier Transform.Scientific American, 260(6):86–95, 1989.
+Alexander Brenner, Felix Knispel, Florian P Fischer, Peter Rossmanith, Yvonne Weber, Henner Koch, Rainer
+Röhrig, Julian Varghese, and Ekaterina Kutafina. Concept-based AI interpretability in physiological time-
+series data: Example of abnormality detection in electroencephalography.Computer Methods and Programs
+in Biomedicine, 257:108448, 2024. doi:https://doi.org/10.1016/j.cmpb.2024.108448.
+Thea Brüsch, Kristoffer K Wickstrøm, Mikkel N Schmidt, Robert Jenssen, and Tommy S Alstrøm. FLEXtime:
+Filterbank Learning to Explain Time Series. InCommunications in Computer and Information Science,
+pages 243–267. Springer, 2025. doi:https://doi.org/10.1007/978-3-032-08330-2_12.
+Kyunghyun Cho, Bart Van Merrienboer, Caglar Gulcehre, Dzmitry Bahdanau, Fethi Bougares, Holger
+Schwenk, and Yoshua Bengio. Learning Phrase Representations using RNN Encoder–Decoder for Sta-
+tistical Machine Translation. InProceedings of the 2014 Conference on Empirical Methods in Natural
+Language Processing (EMNLP), pages 1724–1734. Association for Computational Linguistics, 2014.
+doi:https://doi.org/10.3115/v1/D14-1179.
+Sohee Cho, Wonjoon Chang, Ginkyeng Lee, and Jaesik Choi. Interpreting Internal Activation Patterns in Deep
+Temporal Neural Networks by Finding Prototypes. InProceedings of the 27th ACM SIGKDD Conference on
+Knowledge Discovery & Data Mining, pages 158–166, 2021. doi:https://doi.org/10.1145/3447548.3467346.
+Charles K Chui.An introduction to wavelets, volume 1. Academic press, 1992.
+Robert B Cleveland, William S Cleveland, Jean E McRae, Irma Terpenning, et al. STL: A Seasonal-Trend
+Decomposition Procedure Based on Loess.J. off. Stat, 6(1):3–73, 1990.
+Yuanke Cu, Kaishu Wang, Lechen Zhang, Zixuan Liu, Yixuan Liu, and Li Mo. A Time Series
+Decomposition-Based Interpretable Electricity Price Forecasting Method.Energies, 18(3):664, 2025.
+doi:https://doi.org/10.3390/en18030664.
+15
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+David L Donoho and Iain M Johnstone. Ideal spatial adaptation by wavelet shrinkage.biometrika, 81(3):
+425–455, 1994. doi:https://doi.org/10.2307/2337118.
+Yash Goyal, Amir Feder, Uri Shalit, and Been Kim. Explaining Classifiers with Causal Concept Effect (CaCE).
+arXiv preprint arXiv:1907.07165, 2019. doi:https://doi.org/10.48550/arXiv.1907.07165.
+David Gunning, Mark Stefik, Jaesik Choi, Timothy Miller, Simone Stumpf, and Guang-Zhong Yang.
+XAI—Explainable artificial intelligence.Science robotics, 4(37):7120, 2019.
+Yuduan Han, Chonglong Ding, Shuo Yang, Yingfeng Ge, Jianan Yin, Yunyue Zhao, and Jinxin Zhang.
+Comparison of Electrocardiogram between Dilated Cardiomyopathy and Ischemic Cardiomyopathy Based
+on Empirical Mode Decomposition and Variational Mode Decomposition.Bioengineering, 11(10):1012,
+2024. doi:https://doi.org/10.3390/bioengineering11101012.
+Christopher E Heil and David F Walnut. Continuous and Discrete Wavelet Transforms.SIAM review, 31(4):
+628–666, 1989.
+Werner Heisenberg. Über den anschaulichen Inhalt der quantentheoretischen Kinematik und Mechanik.
+Zeitschrift für Physik, 43(3):172–198, 1927. doi:https://doi.org/10.1007/BF01397280.
+Nico Herwig and Pietro Borghesani. Explaining deep neural networks processing raw
+diagnostic signals.Mechanical Systems and Signal Processing, 200:110584, 2023.
+doi:https://doi.org/10.1016/j.ymssp.2023.110584.
+Norden E Huang, Zheng Shen, Steven R Long, Manli C Wu, Hsing H Shih, Quanan Zheng, Nai-Chyuan Yen,
+Chi Chao Tung, and Henry H Liu. The empirical mode decomposition and the Hilbert spectrum for nonlinear
+and non-stationary time series analysis.Proceedings of the Royal Society of London. Series A: mathematical,
+physical and engineering sciences, 454(1971):903–995, 1998. doi:https://doi.org/10.1098/rspa.1998.0193.
+Zohaib Jan, Farhad Ahamed, Wolfgang Mayer, Niki Patel, Georg Grossmann, Markus Stumptner, and Ana Ku-
+usk. Artificial intelligence for industry 4.0: Systematic review of applications, challenges, and opportunities.
+Expert Systems with Applications, 216:119456, 2023. doi:https://doi.org/10.1016/j.eswa.2022.119456.
+Fazle Karim, Somshubra Majumdar, Houshang Darabi, and Shun Chen. LSTM Fully Con-
+volutional Networks for Time Series Classification.IEEE access, 6:1662–1669, 2017.
+doi:https://doi.org/10.1109/ACCESS.2017.2779939.
+Been Kim, Martin Wattenberg, Justin Gilmer, Carrie Cai, James Wexler, Fernanda Viegas, et al. Interpretability
+Beyond Feature Attribution: Quantitative Testing with Concept Activation Vectors (TCA V). InInternational
+Conference on Machine Learning, pages 2668–2677. PMLR, 2018.
+Pang Wei Koh, Thao Nguyen, Yew Siang Tang, Stephen Mussmann, Emma Pierson, Been Kim, and Percy
+Liang. Concept Bottleneck Models. InInternational Conference on Machine Learning, pages 5338–5348.
+PMLR, 2020.
+Ferdinand Küsters, Peter Schichtel, Sheraz Ahmed, and Andreas Dengel. Conceptual Explanations of Neural
+Network Prediction for Time Series. InInternational Joint Conference on Neural Networks (IJCNN), pages
+1–6. IEEE, 2020. doi:https://doi.org/10.1109/IJCNN48605.2020.9207341.
+Gregory Lee, Ralf Gommers, Filip Waselewski, Kai Wohlfahrt, and Aaron O’Leary. PyWavelets:
+A Python package for wavelet analysis.Journal of Open Source Software, 4(36):1237, 2019.
+doi:https://doi.org/10.21105/joss.01237.
+Youru Li, Zhenfeng Zhu, Deqiang Kong, Hua Han, and Yao Zhao. EA-LSTM: Evolutionary
+attention-based LSTM for time series prediction.Knowledge-Based Systems, 181:104785, 2019.
+doi:https://doi.org/10.1016/j.knosys.2019.05.028.
+Hui Liu, Hong Qi Tian, Di Fu Pan, and Yan Fei Li. Forecasting models for wind speed using wavelet,
+wavelet packet, time series and Artificial Neural Networks.Applied Energy, 107:191–208, 2013.
+doi:https://doi.org/10.1016/j.apenergy.2013.02.002.
+16
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+Scott Lundberg. SHAP Documentation.https://shap.readthedocs.io, 2018. Accessed 17 July 2025.
+Scott M Lundberg and Su In Lee. A Unified Approach to Interpreting Model Predictions. InProceedings of
+the 31st International Conference on Neural Information Processing Systems, pages 4768–4777, 2017.
+Han Meng, Christian Wagner, and Isaac Triguero. SEGAL time series classification - Stable explanations
+using a generative model and an adaptive weighting method for LIME.Neural Networks, 176:106345, 2024.
+doi:https://doi.org/10.1016/j.neunet.2024.106345.
+Diana Mincu, Eric Loreaux, Shaobo Hou, Sebastien Baur, Ivan Protsyuk, Martin Seneviratne, Anne Mottram,
+Nenad Tomasev, Alan Karthikesalingam, and Jessica Schrouff. Concept-based model explanations for
+Electronic Health Records. InProceedings of the Conference on Health, Inference, and Learning, pages
+36–46, 2021. doi:https://doi.org/10.1145/3450439.3451858.
+Mohammad Amin Morid, Olivia R Liu Sheng, and Joseph Dunbar. Time Series Prediction Using Deep
+Learning Methods in Healthcare.ACM Transactions on Management Information Systems, 14(1):1–29,
+2023. doi:https://doi.org/10.1145/3531326.
+Amin Nayebi, Sindhu Tipirneni, Chandan K. Reddy, Brandon Foreman, and Vignesh Subbian. WindowSHAP:
+An efficient framework for explaining time-series classifiers based on Shapley values.Journal of Biomedical
+Informatics, 144:104438, 2023. doi:https://doi.org/10.1016/j.jbi.2023.104438.
+Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory Chanan, Trevor Killeen,
+Zeming Lin, Natalia Gimelshein, Luca Antiga, Alban Desmaison, et al. PyTorch: An Imperative Style,
+High-Performance Deep Learning Library.Advances in Neural Information Processing Systems, 32, 2019.
+Eleonora Poeta, Gabriele Ciravegna, Eliana Pastor, Tania Cerquitelli, and Elena Baralis. Concept-
+based Explainable Artificial Intelligence: A Survey.ACM Computing Surveys, 2023.
+doi:https://doi.org/10.1145/3774643.
+Marco Tulio Ribeiro, Sameer Singh, and Carlos Guestrin. "Why Should I Trust You?": Explaining the Predic-
+tions of Any Classifier. InProceedings of the 22nd ACM SIGKDD International Conference on Knowledge
+Discovery and Data Mining, pages 1135–1144, 2016. doi:https://doi.org/10.1145/2939672.2939778.
+Daniel Roggen, Alberto Calatroni, Mirco Rossi, Thomas Holleczek, Kilian Förster, Gerhard Tröster, Paul
+Lukowicz, David Bannach, Gerald Pirkl, Alois Ferscha, et al. Collecting complex activity datasets in highly
+rich networked sensor environments. InSeventh International Conference on Networked Sensing Systems
+(INSS), pages 233–240. IEEE, 2010. doi:https://doi.org/10.1109/INSS.2010.5573462.
+Philipp Ruf, Christoph Reich, and Djaffar Ould-Abdeslam. Aspects of Module Placement in Machine Learning
+Operations for Cyber Physical Systems. In2022 11th Mediterranean conference on embedded computing
+(MECO), pages 1–6. IEEE, 2022.
+Abhinav Saxena, Kai Goebel, Don Simon, and Neil Eklund. Damage propagation modeling for aircraft engine
+run-to-failure simulation. InInternational Conference on Prognostics and Health Management, pages 1–9.
+IEEE, 2008. doi:https://doi.org/10.1109/PHM.2008.4711414.
+Udo Schlegel, Hiba Arnout, Mennatallah El-Assady, Daniela Oelke, and Daniel A Keim. Towards A Rigorous
+Evaluation Of XAI Methods On Time Series. InIEEE/CVF International Conference on Computer Vision
+Workshop (ICCVW), pages 4197–4201. IEEE, 2019. doi:https://doi.org/10.1109/ICCVW.2019.00516.
+Gesina Schwalbe and Bettina Finzel. A comprehensive taxonomy for explainable artificial intelligence: a
+systematic survey of surveys on methods and concepts.Data Mining and Knowledge Discovery, 38(5):
+3043–3101, 2024. doi:https://doi.org/10.1007/s10618-022-00867-8.
+Lloyd S. Shapley. A Value for N-Person Games.Contribution to the Theory of Games, 2, 1952.
+Ao Sun, Pingchuan Ma, Yuanyuan Yuan, and Shuai Wang. Explain Any Concept: Segment Anything Meets
+Concept-Based Explanation.Advances in Neural Information Processing Systems, 36, 2024.
+17
+
+=== PAGE BREAK ===
+
+C-SHAP for time series
+Mukund Sundararajan, Ankur Taly, and Qiqi Yan. Axiomatic Attribution for Deep Networks. InInternational
+Conference on Machine Learning, pages 3319–3328. PMLR, 2017.
+Andreas Theissler, Francesco Spinnato, Udo Schlegel, and Riccardo Guidotti. Explainable AI for Time Series
+Classification: A Review, Taxonomy and Research Directions.IEEE Access, 10:100700–100724, 2022.
+doi:https://doi.org/10.1109/ACCESS.2022.3207765.
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser,
+and Illia Polosukhin. Attention is All you Need.Advances in Neural Information Processing Systems, 30,
+2017.
+Zhiguang Wang, Weizhong Yan, and Tim Oates. Time Series Classification from Scratch with Deep Neural
+Networks: A Strong Baseline. InInternational Joint Conference on Neural Networks (IJCNN), pages
+1578–1585. IEEE, 2017. doi:https://doi.org/10.1109/IJCNN.2017.7966039.
+Hao Fan Yang and Yi Ping Phoebe Chen. Hybrid deep learning and empirical mode decomposi-
+tion model for time series applications.Expert Systems with Applications, 120:128–138, 2019.
+doi:https://doi.org/10.1016/j.eswa.2018.11.019.
+Chih Kuan Yeh, Been Kim, Sercan Arik, Chun Liang Li, Tomas Pfister, and Pradeep Ravikumar. On
+Completeness-aware Concept-Based Explanations in Deep Neural Networks.Advances in Neural Informa-
+tion Processing Systems, 33:20554–20565, 2020.
+18

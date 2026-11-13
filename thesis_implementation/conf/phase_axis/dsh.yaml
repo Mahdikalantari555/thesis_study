@@ -1,0 +1,5 @@
+name: dsh
+bin_days: 15
+max_cycle_days: 540
+n_bins: 36
+gdd_t_base_c: 12.0

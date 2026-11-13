@@ -1,0 +1,1506 @@
+TYPE Original Research
+PUBLISHED 24 July 2026
+DOI 10.3389/frai.2026.1803320
+OPEN ACCESS
+EDITED BY
+Ahmet Cilek,
+Çukurova University, Türkiye
+REVIEWED BY
+Lachezar Filchev,
+Space Research and Technology Institute
+(BAS), Bulgaria
+Colbert Jackson,
+University of the Free State, South Africa
+*CORRESPONDENCE
+Areej Alwahas
+Areej.alwahas@kaust.edu.sa
+RECEIVED 03 February 2026
+REVISED 23 May 2026
+ACCEPTED 29 June 2026
+PUBLISHED 24 July 2026
+CITATION
+Alwahas A, Johansen K, Rodriguez J and
+McCabe MF (2026) Mapping seasonal
+dynamics of forage and cereal crops in a
+hyper-arid environment using Sentinel-1
+and Sentinel-2 time series.
+Front. Artif. Intell. 9:1803320.
+doi: 10.3389/frai.2026.1803320
+COPYRIGHT
+© 2026 Alwahas, Johansen, Rodriguez
+and McCabe. This is an open-access
+article distributed under the terms of the
+Creative Commons Attribution License
+(CC BY). The use, distribution or
+reproduction in other forums is
+permitted, provided the original author(s)
+and the copyright owner(s) are credited
+and that the original publication in this
+journal is cited, in accordance with
+accepted academic practice. No use,
+distribution or reproduction is permitted
+which does not comply with these terms.
+Mapping seasonal dynamics of
+forage and cereal crops in a
+hyper-arid environment using
+Sentinel-1 and Sentinel-2 time
+series
+Areej Alwahas*, Kasper Johansen, Jorge Rodriguez and
+Matthew F. McCabe
+Division of Biological and Environmental Science and Engineering (BESE), King Abdullah University of
+Science and Technology, Thuwal, Saudi Arabia
+Introduction: In arid and hyper-arid regions, agriculture depends heavily
+on irrigation, making crop type monitoring important for water allocation,
+monitoringcropmanagementpolicies,andprovidingtheinformationrequiredto
+forecast food supply. However, ﬁeld labels are often scarce, and crop calendars
+can shift due to locally managed planting, harvest, and irrigation decisions,
+complicating mapping at ﬁeld-scale.
+Methods: We present a seasonal crop type mapping approach applied to Wadi
+Al-Dawasir, Saudi Arabia, generating maps for 2020–2024 from biweekly optical
+andradarsatellitetimeseries.Themethodlearnsrepresentationsfromunlabeled
+imagery through self-supervised pretraining and ﬁne-tunes a segmentation
+model using a small set of ﬁeld observations with pseudo-label augmentation
+fromunsupervisedclustering.Wemappedfourclasses:fallow,cereal,vegetables,
+and forage, and evaluated performance using overall accuracy, F1-score, and
+mean intersection-over-union (mIoU).
+Results: The conﬁguration combining self-supervised pretraining, pseudo-label
+augmentation,andoptical-radarinputsachievedanmIoUof0.80,anF1-scoreof
+0.88,andanoverallaccuracyof0.97.Incontrast,usingopticalinformationalone
+substantially reduced accuracy, with an mIoU of 0.35, an F1-score of 0.32, and
+an overall accuracy of 0.64. Fallow and forage produced the highest mapping
+accuracies,withmIoUvaluesof0.97and0.85,respectively,whilevegetableshad
+the lowest accuracy among the four crop groups, with an mIoU of 0.52.
+Discussion: These results show that self-supervised temporal pretraining
+combined with pseudo-label augmentation can support efficient multi-season,
+ﬁeld-scalecropmappingusinglimitedlabelsinirrigation-drivenaridregions.The
+lower accuracy for vegetables highlights the continued challenge of mapping
+heterogeneous crop groups with overlapping phenological patterns.
+KEYWORDS
+crop-type mapping, irrigated agriculture, multimodal time series, pseudo labels, self-
+supervised learning
+1 Introduction
+Agricultural landscapes are changing in response to climate pressures, water
+scarcity, and policy interventions, creating a need for robust crop monitoring
+systems ( Food and Agriculture Organization of the United Nations, 2021 ;
+Frontiersin ArtiﬁcialIntelligence 01 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+Food and Agriculture Organization of the United Nations and
+Global Information and Early Warning System, 2024; IPCC, 2022;
+OECD, 2023; Potapovetal., 2022 ). Cereal crops alone account
+for approximately 56% of global dietary energy and about 50%
+of global dietary protein (Muitireetal., 2021 ), with wheat, rice,
+and maize making up the majority of global calorie intake (Food
+and Agriculture Organization of the United Nations, 2023; Food
+and Agriculture Organization of the United Nations and Global
+Information and Early Warning System, 2024;WorldBank, 2025).
+Ontheotherhand,foragecrops,includingalfalfaandothergrasses,
+are used primarily as livestock feed, supporting the production
+of dairy and meat (Josephetal., 2025 ; Vendraminietal., 2023 ).
+The production of these staple cereals is concentrated in a
+relativelysmallgroupofcountries,withmaizebeingpredominantly
+produced in the United States, China, and Brazil, rice in China,
+India, Indonesia, and Bangladesh, and wheat in China, India,
+Russia, and the United States (Food and Agriculture Organization
+of the United Nations, 2023; WorldBank, 2025). While forage
+crops such as irrigated alfalfa are widely cultivated across diverse
+agriculturalsystems.
+Observing the pattern and development of crop systems
+is critical for the planning and management of global food
+systems (Becker-Reshefetal., 2020 ). For instance, the seasonal
+dynamics of cereal and forage crops, including planting and
+harvest timing, number of forage cuts, and peak greenness,
+can be observed from satellite image time series, revealing
+crop responses to environmental conditions, crop management
+practices, and water availability (LiG.etal., 2023 ; Meronietal.,
+2021; Velosoetal., 2017 ; Zhangetal., 2019 ). More broadly,
+monitoringseasonaldynamicsisessentialtopredictmarkettrends,
+manage food security goals, and improve irrigation strategies
+(Becker-Reshefetal.,2019 ;Caleraetal.,2017 ).
+In response to the increasing global demand for food and
+livestock feed, and the desire to improve food self suﬃciency,
+production of cereal and forage crops has expanded into arid
+and hyper-arid regions of the Middle East, North Africa, and
+Central Asia (Hamidovetal., 2016;LiT.etal., 2023 ;Potapovetal.,
+2022). However, this intensiﬁcation has increased pressure on
+scarce groundwater resources used for irrigation, many of which
+are non-renewable and associated with unsustainable depletion in
+drylands (Siebertetal., 2010 ; Vossetal., 2013 ; Wadaetal., 2010 ).
+SaudiArabiaisanextremeexampleofthistrend,withconsiderable
+cereal and forage farming taking place in one of the world’s most
+arid and water-stressed regions (AbdelbakiandAlzahrani, 2024 ;
+LiT.etal., 2023 ). Such a context creates a clear need for robust,
+spatially explicit monitoring systems to evaluate how cropping
+patterns are changing under water stress and policy interventions
+(Becker-Reshefetal.,2020 ;VanTrichtetal.,2023 ).
+Satellite-based remote sensing combined with machine
+learning and deep learning oﬀers cost-eﬀective solutions for crop
+monitoring that are scalable and repeatable (Burkeetal., 2021 ;
+Nakalembeetal.,2021 ).Sentinel-1andSentinel-2imagetimeseries
+havebeenusedtocaptureagriculturalphenologicalstages,identify
+crop types, and delineate ﬁeld boundaries (Masoudetal., 2020 ;
+Tianetal., 2021 ; Velosoetal., 2017 ). However, many supervised
+approachesdependonsuﬃcientandaccuratereferencedata,which
+are diﬃcult and expensive to collect repeatedly over large areas,
+particularly in data-scarce regions (Tayloretal., 2021 ). Existing
+global eﬀorts, including WorldCereal and Global Food Security
+Analysis Data (GFSAD), provide seasonal crop information
+at 10m and 30m resolution, respectively ( VanTrichtetal.,
+2023; YadavandCongalton, 2018 ). Yet arid regions remain
+underrepresented in global datasets, and crop mapping models
+often underperform in irrigation-driven environments that
+diﬀer from temperate rainfed systems ( Tayloretal., 2021 ;
+Thenkabailetal.,2021 ;VanTrichtetal.,2023 ).
+In arid and hyper-arid systems, relatively few studies have
+demonstrated reliable discrimination of major crop types using
+satellite imagery. Recent studies in the Nile Delta and central Iran
+have shown that multi-temporal Sentinel-1 and Sentinel-2 data
+can support mapping of wheat, barley, irrigated forage, and other
+major crops, but they also report persistent constraints related
+to sparse and uneven ground truth data, irregular phenology,
+and weak transferability across seasons or neighboring regions
+(Asgarianetal., 2016 ; Mobarakehetal., 2025 ; Salehetal., 2025 ;
+Tayloretal.,2021 ;VanTrichtetal.,2023 ;Wangetal.,2019 ).These
+constraintsmotivatelabel-eﬃcientapproachesthatreducereliance
+on dense ground truth data, including self- or semi-supervised
+representation learning and the use of pseudo labels (Maetal.,
+2022; Xuetal., 2024). In irrigated drylands, pseudo labels can also
+be informed by recognizable ﬁeld geometry, such as center pivot
+patterns, while time series inputs allow evaluation without relying
+onﬁxedcalendarrules( Johansenetal.,2021 ;LiT.etal.,2023 ).
+Over recent decades, Saudi Arabia’s irrigated agriculture has
+shifted in response to policy, water scarcity, and climate variations
+(LiT.etal., 2023 ; OdnoletkovaandPatzek, 2023 ). Since 2018,
+reforms under the National Water Strategy, such as restrictions
+on water-intensive crops, water pricing, and subsidy changes,
+have created clear shifts in agricultural activity and cropping
+trends on the ground. These eﬀorts also exposed a signiﬁcant
+gap in consistent agricultural monitoring (Food and Agriculture
+Organization of the United Nations and Global Information and
+Early Warning System (FAO GIEWS), 2024; McIlwaineandOuda,
+2020; MinistryofEnvironment,WaterandAgriculture, 2018 ;
+US-SaudiBusinessCouncil, 2022 ). In particular, there is a lack of
+seasonal, ﬁeld-scale crop type maps that can track how cropping
+patterns and intensity respond to policy initiatives for irrigated
+crops. Here, we address this gap by developing and evaluating
+a satellite-based time series approach in an agricultural region
+with limited ground truth data availability (Alqarawyetal., 2019 ;
+Masoudetal.,2020 ).
+In this study, we developed and evaluated an approach for
+seasonal crop type mapping in Wadi Al-Dawasir, Saudi Arabia,
+using Sentinel-1 and Sentinel-2 image time series. The study
+was conducted in a label-scarce setting where crop phenology
+is irrigation-driven and irregular. We assessed whether self-
+supervised learning can support ﬁeld-scale classiﬁcation across
+multiple growing seasons with limited supervision. The analysis
+focused on four functional crop groups, fallow, cereal, vegetables,
+and forage, from 2020 to 2024. The main contribution is a
+ﬁeld-level crop type mapping workﬂow designed for a label-
+scarce, irrigation-dependent agricultural region in Saudi Arabia.
+It combines self-supervised temporal learning, pseudo label
+augmentation, and optical–radar time series to reduce reliance
+on dense ﬁeld labels while preserving crop phenology and
+ﬁeldstructure.
+Frontiersin ArtiﬁcialIntelligence 02 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+FIGURE 1
+Study area of Wadi Al-Dawasir, Saudi Arabia.
+2 Data and methods
+2.1 Study area
+The study area focuses on Wadi Al-Dawasir in Saudi Arabia,
+which covers about 4,560 km2 (76km × 60km) in and is near
+the southernmost part of the Najd Plateau between latitudes 20◦
+and 21◦ N and longitudes 44◦ to 46◦ E, shown inFigure1.T h e
+climate is hyper-arid, with the area receiving an annual average
+of less than 50mm of rain that tends to be concentrated in
+thewintermonths( AbdelbakiandAlzahrani,2024 ;Alqarawyetal.,
+2019). Reported diurnal temperatures of typical daily minimum
+and maximum conditions in winter temperatures drop to around
+6 ◦C, and summer temperatures occasionally reach 45 ◦C
+(Masoudetal., 2020 ), resulting in extremely high evaporation
+rates and frequent windstorms, all of which contribute to soil
+degradation. Wadi Al-Dawasir is known for its sand dunes and
+ﬂat terrain punctuated by valleys. Deep non-renewable subsurface
+aquifers are the primary source for irrigation in this region
+(MinistryofEnvironment,WaterandAgriculture, 2023 ; Morton,
+2019).
+AgricultureinWadiAl-Dawasirisalmostentirelyirrigatedand
+relies on large scale farming supported by center pivot irrigation
+systems (AbdelbakiandAlzahrani, 2024 ; LiT.etal., 2023 ). Cereal
+crops such as wheat and barley, as well as forage crops like lucerne
+and Rhodes grass, are crucial for cattle feed and are produced at
+scale. A range of vegetables, such as potatoes, onions, and chili
+peppers, are also grown, particularly during the colder months
+(Alqarawyetal., 2019 ; Masoudetal., 2020 ). Although agriculture
+has placed signiﬁcant strain on the extremely limited water
+resources and highlighted the vital need for more sustainable
+practices,foodsecurityrelatedpoliciesandgovernment-supported
+infrastructure have mostly spurred agricultural expansion in the
+region(AbdelbakiandAlzahrani,2024 ;Masoudetal.,2020 ).
+2.2 Data
+2.2.1 Satellite data
+Optical and radar data from 2020 to 2024 were used
+to analyze irrigated ﬁelds in Wadi Al-Dawasir. Optical data
+included Sentinel-2 Level-2A surface reﬂectance images
+(COPERNICUS/S2_SR_HARMONIZED), which provide 13
+spectral bands across the visible, red edge, near infrared (NIR),
+and shortwave infrared regions. The Normalized Diﬀerence
+VegetationIndex(NDVI)wasderivedfromtheredandNIRbands
+tocharacterizecropphenology.Sentinel2hasa5-dayrevisitperiod
+from the combined S2A and S2B satellites and a spatial resolution
+of 10–20m (Druschetal., 2012; EuropeanSpaceAgency, 2015). In
+this study, NDVI was used as a compact optical representation of
+cropphenologytoreduceinputdimensionalityandcomputational
+cost under limited label availability. Using all Sentinel-2 bands
+across biweekly time steps would substantially increase the
+input size and memory requirements of the temporal model.
+Frontiersin ArtiﬁcialIntelligence 03 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+However, we did not directly compare NDVI-only inputs with full
+multispectral Sentinel-2 inputs; therefore, this choice should be
+interpreted as a practical phenology-based design decision rather
+thananoptimizedspectralconﬁguration.
+Sentinel-1 radar imagery was acquired as Interferometric
+Wide Swath (IW) Ground Range Detected (GRD) scenes, with
+dual polarizations, i.e., VV and VH ( COPERNICUS/S1_GRD).
+VH polarization is particularly sensitive to vegetation structure
+because of volume scattering eﬀects, which makes it valuable
+for agricultural monitoring ( Bauer-Marschallingeretal., 2021 ;
+Vreugdenhiletal., 2018 ). In this study, we focused on the use
+of the VH/VV ratio, as preliminary tests indicated that VV
+alone did not improve the classiﬁcation accuracy. Sentinel-
+1A and 1B combined had previously ensured a 6-day revisit
+cycle, but since the decommissioning of Sentinel-1B in August
+2022, only Sentinel-1A has been operational (until the launch
+of Sentinel-1C in December 2024), extending the revisit time
+to 12 days (EuropeanSpaceAgency, 2022 ). As our analysis was
+based on biweekly composites, this reduction in acquisition
+frequency did not aﬀect the temporal resolution used. All
+imagery was accessed and processed in the Google Earth Engine
+(GEE), including cloud/shadow masking, temporal compositing,
+and Sentinel-1 and Sentinel-2 data alignment, are described in
+Section2.3.1.
+2.2.2 Field data collection and preparation
+Four ﬁeld data collection campaigns were conducted in Wadi
+Al-Dawasir on March 16 to 21, 2023 (winter), September 10 to
+15, 2023 (summer), January 31 to February 3, 2024 (winter), and
+September 5 to 10, 2024 (summer) to support the development
+and validation of satellite-based crop type models. The data
+collection covered the same 300 center pivot ﬁelds each visit.
+A Trimble handheld GPS-enabled device was used in situ for
+crop type labeling with the obtained data serving as the ground
+truth for evaluating and ﬁne-tuning the developed models for
+crop type mapping. More ﬁelds were cultivated during winter,
+with some ﬁelds being fallow during the summer months. The
+same ﬁelds were visited to record the crop types and track ﬁeld
+dynamics over the diﬀerent growing seasons. Fields with no visible
+standingcroponthesurveydatewererecordedascandidatefallow
+observations during ﬁeld data collection. Final fallow labels for
+each ﬁeld were assigned only after checking the corresponding
+Sentinel-2 NDVI temporal proﬁle for the associated growing
+season to conﬁrm persistently low vegetation activity (Section
+2.2.4). Fields showing evidence of recent harvest, regrowth, or
+a short idle interval within an otherwise active seasonal cycle
+were excluded from the labeled dataset. To understand crop
+growth behavior in the satellite image time series, we recorded the
+phenologicalstagebyvisualobservationfollowingFAOdeﬁnitions
+(vegetative, heading, ﬂowering, senescence) and used these notes
+to compare the recorded phenological stage against the Sentinel-
+2 derived time series. Sentinel-2 images were used to manually
+delineate the boundaries of the 300 ﬁelds visited during the
+ﬁeld campaigns using Quantum Geographic Information System
+(QGIS)(Figure2).
+2.2.3 Field sample distribution
+The collected ﬁeld data of crop type varieties in Wadi
+Al-Dawasir across the 2023 and 2024 growing seasons and the
+seasonal trends are summarized in Figure3. In winter, crops
+grown for human consumption included wheat, barley, onion,
+potato, and chili pepper. Forage crop production for livestock
+feed was dominated by alfalfa, with some ﬁelds also labeled as
+Rhodes grass and maize. The summer season was dominated
+by forage crops, including alfalfa, Rhodes grass, maize, sorghum,
+and a few barley ﬁelds. This seasonal pattern was aﬃrmed
+in reports received from the farmers, who emphasized that
+summer crops mainly focus on livestock feed due to the harsh
+summer conditions. Rhodes grass was among the dominant crops,
+accounting for 25.4% during the summer of 2023. However, in
+2024 its distribution declined to 12.1%, and fallow ﬁelds doubled
+from 32.1% in 2023 to 63.3% in 2024. A similar decline from
+29.6% to 19.5% was observed for alfalfa ﬁelds between winter
+andsummer.
+Alfalfa remained a key crop during all seasons, but the
+number of ﬁelds decreased between the winter of 2023 from
+34.2% to 29.2% in the winter of 2024. Wheat, on the other
+hand, increased from 15.8% in 2023 to 28.1% in 2024. Potatoes
+and other crops were present in both winters, with smaller
+proportional shares of around 10% or less. Since we revisited the
+same ﬁelds during each campaign, the varying numbers of ﬁelds
+per crop type show that farmers vary the crop types grown in the
+sameﬁelds.
+2.2.4 Label quality control
+To ensure label quality, all ﬁelds marked as fallow during the
+campaign were cross-checked against the Sentinel-2 NDVI time
+series around the time of visit, as illustrated inFigure4.I ft h e
+NDVI proﬁle indicated active growth or a recent harvest, meaning
+that the ﬁeld was only idle on the visit day, then the record was
+removed from the training/validation set.Figure4 illustrates an
+examplecenterpivotanditsSentinel-2NDVItrajectory.Thecurve
+inFigure4 exhibitsasinglepronouncedpeakbetweenJanuaryand
+April 2023, consistent with a winter cereal (barley was observed
+during the winter ﬁeld visit). In the summer season, between
+May and October 2023, the curve for the same center pivot
+shows repeated cut and regrow pulses, which are characteristic
+of irrigated forage. However, the ﬁeld was visited in September,
+and it was recorded as fallow on that survey day. Therefore, to
+avoid misclassiﬁcation errors due to a day speciﬁc observation
+that contradicts the surrounding NDVI dynamics, this data point
+wasremoved.
+For the same center pivot, the NDVI rises again and reaches
+a single peak between approximately January and April 2024,
+consistent with a cereal cycle. In this case, wheat was observed
+duringthecorrespondingﬁeldvisit.Thisisfollowedbyaprolonged
+low NDVI period from approximately May to October 2024,
+indicatingfallowconditionsduringmid-to-late2024.Becausethese
+ﬁeld observations are consistent with the NDVI dynamics around
+the visit dates, the corresponding data points were retained. The
+Frontiersin ArtiﬁcialIntelligence 04 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+FIGURE 2
+Visited ﬁelds and representative photographs from Wadi Al-Dawasir:(a) map of center pivot ﬁelds visited during the 2023–2024 campaigns (yellow
+circles); representativein-situ photographs of(b) potato, (c) chili pepper,(d) and (e) wheat, (f) alfalfa, and(g) barley.
+sameNDVIscreeningcheckwasperformedforeverylabeledcenter
+pivot ﬁeld in the dataset, to remove observations that conﬂicted
+withtheexpectedNDVIseasonalsignal.
+2.3 Methods
+Our approach for mapping crop types integrates multi-sensor
+inputs, i.e., NDVI from Sentinel-2 and VH/VV from Sentinel-1.
+The workﬂow consists of six stages: (i) image processing in GEE,
+(ii) creating biweekly time-series stacks of NDVI and VH/VV, (iii)
+preparing the data for modeling by post-processing, tiling, and
+splitting the data into train and validation subsets, (iv) pretraining
+the MAE model on unlabeled image time series, (v) ﬁne-tuning
+with diﬀerent supervision settings using veriﬁed ﬁeld labels with
+optional K-means pseudo-label augmentation, and (vi) evaluation
+on a held-out subset using OA, UA/PA, F1, and IoU (Figure5).
+Pseudo labels were generated separately using K-means clustering
+on the seasonal NDVI and VH/VV time-series inputs and were
+used only as auxiliary supervision during ﬁne-tuning. They were
+notusedforpretraining,validation,ormodelselection.Thedashed
+branchin Figure5 indicatesthisoptionalpseudo-labelpathway.
+The dataset was split into training and validation sets using a
+random, stratiﬁed split by crop class to ensure that all classes were
+represented in both subsets despite class imbalance. The validation
+subset was kept aside and was never seen by the model during the
+pre-training stage. We generated pseudo labels using a K-means
+approach, as detailed in Section 2.3.2, to augment our limited
+collected labels. In the pre-training stage, a masked autoencoder
+(MAE) was trained on the biweekly Sentinel-1/2 stacks to learn
+temporal representations (Section 2.3.3). For the supervised ﬁne-
+tuningstage,thepre-trainedencoderswereupdatedusingthecrop
+type labels using two approaches: (1) a RF classiﬁcation, and (2)
+a segmentation (DeepLabv3+) to produce the ﬁnal crop type map
+(Section2.3.4).
+Mapping accuracy of crop types was assessed based on
+independent withheld ﬁeld data and using the overall accuracy
+(OA), user’s and producer’s accuracies (UA/PA), F1 Score, and
+mean intersection over union (mIoU). We quantiﬁed predictive
+reliability via an entropy-based uncertainty measure (Section
+2.3.5). For seasonal area statistics, we converted the predicted
+crop type outputs to hectares by counting pixels per class and
+multiplying by pixel area (10m × 10m = 100 m2 = 0.01 ha
+per pixel), reporting the total mapped area per season for each
+cropclass.
+Frontiersin ArtiﬁcialIntelligence 05 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+FIGURE 3
+Distribution of crop types recorded during the 2023–2024 summer and winter ﬁeld campaigns. Percentage share of sampled ﬁelds(top) and ﬁeld
+counts by crop type(bottom). “Fallow” indicates no crop on the survey day. Values reﬂect surveyed ﬁelds, not regional totals.
+FIGURE 4
+Representative center pivot ﬁeld in Wadi Al-Dawasir(left) and its Sentinel-2 NDVI time series(right), with the red line showing the NDVI curve.
+2.3.1 Satellite image processing in GEE
+BothSentinel-2andSentinel-1datawereprocessedintheGEE
+tobuildtemporallyaligned,biweeklystacksoftheWadiAl-Dawasir
+region and spanning the agricultural growing seasons starting in
+November2022andendinginOctober2024.TheSentinel-1and −2
+datasets used in the GEE were from the analysis ready collections
+(S2Level-2Asurfacereﬂectance;S1GRD).
+Sentinel-2 Level-2A products (S2_SR_HARMONIZED)
+provide surface reﬂectances after atmospheric correction
+(Sen2Cor), radiometric calibration, and terrain correction.
+We masked clouds and shadows using the Scene Classiﬁcation
+Layer by excluding classes 0 (no data), 1 (saturated/defective), 2
+(dark area), 3 (cloud shadow), 7 (unclassiﬁed), 8–9 (clouds), 10
+(cirrus), and 11 (snow/ice) together with the cloud probability
+band set to less than 20%. Sentinel-2 images were aggregated into
+biweeklystacksconsistingof15-daytimestepsusingmedianvalues
+to stabilize the phenological signal. Doing this reduces the impact
+of residual clouds, haze and illumination changes, thus ignoring
+outliers such that the NDVI time series reﬂects the underlying
+crop signal rather than occasional contaminated pixels. The same
+procedure was applied consistently across years before computing
+NDVIforeachtimestepas(B8–B4)/(B8 +B4)(Druschetal.,2012 ).
+To integrate SAR data, we used Sentinel-1 Ground
+Range Detected (GRD) scenes acquired in Interferometric
+Wide (IW) swath mode from the Sentinel-1 data collection
+(COPERNICUS/S1_GRD) ﬁltered to the study area and the time
+periods of the ﬁeld campaigns. We used dual polarization (VV,
+Frontiersin ArtiﬁcialIntelligence 06 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+FIGURE 5
+End-to-end pipeline showing the main steps used to produce seasonal, ﬁeld-scale crop type maps.
+VH), allowing both ascending and descending passes. Processing
+included orbit correction and border/thermal-noise removal,
+radiometric calibration to the backscatter coeﬃcient σ0( t h e
+normalized radar cross-section of returned power per unit ground
+area), and terrain correction to reduce geometric distortions.
+We then converted the calibrated backscatter to decibels (dB)
+using 10 log10 (σ0). To reduce speckle while preserving ﬁeld
+boundaries, we co-registered the processed Sentinel-1 imagery
+to the Sentinel-2 grid (i.e., same Coordinate Reference System,
+pixel size, and alignment). Temporal alignment was achieved by
+pairing each 15-day NDVI composite with the closest-in-time
+Sentinel-1 acquisition within±6 days. When multiple acquisitions
+were available, we kept the nearest Sentinel-1 scene within±6
+days of the composite center date; if no acquisition fell within
+this ±6 day window, the radar value for that timestep was set
+to missing. We retained the VH/VV ratio in dB, rather than
+a single polarization, because this ratio emphasizes vegetation
+structure and volume scattering while reducing the inﬂuence of
+soil moisture and incidence angle variations, which is particularly
+important in irrigated arid environments such as Saudi Arabia
+(EuropeanSpaceAgency, n.d. ; Velosoetal., 2017 ). Importantly,
+we used the VH/VV ratio, a commonly reported dual-polarization
+feature in Sentinel-1 crop classiﬁcation studies, and retained this
+formulation for consistency of interpretation. Prior work shows
+thatpolarizationratioscanimprovecropdiscriminationrelativeto
+usingVHorVVindividually( TsuchiyaandSonobe,2025 ).
+2.3.2 Pseudo labels
+To augment the ﬁeld veriﬁed crop type labels, we produced
+additional pseudo labels using unsupervised K-means clustering,
+which is predeﬁned in GEE. K-means clustering was selected
+because it is a simple and common unsupervised approach that
+does not require labels during clustering, which makes it suitable
+when ﬁeld annotations are limited (Wangetal., 2019 ). We used
+fullseasonaltimeseriesstacksforeachseason(biweeklySentinel-2
+NDVI paired with Sentinel-1 VH/VV) for every pixel. Clustering
+was restricted to an agricultural mask of seasonal median NDVI
+values > 0.5, in order to exclude natural vegetation, desert, and
+other built-up areas. We selected the number of clusters to be
+8( K = 8) after scanning K = 4 to 16. Candidate K values
+were evaluated using agreement with the available training ﬁeld
+labels, based on overall accuracy and macro-F1, and cluster purity,
+based on Shannon entropy of the ﬁeld-label distribution within
+each cluster. Lower entropy indicated clusters dominated by one
+crop group, while higher entropy indicated mixed clusters. K= 8
+providedthebestbalancebetweenﬁeld-labelagreementandcluster
+purity and was therefore retained for pseudo-label generation in
+this dataset. These metrics were used only to guide the choice of K
+andwerenotintendedtorepresentauniversalsetting.Theselected
+K value is dataset-speciﬁc and depends on crop composition,
+ﬁeld structure, and phenological variability. In other regions, K
+should be re-evaluated using limited local reference data, expert
+interpretationoftemporalclusterproﬁles,orunsupervisedcluster-
+validitydiagnostics.
+Clusters were then assigned to crop groups by identifying, for
+each cluster, the crop label most frequently observed within that
+cluster’s pixels inside the veriﬁed ﬁeld polygons. To reduce noisy
+pixels and encourage within-ﬁeld consistency, i.e., more uniform
+labelswithineachcenterpivotﬁeldratherthanscatteredpixel-wise
+fragments, we retained only connected regions≥100 pixels, about
+0.1ha,asaconservativeminimummappingunitat10mresolution
+toremovesmallfragmentedpatchesthataremorelikelynoisethan
+true ﬁeld-scale crop. Areas outside the NDVI-based agricultural
+mask, and noisy patches within ﬁelds, were treated as ambiguous
+and left unlabeled. The K-means derived pseudo labels were used
+toaugmentourﬁeldlabelstoprovideadditionalsupervisionforthe
+model during the ﬁne-tuning stage, explained in section 2.3.3. The
+pseudolabelswerenotusedforpre-training,validation,orselecting
+the model, which relied exclusively on the collected ﬁeld labels.
+Since the pseudo labels were derived from unsupervised clustering
+ratherthandirectﬁeldveriﬁcation,theywerelikelytocontainsome
+classiﬁcation errors, particularly for crop types with overlapping
+temporal and spectral signatures or limited representation in the
+study area. The possible uncertainty and eﬀect on ﬁne-tuning
+should therefore be considered when interpreting the results. The
+K-means derived pseudo labels were used to augment the ﬁeld
+labels and provide additional supervision during ﬁne-tuning, as
+explained in Section 2.3.3. The pseudo labels were not used for
+pretraining, validation, testing, or model selection, which relied
+exclusively on the collected ﬁeld labels. K-means clustering itself
+Frontiersin ArtiﬁcialIntelligence 07 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+FIGURE 6
+Pre-trainingpipeline(MAE-style)forNDVIandSARstreams.Eachframeisencodedspatially,pooledtotemporaltokens,randomlymaskedalongtime,
+encoded by a temporal transformer, and reconstructed by a modality-speciﬁc decoder. Reconstruction loss is computed only on masked timesteps.
+was applied to unlabeled seasonal Sentinel-2 NDVI and Sentinel-
+1 VH/VV time-series pixels. Limited ﬁeld labels were used only to
+guide the choice of K and assign resulting clusters to crop groups
+within the training data. The pseudo labels were therefore used as
+anintermediatesupervisionsourcetoincreaselabeldensityduring
+ﬁne-tuning, not as a replacement for ﬁeld labels or as part of the
+validationprocess.
+2.3.3 Pre-training phase
+A masked autoencoder (MAE) is a self-supervised model
+that masks a portion of the input and trains an encoder and a
+decodertoreconstructthemaskedcontent,resultingintransferable
+representations (Heetal., 2022 ). In the pre-training stage, a MAE
+was trained to learn crop phenology characteristics directly from
+satellite image time series without labels. Each training sample was
+a season-speciﬁc sequence of biweekly Sentinel-2 derived NDVI
+paired with Sentinel-1 VH/VV, stored per modality as tensors of
+shape (T× H ×W), where H=W=128 are the spatial dimensions
+in pixels, and T≈13, which represents the timesteps. NDVI values
+were clipped to a range of (−1, 1) and VH/VV to (−30, 0) dB
+to stabilize training. Because image acquisitions were irregular, the
+collatestepselectedacontiguous,alignedwindowofT =12shared
+by NDVI and VH/VV, where each frame corresponds to a 2-D
+mediancompositeatasingle15-daytimestep.Missingframeswere
+zero-paddedandmaskedsotheydidnotcontributetothelossand
+weretreatedasno-datadownstream.
+The input NDVI and VH/VV data were combined as a two-
+channel input and processed jointly through a shared encoder,
+as illustrated in Figure6. For each sample, the stacked inputs
+were passed through a small 3-layer spatial encoder (convolution,
+group normalization, and the Gaussian Error Linear Unit; GELU),
+which produced a feature map for each timestep. Instead of global
+spatialaveraging,featuremapswerereducedusingadaptiveaverage
+pooling to a coarse spatial grid, where each cell summarizes
+a local region of the ﬁeld to preserve limited spatial structure
+while controlling model complexity. The resulting features were
+reshaped into a sequence of spatiotemporal tokens, where each
+tokenrepresentsonegridcellatonetimestep.Positionalencodings
+were added to the tokens, and random temporal masking was
+then applied, with 50% of frames masked during training.
+The masked token sequence was passed to a transformer-based
+temporal encoder (Bertasiusetal., 2021), which modeled temporal
+dependencies across the season. Spatial context was retained
+directly within the tokenized representation through the coarse
+spatial grid. The pre-training stage was designed to prioritize
+learning temporal crop dynamics rather than preserving full-
+resolution spatial texture. Spatial information was compressed
+ratherthandiscarded,andthedecoderincorporatedaspatialprior
+derived from encoder feature maps during reconstruction. This
+designreducedmodelcomplexitywhileretainingsuﬃcientwithin-
+tile structure to support temporal representation learning using
+limited labels and irregular phenology. Fine spatial detail and ﬁeld
+boundaries were subsequently recovered during supervised ﬁne-
+tuning with DeepLabV3, which explicitly exploits spatial context
+andreﬁnessegmentationboundaries.
+During training, masked timesteps were removed from the
+inputsequence,andthemodellearnedtoinfertheirrepresentations
+from the remaining timesteps. The transformer produced context
+aware tokens at masked positions by aggregating information
+across the temporal sequence (self-attention). The reconstructed
+tokenswerethenpassedtothedecoderforreconstructionfollowing
+MAE principles (Heetal., 2022 ). To preserve spatial details, the
+decoderreceivedaspatialpriordeﬁnedasthemeanoftheencoder
+feature maps computed over the unmasked timesteps, resulting in
+a coarse spatial feature map. The spatial prior was fused with the
+token-based features and subsequently upsampled to 128× 128
+pixelsforreconstruction.
+We used the Huber loss (δ = 0.5), which behaves as squared
+error for small mistakes but transitions to absolute error for larger
+ones. This makes training stable while being robust to outliers
+or noisy data. The parameter δ sets the switch point, meaning
+errors smaller than 0.5 are penalized quadratically to encourage
+precise ﬁts, and errors larger than 0.5 are penalized linearly to
+limit the impact of bad frames. We computed a Huber loss on the
+maskedframesforeachinputchannel,L NDVI andLVH/VV,andthen
+we optimized their sum as Ltotal = LNDVI + LVH/VV. Summing
+the two losses trains the encoder on both signals at once, so the
+Frontiersin ArtiﬁcialIntelligence 08 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+FIGURE 7
+Experimental conﬁgurations used in the study. After masked-autoencoder pre-training, we compare two pre-training scopes (single season versus
+multiple seasons) and two supervision regimes for ﬁne-tuning (veriﬁed ﬁeld labels versus K-means-derived pseudo labels). Each conﬁguration is
+evaluated using two downstream models: a DeepLabV3 segmentation model and an RF classiﬁer.
+learned representation can capture how optical phenology and
+radar backscatter co-vary over time. This setup converged stably
+in practice. Training was conducted for approximately 500 epochs
+usingadatasetsplitintotrainingandvalidationsets(80/20),which
+gave us 11,721 training samples and 2,931 validation samples. A
+batch size of 4 was used due to GPU memory constraints, and
+optimization was performed using the Adam optimizer with a
+learningrateof1 ×10−4.
+Thedecoder(reconstruction)stageforcestheencodertomodel
+crop growth dynamics by predicting masked observations from
+temporal context. After pre-training, the decoder was discarded,
+and the encoder was then ﬁne-tuned with a small labeled set for
+downstreamcropmapping,followingthestandardpracticeinself-
+supervisedlearningapproachesappliedtoimagedata( Ayushetal.,
+2021;RußwurmandKörner,2020 ).
+2.3.4 Fine-tuning phase
+Diﬀerent experimental conﬁgurations were explored for ﬁne-
+tuning the pre-trained encoders in order to evaluate the eﬀects of
+pre-trainingscope,modelofchoice,andinputmodality( Figure7).
+EncoderswereinitializedfromtheMAEpre-trainingstage.Thetwo
+trained encoders with diﬀerent scope conﬁgurations were either
+usingdatafromasingleseasonorallseasons.
+For the supervised stage, we trained and evaluated two
+independentdownstreammodels:DeepLabV3andRF.DeepLabV3
+was used as a semantic segmentation model with class-weighted
+cross-entropy loss, early stopping on validation loss, and gradient-
+norm clipping (1.0). It was selected because the target output
+is a spatially coherent ﬁeld-level crop map, rather than only
+independent pixel-wise labels. The segmentation setup allows the
+model to use spatial context during prediction and to better
+preserve center pivot ﬁeld structure (Chenetal., 2018 ). A RF
+model was trained at the pixel level on frozen MAE encoder
+features. For the RF approach, the NDVI and VH/VV stacks were
+passed through the pre-trained MAE encoder to obtain per-pixel
+embeddings at the native resolution, and the RF was trained on
+theseembeddingsusing600trees,class-balancedtraining,andout-
+of-bag probability estimates. RF was included as a widely used
+remote-sensing baseline and as a comparison to evaluate whether
+frozenMAEfeaturescouldsupportcropmappingwithoutsemantic
+segmentation(BelgiuandDragut,2016 ;Breiman,2001).
+Each conﬁguration was evaluated with NDVI and VH/VV
+stacks as inputs. Only the NDVI stack was used as input for
+ablation. To test the eﬀect of the amount of label density
+(supervision), we toggled pseudo labels (Sec. 2.3.2) on and oﬀ
+for the best conﬁguration of downstream tasks and modalities.
+As noted earlier, pseudo labels were used only during training,
+and never for validation or testing. Moreover, we denoted
+conﬁgurations as Sn-r; where S represents season, n is the number
+of seasons used in pre-training, and r is the supervision type used
+for ﬁne-tuning i.e., S1-F = single season pre-training + Field
+labels; S1-P= single season+ Pseudo labels; S4-F= all seasons
+pre-training+ﬁeldlabels;S4-P =allseasons +pseudolabels.
+2.3.5 Evaluation data and metrics
+We withheld 20% of labeled ﬁelds as a validation set, stratiﬁed
+by season and class at the ﬁeld level, to provide an independent
+evaluation with suﬃcient representation across crop groups while
+retaining most labeled data for model development. Within the
+remaining 80%, training and validation were split 80/20 by
+ﬁeld IDs for early stopping and model selection. The withheld
+validationsetwasneverusedforhyperparametertuningorpseudo
+label mapping. Pseudo labels were generated only based on the
+trainingpartition.
+For accuracy assessment, we calculated the mean Intersection
+over Union (mIoU) and per class IoU, overall accuracy (OA),
+producer’s accuracy (PA/recall), user’s accuracy (UA/precision),
+and F1 per class. We also produced a confusion matrix.
+Metrics were computed separately for winter and summer and
+then summarized across seasons by averaging. In addition, to
+contextualize the performance of the proposed framework, we
+evaluated two external MAE-based foundation models, Prithvi
+1.0 and ScaleMAE, under the same study protocol. For these
+benchmark experiments, we used the same label partitions,
+single-season inputs, supervision settings, and evaluation metrics,
+and tested both decoder-only adaptation and full ﬁne-tuning.
+Frontiersin ArtiﬁcialIntelligence 09 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+These comparisons were intended to provide a controlled
+referenceforrelativeperformanceacrossarchitecturesandtraining
+conﬁgurations under the same study protocol, rather than an
+exhaustive model-speciﬁc optimization. Therefore, the benchmark
+results should be interpreted as performance under the tested
+adaptation settings, not as the maximum achievable performance
+ofPrithvi-EO-1.0orScaleMAE.
+Uncertainty was quantiﬁed using normalized predictive
+entropy. Entropy summarizes the full probability vector to range
+from 0 to 1, where values near 0 indicate a conﬁdent decision and
+values near 1 indicate uncertainty. Scene level maps of conﬁdence
+and entropy were displayed, and entropy was also overlain on
+an NDVI background to localize and interpret uncertainty to
+evaluatewhetherhighentropycoincidedwithlowvegetationsignal,
+parcel boundaries, subpixel heterogeneity, or irrigation driven
+phenologicaltransitions.Thesemapshelpeddiagnoseclassiﬁcation
+errors, guide targeted reference data collection, and highlight
+conditionsthatreduceperformance.
+For practical use, a low-conﬁdence ﬂag was deﬁned by
+thresholdingtheDeepLabV3conﬁdencemap(e.g., ≤0.50).Flagged
+pixelstypicallyoccurredalongﬁeldedges,withinmixedorpartially
+harvested pivots, or on dates with very low vegetation activity
+in terms of NDVI signal. Conversely, very high conﬁdence (e.g.,
+≥ 0.95) identiﬁed stable ﬁeld cores that were suitable for area
+aggregation. While these conﬁdence results were used to interpret
+themodelpredictionsandguidequalitycontrolandfuturelabeling,
+theywerenotusedtomodifylabelsinthisstudy.
+Toextenduncertaintyanalysistoaggregatestatistics,croparea
+totals were also estimated using class probabilities rather than
+only hard labels. For each class, expected area was computed as
+the sum of per-pixel class probabilities multiplied by pixel area.
+An approximate uncertainty term was derived using the Bernoulli
+variance, p(1 − p), where p is the predicted probability for a
+crop class. This quantiﬁes pixel-level uncertainty, which was then
+aggregated and summarized as standard deviation and conﬁdence
+intervals for each crop area. This provides a simple estimate of
+uncertaintyincropareatotalsbasedonpixel-levelprobabilities,but
+itdoesnotcapturespatialcorrelationorsystematicmodelerrors.
+3 Results
+3.1 Temporal crop responses from
+Sentinel-2 NDVI
+Temporal NDVI proﬁles derived from Sentinel-2 images
+revealed phenological patterns that help diﬀerentiate crop types.
+Figure8 summarizesthemeanseasonalNDVItrajectoriespercrop
+as heatmaps across labeled ﬁelds. Cereals and vegetables (e.g.,
+wheat, barley, and potato) typically exhibited a single growing
+season with a rapid NDVI rise, a visible mid-season peak, and
+a decline, consistent with synchronized planting and harvest
+cycles.Foragecrops(alfalfaandRhodesgrass)maintainedelevated
+NDVI values for prolonged periods of activity throughout the
+year with multiple cuts and regrowth cycles, whereas other crops
+(e.g., sorghum, chili, and onion) showed more moderate and
+variable trajectories. Guided by these temporal behaviors, four
+functional groups (forage, cereal, vegetable, and fallow) were used
+for classiﬁcation to maximize phenological separability at the ﬁeld
+scale while maintaining suﬃcient samples per class for robust
+trainingandevaluation.
+Because irrigation was not based on rainfall but rather on
+groundwater extraction, sowing and harvest dates can shift across
+ﬁelds and crop types. Figure8 highlights the typical temporal
+patterns by crop based on mean seasonal NDVI proﬁles, whereas
+Figure9 shows ﬁeld-level variability within individual crop classes,
+particularly in the timing and magnitude of seasonal NDVI
+peaks. Nevertheless, the broader functional groups retained more
+consistent seasonal behavior than the individual crop classes.
+Therefore, to handle this variability, the full time series signal was
+used instead of ﬁxed calendar thresholds, allowing the model to
+learn crop speciﬁc temporal trends from the NDVI and VH/VV
+time series. This grouping strategy was used to reduce label noise
+and improved class separability by collapsing similar crops into a
+smaller set of functional crop groups that remain more distinct at
+theﬁeldscale.
+3.2 Overall performance across
+conﬁgurations: pre-training scope, pseudo
+labels, and model type
+We evaluated the seasonal crop type mapping models across
+conﬁgurations that varied between the pre-training scope (single
+season vs. all seasons), pseudo label use (with vs. without), and
+modeltype(DeepLabV3vs.RF),usingNDVIalongwithVH/VVas
+the default input and NDVI only as an ablation, i.e., retraining the
+same architecture with identical settings but removing VH/VV, to
+isolatethecontributionofSAR.Weusedanindependentvalidation
+setthathadneitherbeenseenbythemodelduringthepre-training
+norﬁne-tuningstagesforevaluation.
+We observed that when using pseudo labels, the mIoU values
+increased from 43–45 when using ﬁeld labels to 77–80 mIoU,
+using both the DeepLabV3 and RF models, with OA increasing
+from 91–92% to 96–97% and macro-F1 from 55–56 to 86–
+88. Pseudo labels increase the number of labeled pixels across
+ﬁelds and timesteps per season (Section 2.3.2), broadening spatial
+coverage and reducing class imbalance. This improvement was
+not uniform across crop groups. For fallow ﬁelds, performance
+was already strong under few-label supervision and pseudo labels
+provided a smaller additional gain, mainly reﬂected in spatial
+consistency. For cereals, pseudo labels improved precision by
+reducing overprediction of the cereal class, while recall changed
+more modestly. The largest gains were observed for vegetables and
+forage classes. Vegetables were previously poorly detected, while
+forage was frequently confused with cereals. With pseudo labels,
+both recall and mIoU increased substantially for these classes.
+Despite these gains, vegetables remained the most challenging
+class, with higher within-class variability and temporal overlap
+withcereals.
+The DeepLabV3 approach slightly outperformed RF,
+speciﬁcally under the S4-P conﬁguration, with mIoU of 80.1
+forDeepLabV3vs.77.2forRF(see Table1).Thisdiﬀerenceismost
+apparent along pivot edges and during transition periods such as
+Frontiersin ArtiﬁcialIntelligence 10 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+FIGURE 8
+Heatmaps of mean temporal NDVI proﬁles of major crops during winter and summer seasons across all campaigns.
+FIGURE 9
+Seasonal NDVI trajectories by functional crop group showing mean trends (solid lines) and ﬁeld-level variability (shaded bands),(a) winter season, and
+(b) summer season. Variability reﬂects differences in timing and magnitude of NDVI across ﬁelds, while functional groups retain distinct temporal
+patterns.
+forage after cutting, newly sown or recently harvested cereals, and
+partially irrigated or abandoned pivots. With ﬁeld-collected labels
+only (S4-F), the performance diﬀerence remained similarly small,
+with45.0vs.42.0mIoUforDeepLabV3andRF,respectively.
+The uncertainty analysis also establishes that DeepLabV3′s
+predictions are generally conﬁdent i.e. mean conﬁdence 0.85
+(median 0.88), with 16% of pixels at very high conﬁdence (≥ 0.95)
+and only 5.2% at low conﬁdence (≤ 0.50). The mean entropy is
+0.29 (0= conﬁdent, 1= uncertain), which indicates low overall
+uncertainty. Most of the uncertainty occurs in the following cases.
+Higher entropy occurs over vegetable ﬁelds (potato, onion, chili)
+where crop timing overlaps with cereals, and over forage ﬁelds
+immediately after cutting and during short regrowth windows.
+Uncertainty is also higher for newly sown or recently harvested
+cereals,withinsummerfallowandpartiallyirrigatedorabandoned
+pivots,andalongﬁeldedgeswheremixedpixelsarecommon.
+We also evaluated the selected S4-P DeepLabV3 setup (S4-P;
+DeepLabV3) using NDVI alone, i.e., excluding the VH/VV SAR
+feature.Inthiscase,performanceinOAdroppedto0.63compared
+to0.96whenusingNDVI +VH/VV,andmIoU =0.35(from0.80),
+UA= 0.39 (from 0.88), PA= 0.33 (from 0.88), and F1(UA,PA)=
+0.31 (from 0.88). This sharp decline shows that excluding VH/VV
+reduced performance substantially. Therefore, NDVI combined
+with VH/VV remained the default input. Across conﬁgurations,
+pseudolabelaugmentationproducedthelargestperformancegain,
+withmIoUincreasingbyroughly35pointsrelativetotrainingwith
+ﬁeld-labelsonly.Expandingthepre-trainingscopefromoneseason
+to all seasons produced a smaller additional gain. These results
+indicate that, in this label-scarce setting, performance beneﬁted
+most from adding intermediate supervision through pseudo labels
+together with the temporal optical–radar representation. The
+pseudolabelswereusedonlyduringﬁne-tuningandwerenotused
+forpre-training,validation,ormodelselection.
+We further compared the proposed framework against
+two external MAE-based baselines, Prithvi-EO-1.0-100M and
+ScaleMAE, under the same downstream crop-mapping task.
+Across all benchmark settings, neither Prithvi-EO-1.0-100M nor
+ScaleMAE achived the results of the proposed framework,
+as detailed in Table2. The strongest comparison baseline
+was obtained with ScaleMAE using decoder-only training and
+ﬁeld labels, which reached an mIoU of 46.8 and F1 of
+63.48, followed by Prithvi also with decoder-only training and
+ﬁeld labels, yielded an mIoU and F1 of 42.52 and 59.28,
+respectively. In contrast to the proposed framework, pseudo label
+supervision reduced performance for both external foundation
+models (used as baselines) across all tested settings, with
+mIoU decreasing to approximately 29–31. These results show
+that pseudo labels did not provide consistent beneﬁt across
+Frontiersin ArtiﬁcialIntelligence 11 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+TABLE 1 Results for fourconﬁgurationsthat vary pre-training scope (1 season vs. 4 seasons), label type (ﬁeld labels vs. ﬁeld+pseudolabels), and model (DeepLabV3 vs. RandomForest).
+Experiments DeepLabV3 Random forest
+ID Pre-training Input data Label type OA F1 PA UA mIoU OA F1 PA UA mIoU
+S1-F 1season 1season Fieldlabels 91.0 55.6 49.1 63.9 43.0 91.6 48.9 48.8 63.4 41.9
+S1-P 1season 1season Pseudolabels 96.8 88.4 88.5 88.3 80.1 96.7 88.3 90.4 86.4 80.1
+S4-F 4seasons 1season Fieldlabels 91.7 56.0 51.0 64.0 45.0 91.0 50.0 48.6 61.2 42.0
+S4-P 4seasons 1season Pseudolabels 96.9 88.3 88.2 88.4 80.1 96.4 86.1 87.8 84.6 77.2
+InputswereNDVI +SAR(VH/VV).Metricsarecomputedontheindependentvalidationset.
+model architectures in this study, which is further discussed in
+Section4.
+3.3 Per class performance and errors
+Reportingonclass-wiseaccuraciesunderthebestconﬁguration
+(S4-P; DeepLabV3; NDVI+ VH/VV input) on the independent
+validation set,Table3 shows that fallow and forage classes produce
+the highest mapping accuracies. The very high scores for fallow
+reﬂect a distinct signature of persistently low NDVI with limited
+variance, which is rarely confused with crop classes. Forage also
+shows high accuracy, with extended periods of elevated NDVI
+across the season. Cereal showed intermediate accuracy, with UA
+= 0.79, PA = 0.88, F1 = 0.85, and mIoU = 0.71 (Table3).
+The cereal class exhibits a single seasonal peak that overlaps in
+timing and duration with vegetables. The higher PA than UA for
+cereal indicates that most true cereal ﬁelds are correctly identiﬁed,
+while some non-cereal ﬁelds are also predicted as cereal, resulting
+in lower precision. Vegetables were the most challenging crop
+group, as shown inTable3. Figure10 shows that the main error is
+vegetablesbeingmisclassiﬁedascereals.
+The confusion matrix in Figure10 summarizes
+misclassiﬁcations on the validation set for the best saved
+DeepLabV3 segmentation model. Rows denote ground truth
+classes and columns denote predicted classes, and values are row-
+normalized so each row sums to 100%. The diagonal represents
+per-class recall, and oﬀ-diagonal values show where pixels from a
+true class are assigned to other classes. Recall is highest for fallow
+and forage, indicating few missed pixels for these classes. Cereal
+also shows high recall, but some non-cereal pixels are predicted
+as cereal, contributing to commission errors and lower precision.
+The main confusion is vegetables being predicted as cereal, with
+a smaller fraction predicted as fallow, which corresponds to the
+lowerF1andmIoUforvegetablesrelativetotheotherclasses.
+The DeepLabV3 model was ﬁne-tuned with data from the
+winter season of 2023 and then applied to the winter of
+2024, summer of 2023, and summer of 2024. The resulting
+maps produced ﬁeld-scale predictions that preserved center pivot
+geometry, with boundaries that follow ﬁeld edges rather than
+fragmented pixel-wise patterns. In the winter maps, all four classes
+arepresent,andthemainresidualconfusionoccursbetweencereals
+and vegetables, consistent with the per-class metrics. In summer
+maps, the label space is dominated by forage and fallow, and
+the maps reﬂect this with a clear separation of these two classes.
+Figure11 shows that the segmentation outputs preserve center
+pivot geometry and ﬁeld boundaries across scenes. In panels a and
+b, crop patterns are spatially consistent at the ﬁeld scale, with most
+pivots assigned a dominant class rather than scattered pixel-wise
+labels.Residualerrorsareconcentratedalongﬁeldedgesandpartial
+pivots. The most noticeable confusion occurs between cereals and
+vegetables, while forage remains visually distinct and is mapped
+consistentlyacrossﬁelds.
+3.4 Crop area dynamics over time
+We produced seasonal crop area estimates from the model
+outputs. After inference, predictions were masked to the
+Frontiersin ArtiﬁcialIntelligence 12 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+TABLE 2 Performance of MAE-based baselines under crop type mappingtask.
+Framework Decoder Fine-tuning Label type OA F1 mIoU
+Prithvi-EO-1.0 SegUperNet Decoder-only Fieldlabels 89.30 59.28 42.52
+Prithvi-EO-1.0 SegUperNet Decoder-only Pseudolabels 85.72 42.34 31.04
+Prithvi-EO-1.0 SegUperNet Fullﬁne-tuning Fieldlabels 88.14 56.51 39.75
+Prithvi-EO-1.0 SegUperNet Fullﬁne-tuning Pseudolabels 85.91 42.42 31.13
+ScaleMAE SegUperNet Decoder-only Fieldlabels 88.26 63.48 46.80
+ScaleMAE SegUperNet Decoder-only Pseudolabels 85.11 40.73 29.28
+ScaleMAE SegUperNet Fullﬁne-tuning Fieldlabels 87.36 55.97 38.99
+ScaleMAE SegUperNet Fullﬁne-tuning Pseudolabels 84.39 41.13 29.44
+TABLE 3 Per class performance for the best performing model(DeepLabV3, S4-P, NDVI+SAR).
+Per class OA UA PA F1 mIoU
+Cereal 89.1 79.4 88.7 85.0 71.0
+Fallow 98.0. 98.0 98.0 98.0 95.0
+Forage 90.6 94.0 90.6 92.0 81.5
+Vegetables 61.7 73.0 63.6 66.9 50.6
+Metrics:OA,UA =precision,PA =recall,F1,mIoU.
+FIGURE 10
+Confusion matrix for the best-performing model (DeepLabV3, S4-P).
+Class labels are fallow= 0, cereal= 1, vegetables= 2, and
+forage = 3.
+agricultural footprint, a small inward buﬀer was applied at
+pivot edges to reduce mixed pixels, and pixels were aggregated
+per class and converted to hectares to report seasonal crop area
+totals by year. The time series of cultivated areas (Table4) shows
+temporal changes in crop area distribution in Wadi Al-Dawasir
+between2020and2024.Foragecropsreachedapeakareaof17,441
+hectares in 2022 during the summer season, before declining to
+8,775hectaresbysummer2024.
+Table4 shows the progression of cereal, forage, and vegetable
+crop areas between 2020 and 2024. Cereal crops show an overall
+increasing trend, peaking in 2024. In contrast, forage crops
+increased until 2022 and then declined in subsequent years.
+Vegetable crop areas remained relatively stable over time. Seasonal
+patterns show that forage crops dominated summer agriculture,
+reaching peak extent in 2022, followed by a decrease in later
+seasons. Conversely, cereal crops expanded during winter seasons,
+reachingamaximumareaof15,076hectaresin2024.
+To complement the crop area estimates, uncertainty was
+propagated into crop area totals using class probabilities. The
+expected area for each class was computed as the sum of per-pixel
+class probabilities multiplied by the pixel area, rather than relying
+solelyonhardclassassignments.Anapproximateuncertaintyterm
+was derived from aggregated Bernoulli variance and summarized
+as standard deviation and conﬁdence intervals. The resulting
+uncertainty bounds were small relative to the reported hectare
+values. For example, for winter forage, which ranged from
+10,800 to 16,600 hectares across the study period, the associated
+uncertainty was on the order of±10–12 hectares (<0.1%). Similar
+magnitudes were observed for other classes, including winter
+cereal (6,311–15,076 ha) and summer forage (8,775–17,441 ha),
+where uncertainty remained below±0.1% of the total area. These
+narrow conﬁdence intervals indicate stable probability-based area
+estimatesrelativetothemagnitudeoftotalmappedarea.However,
+these uncertainty bounds should be interpreted as approximate
+rather than comprehensive map-level uncertainty. The estimate
+is based on pixel-level class probabilities and does not explicitly
+model spatial dependence among neighboring pixels or ﬁelds.
+Agricultural ﬁelds are spatially structured, so prediction errors
+can be correlated within ﬁelds or repeated along ﬁeld boundaries.
+Therefore, these uncertainty estimates provide useful context for
+interpreting temporal changes in crop area, but they do not
+representafullspatialerrorpropagation.
+Frontiersin ArtiﬁcialIntelligence 13 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+FIGURE 11
+DeepLabV3 model performance across representative subsets. The RGB images(left) show agricultural center pivot patterns. Ground-truth
+annotations (center) include cereal (pink), forage/fodder (yellow), and vegetables (purple). Black pixels indicate fallow or background/unlabeled
+areas. The prediction map(right) shows the segmentation results from the self-supervised model at ﬁeld scale.
+4 Discussion
+Theresultsshowthatlimitedlabelavailabilityremainsthemain
+challenge in this crop type mapping task. The large improvement
+associated with pseudo labels indicates that expanding supervision
+across space and time was more eﬀective than increasing pre-
+training scope alone in the proposed framework. Similar patterns
+have been reported in recent self-supervised remote sensing
+studies, where downstream performance depends more strongly
+on ﬁne-tuning data than on pre-training scale ( Ayushetal.,
+2021; Congetal., 2022 ). However, the benchmark results show
+that pseudo labels did not provide the same beneﬁt across all
+model architectures. In this study, the strongest results came
+from combining temporal representation learning, optical-radar
+inputs, pseudo labels, and segmentation based ﬁne-tuning to
+produce spatially coherent ﬁeld-level crop type maps with limited
+labelavailability.
+Thephenologicalbehaviorofcroptypesrevealsakeylimitation
+inirrigationdrivenagriculture.Fallowandforagewereconsistently
+separable because they showed distinct temporal signatures, while
+cerealsandvegetablesshowedoverlappingseasonalNDVIproﬁles.
+As shown inFigures8, 9, winter cereals and vegetables followed
+Frontiersin ArtiﬁcialIntelligence 14 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+TABLE 4 Croparea estimates inWadi Al-Dawasir(2020–2024)derived from the DeepLabV3+crop maps.
+Year Winter forage Winter cereal Winter vegetables Summer forage
+2020 11,200 6,311 4,327 13,143
+2021 13,000 8,277 2,534 14,315
+2022 16,500 9,806 3,104 17,441
+2023 16,600 9,766 3,053 13,361
+2024 10,800 15,076 3,544 8,775
+Cereal,forage,andvegetableareasareseasonaltotalsinunithectare(ha).
+similar single-season NDVI trajectories, with comparable timing
+of greening, peak vegetation growth, and senescence phases. The
+vegetableclassaddedanothersourceofdiﬃcultybecauseitgrouped
+severalcrops,includingpotato,onion,andchili,intoonecategory.
+These crops can diﬀer in canopy structure, vegetation density,
+and NDVI magnitude. Together with the overlap between cereals
+and vegetables, this variability within the vegetable class explains
+why vegetables remained the least reliable class and why confusion
+betweenvegetablesandcerealspersistedinthevalidationresults.
+The misclassiﬁcation of vegetables as cereals represented a
+meaningful limitation for certain applications. With an mIoU of
+approximately 0.50, vegetable predictions were less reliable at the
+ﬁeld scale, particularly during winter seasons when phenological
+overlap was strongest. For applications requiring crop-speciﬁc
+estimates, such as targeted yield assessment or crop type
+speciﬁc policy enforcement, this level of accuracy may introduce
+uncertainty.However,forbroadermonitoringobjectives,including
+distinguishingforagefromnon-foragesystemsortrackingseasonal
+shifts in cropping patterns, the impact is more limited because
+these tasks depend on separability between major functional
+groups rather than ﬁne-grained crop classes such as alfalfa, wheat,
+orpotato.
+ThecontributionofSARdatawasfoundparticularlyimportant.
+The strong performance reduction observed when using NDVI-
+only input indicates that optical signals alone did not suﬃciently
+capture crop diﬀerences in irrigated arid environments. SAR
+backscatter provided complementary sensitivity to vegetation
+structure and biomass, which improved discrimination where
+spectral signals were ambiguous (Sunetal., 2020 ; Velosoetal.,
+2017; Weilandtetal., 2023 ). This is consistent with prior studies
+showing that multi-modal fusion is especially beneﬁcial under
+non-standard phenological conditions. Moreover, the external
+benchmark comparison clariﬁes the role of model-task alignment
+in this study. Although pseudo label augmentation was the major
+source of improvement within the proposed framework, it did not
+improveperformanceforallmodels.Underthesamestudysetting,
+pseudolabelsreducedcropmappingaccuracyforbothPrithvi-EO-
+1.0-100M and ScaleMAE. This suggests that pseudo labels were
+mostusefulwhentheywereconsistentwiththefeatureslearnedby
+the model and with the target crop mapping task. The proposed
+framework learned representations from local Sentinel-1/Sentinel-
+2 time series in a hyper-arid, center pivot agricultural system.
+In contrast, Prithvi-EO-1.0-100M and ScaleMAE were pretrained
+externallyonbroaderremote-sensingdatasets,withdiﬀerentinput
+structures,datadistributions,andpretrainingobjectives.Theywere
+not designed speciﬁcally for hyper-arid irrigated agriculture or for
+the same NDVI and VH/VV temporal input used in this study.
+Therefore, the observed gain should be interpreted as the result
+of combining local temporal representation learning, multimodal
+inputs, pseudo labels, and segmentation-based ﬁne-tuning, rather
+than pseudo labeling alone. A fuller diagnosis of the external
+baselineswouldrequiremodel-speciﬁcoptimizationandadditional
+checks of training behavior, including learning curves, validation
+performanceacrossepochs,andsensitivitytopseudo-labelnoise,to
+distinguishunderﬁtting,overﬁtting,andrepresentationmismatch.
+Observed crop area dynamics further demonstrated the value
+of satellite-based monitoring. The decline in forage area after
+2022, together with the increase in winter cereal area, indicates
+a shift in crop composition over time. These results do not
+establish causality. However, they are consistent with broader
+evidence that Saudi Arabia’s irrigated agriculture has changed over
+time, including reported shifts in national center pivot extent and
+agricultural activity (LiT.etal., 2023 ). Satellite-derived time series
+therefore provide an independent way to track local crop area
+trajectories in places such as Wadi Al-Dawasir and compare them
+withbroadernationaltrends.
+From an application perspective, the maps were most
+reliable for monitoring dominant crop systems, particularly
+forage, rather than for crop-speciﬁc accounting across all classes.
+Reliable identiﬁcation of forage supports tracking water-intensive
+agriculture, which is relevant for irrigation planning, seasonal
+reporting, and regional resource allocation. Field-scale consistency
+also enables aggregation of mapped areas to quantify broad
+changes in crop composition over time. However, reduced
+mappingaccuracyofvegetableslimitsthereliabilityofcrop-speciﬁc
+interpretation. The maps were therefore deemed suitable for
+tracking forage dynamics and broader shifts in crop composition,
+but less suitable for applications that depend on accurate estimates
+of vegetable types. Crop type maps can support monitoring
+of major cropping changes over time, but they should not be
+used on their own to quantify vegetable production trends or
+other vegetable-speciﬁc assessments without further improvement
+of the vegetable class. The multi-seasonal mapping results
+demonstratetemporalapplicabilitywithinWadiAl-Dawasir,where
+the framework was applied across multiple growing seasons.
+However, spatial transferability to other agricultural regions
+remains untested. Transfer to other arid systems may be aﬀected
+by diﬀerences in crop composition, irrigation practices, soil
+background, ﬁeld geometry, and crop calendars. These factors
+can change both the temporal and spectral signals learned by the
+model. For example, diﬀerent crop mixtures may introduce classes
+that were not represented in the Wadi Al-Dawasir training data,
+Frontiersin ArtiﬁcialIntelligence 15 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+while diﬀerent irrigation practices can alter greening, harvest, and
+regrowth patterns. Soil brightness, salinity, and ﬁeld geometry can
+also aﬀect NDVI and SAR responses, especially in fragmented
+ﬁelds or areas without regular structure of center pivot ﬁelds.
+Achieving spatial transferability would therefore require testing
+the framework in additional arid regions, supported by limited
+local reference data, region-speciﬁc calibration, or ﬁne-tuning
+to account for local crop types, management practices, and
+backgroundconditions.
+5C o n c l u s i o n
+In this study, we proposed a framework for crop type
+mappinginalabelscarcesetting,coveringahyper-aridagricultural
+region using multi-temporal Sentinel-1 and Sentinel-2 data.
+The developed approach integrates self-supervised representation
+learning, pseudo label augmentation, and multi-modal inputs
+to address limited labeled data. Results showed that increasing
+label density through pseudo labels contributed to the largest
+performance improvement, enabling the best conﬁguration to
+reach ∼0.80 mIoU, 0.88 F1, and 0.97 OA for the four crop classes,
+while the benchmark comparison indicated that such gains were
+not universal across pretrained encoders. These ﬁndings indicate
+that availability of labeled data, rather than temporal pre-training
+depth,remainstheprimaryconstraintincroptypemapping.These
+results directly address the study objective of developing a scalable
+cropmappingapproachunderlimitedlabeleddataconditions.
+Class-wise performance reﬂects diﬀerences in phenological
+separability. Fallow and forage achieved high mapping accuracies
+due to distinct temporal signatures, whereas cereals and vegetables
+showedsimilarseasonalbehavior,whichledtopersistentconfusion
+and lower performance for vegetables (mIoU ≈ 0.50). NDVI
+variabilityanalysisconﬁrmedsubstantialwithin-classvariationand
+overlap between cereals and vegetables under irrigation-driven
+conditions, where planting and harvesting are not synchronized
+across ﬁelds. These results indicate that classiﬁcation diﬃculty
+is driven by both data limitations and similarities in crop
+growth patterns. Important limitations remain, i.e. minority-class
+performance, particularly for vegetables, limits reliable ﬁeld-level
+croptypediscrimination,theanalysiswaslimitedtoonehyper-arid,
+centerpivotagriculturalregion,andtheopticalinputwasrestricted
+to NDVI to reduce input dimensionality and computational
+cost, which limited the model’s ability to use additional spectral
+informationfromred-edgeandshortwaveinfrared(SWIR)bands.
+Future work should focus on improving separation between
+phenologically similar classes, particularly cereals and vegetables.
+Full multispectral Sentinel-2 inputs, including red-edge and SWIR
+bands, should be evaluated to determine whether additional
+spectral information improves discrimination beyond NDVI-
+based trajectories ( Forkuoretal., 2018 ; Griﬃthsetal., 2019 ;
+Immitzeretal., 2016 ). Higher temporal sampling density and
+higher spatial resolution imagery could further reduce class
+overlap and mixed-pixel eﬀects (Sunetal., 2019 ). Future work
+should also improve how classiﬁcation uncertainty is carried
+into ﬁeld-level crop type maps and area estimates, and evaluate
+spatialtransferabilityacrossaridagriculturalsystemswithdiﬀerent
+irrigation methods, soil backgrounds, ﬁeld geometries, crop
+calendars,cropcomposition,andmanagementpractices.
+Overall, the framework demonstrates practical potential for
+large-scale agricultural monitoring in water scarce environments.
+Reliable identiﬁcation of forage systems in the case of Saudi
+Arabia enables monitoring of water-intensive cropping patterns,
+while seasonal crop maps enable tracking of temporal changes
+in cultivated area. These capabilities support applications in
+irrigation planning, crop monitoring, and resource allocation. The
+combination of representation learning and multi-modal satellite
+data provides a scalable pathway for crop type mapping in data-
+scarceregions.
+Data availability statement
+The original contributions presented in the study are included
+in the article/supplementary material, further inquiries can be
+directedtothecorrespondingauthor.
+Ethics statement
+Ethical review and approval was not required for the
+study on human participants in accordance with the local
+legislation and institutional requirements. Written informed
+consent from the participants was not required to participate in
+this study in accordance with the national legislation and the
+institutionalrequirements.
+Author contributions
+AA:Conceptualization,Formalanalysis,Methodology,Writing
+– original draft, Data curation, Investigation, Validation, Writing
+– review & editing. KJ: Supervision, Writing – review & editing.
+JR:Conceptualization,Validation,Writing–review&editing.MM:
+Supervision,Writing–review&editing,Resources.
+Funding
+The author(s) declared that ﬁnancial support was received for
+this work and/or its publication. This research was supported by
+Hydrology,Agriculture,andLandObservation(HALO)laboratory,
+KingAbdullahUniversityofScienceandTechnology(KAUST).
+Acknowledgments
+The authors thank the members of HALO laboratory for
+helping facilitate and conduct the ﬁeld work for this project and
+forsuggestionsthathelpedﬁnalizethestudy.
+Frontiersin ArtiﬁcialIntelligence 16 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+Conﬂict of interest
+The author(s) declared that this work was conducted in the
+absence of any commercial or ﬁnancial relationships that could be
+construedasapotentialconﬂictofinterest.
+TheauthorsMM,KJdeclaredthattheywereaneditorialboard
+memberofFrontiers,atthetimeofsubmission.Thishadnoimpact
+onthepeerreviewprocessandtheﬁnaldecision.
+Generative AI statement
+The author(s) declared that Generative AI was used in the
+creation of this manuscript. During the preparation of this
+work, the author(s) used Open AI’s ChatGPT, and Quillbot
+to improve the language and readability of this manuscript.
+After using these tools, the author(s) reviewed and edited the
+content as required, and take full responsibility for the content of
+thispublication
+Any alternative text (alt text) provided alongside ﬁgures in
+this article has been generated by Frontiers with the support of
+artiﬁcial intelligence and reasonable eﬀorts have been made to
+ensureaccuracy,includingreviewbytheauthorswhereverpossible.
+Ifyouidentifyanyissues,pleasecontactus.
+Publisher’s note
+All claims expressed in this article are solely those of the
+authors and do not necessarily represent those of their aﬃliated
+organizations, or those of the publisher, the editors and the
+reviewers. Any product that may be evaluated in this article, or
+claim that may be made by its manufacturer, is not guaranteed or
+endorsedbythepublisher.
+References
+Abdelbaki, A. M., and Alzahrani, A. S. (2024). Gradually optimization of cropping
+patterninSaudiArabiaforsustainableagriculturaldevelopmentuntil2030. Ain Shams
+Eng. J. 15:102624.doi:10.1016/j.asej.2023.102624
+Alqarawy, A. M., Kamis, A. S., BaSahi, J. M., and Al Saud, M. I. (2019). Evaluating
+the eﬀect of the economic factors that aﬀect the crop price on the continuation
+of agriculture in Wadi Al-Dawasir, Saudi Arabia.J. King Abdulaziz Univ. Meteorol.
+Environ. Arid Land Agric. Sci. 28,89–101.doi:10.4197/Met.28-1.8
+Asgarian, A., Soﬃanian, A., and Pourmanaﬁ, S. (2016). Crop type mapping in a
+highly fragmented and heterogeneous agricultural landscape: a case of central Iran
+using multi-temporal Landsat 8 imagery. Comput. Electron. Agric. 127, 531–540.
+doi:10.1016/j.compag.2016.07.019
+A y u s h ,K . ,U z k e n t ,B . ,M e n g ,C . ,T a n m a y ,K . ,B u r k e ,M . ,a n dE r m o n ,S .
+(2021). “Geography-aware self-supervised learning,” inProceedings of the IEEE/CVF
+International Conference on Computer Vision (ICCV),10181–10190.
+Bauer-Marschallinger, B., Vreugdenhil, M., and Wagner, W. (2021). The normalised
+Sentinel-1 Global Backscatter Model reveals vegetation structural sensitivity in VH
+backscatter. Sci. Data8:289.doi:10.1038/s41597-021-01059-7
+Becker-Reshef, I., Barker, B., Humber, M. L., Puricelli, E., Sanchez, A., Sahajpal, R.,
+etal.(2019).TheGEOGLAMCropMonitorforAMIS:assessingcropconditionsinthe
+contextofglobalmarkets. Glob. Food Sec. 23,173–181.doi:10.1016/j.gfs.2019.04.010
+Becker-Reshef, I., Justice, C., Barker, B., Humber, M., Rembold, F., Bonifacio, R., et al.
+(2020). Strengthening agricultural decisions in countries at risk of food insecurity:
+the GEOGLAM Crop Monitor for Early Warning.Remote Sens. Environ. 237:111553.
+doi:10.1016/j.rse.2019.111553
+Belgiu, M., and Dragut, L. (2016). Random forest in remote sensing: a review of
+applications and future directions.ISPRS J. Photogramm. Remote Sens. 114, 24–31.
+doi:10.1016/j.isprsjprs.2016.01.011
+Bertasius, G., Wang, H., and Torresani, L. (2021).Is space-time attention all you need
+for video understanding?
+Breiman, L. (2001). Random forests. Mach. Learn. 45, 5–32.
+doi:10.1023/A:1010933404324
+Burke, M., Driscoll, A., Lobell, D. B., and Ermon, S. (2021). Using satellite
+imagery to understand and promote sustainable development.Science 371:eabe8628.
+doi:10.1126/science.abe8628
+Calera,A.,Campos,I.,Osann,A.,D’Urso,G.,andMenenti,M.(2017).Remotesensing
+for crop water management: from ET modelling to services for end users.Sensors
+17:1104.doi:10.3390/s17051104
+Chen, L.-C., Zhu, Y., Papandreou, G., Schroﬀ, F., and Adam, H. (2018).
+“Encoderdecoderwithatrousseparableconvolutionforsemanticimagesegmentation,”
+in Proceedings of the European conference on computer vision (Munich: ECCV),
+833–851.
+Cong, Y., Khanna, S., Meng, C., Liu, P., Rozi, E., He, Y., et al. (2022). SatMAE: pre-
+training transformers for temporal and multi-spectral satellite imagery.Adv. Neural
+Inf. Process. Syst. 35.doi:10.52202/068431-0015
+Drusch,M.,DelBello,U.,Carlier,S.,Colin,O.,Fernandez,V.,Gascon,F.,etal.(2012).
+Sentinel-2: ESA’s optical high-resolution mission for GMES operational services.
+Remote Sens. Environ. 120,25–36.doi:10.1016/j.rse.2011.11.026
+European Space Agency (2015). S e n t i n e l - 2U s e rH a n d b o o k. Paris: European Space
+Agency (Accessed July 8, 2026). Available online at: https://sentinels.copernicus.eu/
+documents/247904/685211/Sentinel-2_User_Handbook(AccessedJuly8,2026).
+European Space Agency (2022). Mission ends for Copernicus Sentinel-1B satellite .
+ESA. Available online at: https://www.esa.int/Applications/Observing_the_Earth/
+Copernicus/Sentinel-1/Mission_ends_for_Copernicus_Sentinel-1B_satellite
+European Space Agency (n.d.).Sentinel-1 Technical Guide. Available online at: https://
+sentinels.copernicus.eu/copernicus/sentinel-1(AccessedJuly8,2026).
+Food and Agriculture Organization of the United Nations (2021). The State of
+the World’s Land and Water Resources for Food and Agriculture 2021: Systems at
+Breaking Point (SOLAW 2021) – Synthesis Report . Rome: FAO. p. 82. doi: 10.4060/cb9
+910en
+Food and Agriculture Organization of the United Nations (2023).World Food and
+Agriculture - Statistical Yearbook 2023.Rome:FAO.doi:10.4060/cc8166en
+Food and Agriculture Organization of the United Nations and Global Information
+and Early Warning System (FAO GIEWS) (2024). GIEWS country brief: The
+Kingdom of Saudi Arabia (archive) . Rome: FAO. Available online at: https://www.fao.
+org/giews/countrybrief/country/SAU/pdf_archive/SAU_Archive.pdf (Accessed July 8,
+2026).
+Forkuor, G., Dimobe, K., Serme, I., and Tondoh, J. E. (2018). Landsat-8 vs.
+Sentinel-2: examining the added value of Sentinel-2’s red-edge bands to land-use
+and land-cover mapping in Burkina Faso. GIScience Remote Sens. 55, 331–354.
+doi:10.1080/15481603.2017.1370169
+Griﬃths, P., Nendel, C., and Hostert, P. (2019). Intra-annual reﬂectance composites
+from Sentinel-2 and Landsat for national-scale crop and land cover mapping.Remote
+Sens. Environ. 220,135–151.doi:10.1016/j.rse.2018.10.031
+Hamidov, A., Helming, K., and Balla, D. (2016). Impact of agricultural land use in
+CentralAsia:areview. Agron. Sustain. Dev.36:6.doi:10.1007/s13593-015-0337-7
+He, K., Chen, X., Xie, S., Li, Y., Dollár, P., and Girshick, R. (2022). “Masked
+autoencoders are scalable vision learners,” inProceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition (CVPR),16000–16009.
+Immitzer, M., Vuolo, F., and Atzberger, C. (2016). First experience with Sentinel-2
+data for crop and tree species classiﬁcations in Central Europe.Remote Sens. 8:166.
+doi:10.3390/rs8030166
+IPCC (2022). “Food, Fibre and Other Ecosystem Products (Chapter 5),” inClimate
+Change 2022: Impacts, Adaptation and Vulnerability . Geneva: IPCC. Available online
+at:https://www.ipcc.ch/report/ar6/wg2/chapter/chapter-5/(AccessedJuly8,2026).
+Johansen,K.,LópezValencia,O.M.,Tu,Y.-H.,Li,T.,andMcCabe,M.F.(2021).Center
+pivot ﬁeld delineation and mapping: a satellite-driven object-based image analysis
+approachfornational-scaleaccounting. ISPRS J. Photogramm. Remote Sens. 175,1–19.
+doi:10.1016/j.isprsjprs.2021.02.019
+Frontiersin ArtiﬁcialIntelligence 17 frontiersin.org
+
+=== PAGE BREAK ===
+
+Alwahas et al. 10.3389/frai.2026.1803320
+Joseph, J., Tramberend, S., Kabi, F., Fischer, G., and Kahil, T. (2025). Sustainable
+intensiﬁcation of fodder crop production can mitigate feed shortage and
+seasonality in East Africa. Environ. Dev. 54:101158. doi: 10.1016/j.envdev.2025.10
+1158
+Li, G., Han, W., Dong, Y., Zhai, X., Huang, S., Ma, W., et al. (2023). Multi-
+year crop type mapping using Sentinel-2 imagery and deep semantic segmentation
+algorithm in the Hetao irrigation district in China. Remote Sens. 15:875.
+doi:10.1016/j.compag.2022.107478
+Li, T., Johansen, K., and McCabe, M. F. (2022). A machine learning approach for
+identifyinganddelineatingagriculturalﬁeldsandtheirmulti-temporaldynamicsusing
+three decades of Landsat data. ISPRS J. Photogramm. Remote Sens. 186, 83–101.
+doi:10.1016/j.isprsjprs.2022.02.002
+Li, T., López Valencia, O. M., Johansen, K., and McCabe, M. F. (2023). A retrospective
+analysisofnational-scaleagriculturaldevelopmentinSaudiArabiafrom1990to2021.
+Remote Sens. 15:731.doi:10.3390/rs15030731
+Ma, C., Johansen, K., and McCabe, M. F. (2022). Monitoring irrigation events and
+crop dynamics using Sentinel-1 and Sentinel-2 time series. Remote Sens. 14:1205.
+doi:10.3390/rs14051205
+Masoud, K. M., Persello, C., and Tolpekin, V. A. (2020). Delineation of agricultural
+ﬁeld boundaries from Sentinel-2 images using a super-resolution contour detector
+based on fully convolutional networks. Remote Sens. 12:59. doi: 10.3390/rs1201
+0059
+McIlwaine, S. J., and Ouda, O. K. M. (2020). Drivers and challenges to
+water tariﬀ reform in Saudi Arabia. Int. J. Water Resour. Dev. 36, 1014–1030.
+doi:10.1080/07900627.2020.1720621
+Meroni, M., d’Andrimont, R., Vrieling, A., Fasbender, D., Lemoine, G., Rembold,
+F., et al. (2021). Comparing land surface phenology of major European crops as
+derived from SAR and multispectral data of Sentinel-1 and−2. Remote Sens. Environ.
+253:112232.doi:10.1016/j.rse.2020.112232
+Ministry of Environment, Water and Agriculture (2018). National Water Strategy
+2030. Riyadh: Ministry of Environment, Water and Agriculture. Available online
+at: https://www.mewa.gov.sa/en/Ministry/Agencies/TheWaterAgency/Topics/Pages/
+Strategy.aspx(AccessedJuly8,2026).
+Ministry of Environment, Water and Agriculture (2023). Innovation in the
+AgricultureSector.Riyadh:MinistryofEnvironment,WaterandAgriculture.Available
+online at: https://www.mewa.gov.sa/en/Ministry/Agencies/AgencyLivestock/Topics/
+PublishingImages/Pages/InnovationintheAgriclturesector/EN-MEWA-Agriculture_
+High-resolution%20for%20reading.pdf(AccessedJuly8,2026).
+Mobarakeh, Z. M., Pourmanaﬁ, S., and Ahmadi, M. (2025). Employing Sentinel-
+2 time series and noisy data quality control to enhance crop classiﬁcation in arid
+environments: a comparison of machine learning and deep learning methods.Int. J.
+Appl. Earth Obs. Geoinf. 142:104678.doi:10.1016/j.jag.2025.104678
+Morton, M. C. (2019). Arid Arabian Peninsula is tapping into vast groundwater
+reserves. Eos100.doi:10.1029/2019EO136360
+Muitire, C., Kamutando, C. N., and Moyo, M. (2021). “Building stress resilience of
+cereals under future climatic scenarios: the case of maize, wheat, rice and sorghum,”
+in Cereal Grains—Volume 1.London:IntechOpen .
+Nakalembe, C., Becker-Reshef, I., Bonifacio, R., Hu, G., Humber, M., Justice, C., et al.
+(2021). A review of satellite-based global agricultural monitoring systems available for
+Africa. Glob. Food Sec. 29:100543.doi:10.1016/j.gfs.2021.100543
+Odnoletkova,N.,andPatzek,T.W.(2023).Waterresources inSaudiArabia:trendsin
+rainfall, water consumption, and analysis of agricultural water footprint.NPJ Sustain.
+Agric.1:7.doi:10.1038/s44264-023-00006-w
+OECD (2023). Agricultural Policy Monitoring and Evaluation 2023: Adapting
+Agriculture to Climate Change.Paris:OECDPublishing.
+Potapov, P., Turubanova, S., Tyukavina, A., Hansen, M. C., Zalles, V.,
+Khan, A., et al. (2022). Global maps of cropland extent and change show
+accelerated cropland expansion in the twenty-ﬁrst century. Nat. Food 3, 19–28.
+doi:10.1038/s43016-021-00429-z
+Rußwurm, M., and Körner, M. (2020). Self-attention for raw optical satellite
+time series classiﬁcation. ISPRS J. Photogramm. Remote Sens. 169, 421–435.
+doi:10.1016/j.isprsjprs.2020.06.006
+Saleh, S., Ayyad, S., and Ribbe, L. (2025). Satellite-based approach for crop type
+mapping and assessment of irrigation performance in the Nile Delta.Earth 6:80.
+doi:10.3390/earth6030080
+Siebert, S., Burke, J., Faures, J.-M., Frenken, K., Hoogeveen, J., Döll, P., et al. (2010).
+Groundwater use for irrigation—a global inventory. Hydrol. Earth Syst. Sci. 14,
+1863–1880.doi:10.5194/hess-14-1863-2010
+Sun, C., Bian, Y., Zhou, T., and Pan, J. (2019). Using of multi-source and multi-
+temporal remote sensing data improves crop-type mapping in the subtropical
+agricultureregion. Sensors19:2401.doi:10.3390/s19102401
+Sun, L., Chen, J., Guo, S., Deng, X., and Han, Y. (2020). Integration of time series
+Sentinel-1 and Sentinel-2 imagery for crop type mapping over oasis agricultural areas.
+Remote Sens. 12:158.doi:10.3390/rs12010158
+Taylor, S. D., Browning, D. M., Baca, R. A., and Gao, F. (2021). Constraints and
+opportunities for detecting land surface phenology in drylands. J. Remote Sens.
+9859103.doi:10.34133/2021/9859103
+Thenkabail,P.S.,Teluguntla,P.G.,Xiong,J.,Oliphant,A.,Congalton,R.G.,Ozdogan,
+M., et al. (2021).Global cropland-extent product at 30-m resolution (GCEP30) derived
+from Landsat satellite time series data for the year 2015 using multiple machine-learning
+algorithms on Google Earth Engine . Report No.: Professional Paper 1868. Reston, VA:
+U.S.GeologicalSurvey.
+Tian, H., Li, Z., Wang, Q., and Tang, H. (2021). Early-season mapping of winter crops
+usingSentinel-2imagery. Remote Sens. 13:3822.doi:10.3390/rs13193822
+Tsuchiya, Y., and Sonobe, R. (2025). Crop classiﬁcation using time series Sentinel-1
+SARdata:acomparisonofLSTM,GRU,andTCNwithattention. Remote Sens.17:2095.
+doi:10.3390/rs17122095
+US-Saudi Business Council (2022). Saudi Arabia’s Water Sector: Economic Brief .
+Vienna, VA: U.S.-Saudi Business Council. Available online at: https://ussaudi.org/wp-
+content/uploads/2022/02/Water-2022-Economic-Brief.pdf(AccessedJuly9,2026).
+Van Tricht, K., Degerickx, J., Gilliams, S., Zanaga, D., Battude, M., Grosu, A., et al.
+(2023). WorldCereal: a dynamic open-source system for global-scale, seasonal, and
+reproducible crop and irrigation mapping. Earth Syst. Sci. Data 15, 5491–5515.
+doi:10.5194/essd-15-5491-2023
+Veloso, A., Mermoz, S., Bouvet, A., Le Toan, T., Planells, M., Dejoux, J.-F.,
+et al. (2017). Understanding the temporal behavior of crops using Sentinel-1 and
+Sentinel-2-like data for agricultural applications.Remote Sens. Environ. 199, 415–426.
+doi:10.1016/j.rse.2017.07.015
+Vendramini, J. M. B., Silveira, M. L., and Moriel, P. (2023). Resilience of warm-season
+(C4) perennial grasses under challenging environmental and management conditions.
+Anim. Front. 13,16–22.doi:10.1093/af/vfad038
+Voss, K. A., Famiglietti, J. S., Lo, M., De Linage, C., Rodell, M., and Swenson, S. C.
+(2013). Groundwater depletion in the Middle East from GRACE with implications for
+transboundarywatermanagementintheTigris-Euphrates-WesternIranregion. Water
+Resour. Res.49,904–914.doi:10.1002/wrcr.20078
+Vreugdenhil, M., Wagner, W., Bauer-Marschallinger, B., Pfeil, I., Teubner, I., Rüdiger,
+C., et al. (2018). Sensitivity of Sentinel-1 backscatter to vegetation dynamics: an
+Austriancasestudy. Remote Sens. 10:1396.doi:10.3390/rs10091396
+Wada, Y., van Beek, L. P. H., and Bierkens, M. F. P. (2010). Global depletion of
+groundwaterresources. Geophys. Res. Lett. 37:L20402.doi:10.1029/2010GL044571
+Wang, S., Azzari, G., and Lobell, D. B. (2019). Crop type mapping without ﬁeld-level
+labels: random-forest transfer and unsupervised clustering techniques.Remote Sens.
+Environ.222,303–317.doi:10.1016/j.rse.2018.12.026
+Weilandt,F.,Behling,R.,Goncalves,R.,Madadi,A.,Richter,L.,Sanona,T.,etal.(2023).
+Early crop classiﬁcation via multi-modal satellite data fusion and temporal attention.
+Remote Sens. 15:799.doi:10.3390/rs15030799
+World Bank (2025). Cereal production (metric tons) (AG.PRD.CREL.MT)—World
+Development Indicators: metadata. Washington, DC: World Bank. Available online
+at: https://databank.worldbank.org/metadataglossary/world-development-indicators/
+series/AG.PRD.CREL.MT(AccessedJuly9,2026).
+Xu, Y., Ma, Y., and Zhang, Z. (2024). Self-supervised pre-training for large-scale
+crop mapping using Sentinel-2 time series.ISPRS J. Photogramm. Remote Sens. 207,
+312–325.doi:10.1016/j.isprsjprs.2023.12.005
+Yadav, K., and Congalton, R. G. (2018). Accuracy assessment of Global Food Security-
+Support Analysis Data (GFSAD) cropland extent maps produced at three diﬀerent
+spatialresolutions. Remote Sens. 10:1800.doi:10.3390/rs10111800
+Zhang, Z., Yu, K., Siddique, K. H. M., and Nan, Z. (2019). Phenology and sowing time
+aﬀect water use in four warm-season annual grasses under a semi arid environment.
+Agric. For. Meteorol.269–270,257–269.doi:10.1016/j.agrformet.2019.02.027
+Frontiersin ArtiﬁcialIntelligence 18 frontiersin.org

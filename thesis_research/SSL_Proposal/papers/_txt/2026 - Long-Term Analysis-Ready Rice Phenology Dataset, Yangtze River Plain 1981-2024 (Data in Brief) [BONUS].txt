@@ -1,0 +1,510 @@
+Data in Brief 69 (2026) 113310 
+Contents lists available at ScienceDirect 
+Data in Brief 
+journal homepage: www.elsevier.com/locate/dib 
+Data Article 
+A long-term, analysis-ready dataset of rice 
+phenology in middle and lower reaches of the 
+Yangtze River Plain of China from 1981 to 
+2024 
+Quan-Jun Zhang a , b , c , Dong-Li Wu a , b , c , ∗
+a Meteorological Observation Centre of China Meteorological Administration (CMA), Beijing, 10 0 081, China 
+b State Key Laboratory of Environment Characteristics and Effects for Near-space, Beijing, 10 0 081, China 
+c Engineering Technology Research Center for Meteorological Observation of CMA, Beijing, 10 0 081, China 
+a r t i c l e i n f o 
+Article history: 
+Received 13 March 2026 
+Revised 28 September 2026 
+Accepted 30 September 2026 
+Available online 7 October 2026 
+Keywords: 
+Rice phenology 
+Long-term dataset 
+Middle and lower Yangtze River Plain 
+Kernel density estimation 
+Linear trend analysis 
+Climate change 
+a b s t r a c t 
+Background: Quantifying the impact of climate change on 
+rice production, a cornerstone of global food security, re- 
+quires long-term, spatially explicit, and readily analyzable 
+phenological data. While the Middle and Lower Yangtze River 
+Plain (MLYRP) is China’s primary rice bowl, a critical gap per- 
+sists: the lack of a publicly available, multi-decadal, station- 
+based dataset that provides not only raw phenological dates 
+but also curated statistical trends for the entire growth cycle, 
+tailored for immediate reuse by the research community. 
+The dataset: To bridge this gap, we present “MLYRP-rice phe- 
+nology data”, a foundational dataset characterizing rice phe- 
+nology dynamics across the MLYRP from 1981 to 2024. De- 
+rived from rigorously quality-controlled records of 95 na- 
+tional agrometeorological stations, this dataset is architected 
+for reuse, offering two synergistic products: (1) A visualiza- 
+tion collection comprising 2,432 high-resolution graphs that 
+intuitively depict the probability distribution and temporal 
+trends of 11 phenological stages and 3 growth phase lengths 
+via kernel density estimation and linear regression. (2) A 
+machine-actionable statistical core, structured as an Excel 
+spreadsheet, which provides the complete results of the lin- 
+∗ Corresponding author at: Meteorological Observation Centre, China Meteorological Administration (CMA), Beijing, 
+10 0 081, China. 
+E-mail address: wudongli666@126.com (D.-L. Wu) . 
+https://doi.org/10.1016/j.dib.2026.113310 
+2352-3409/© 2026 The Author(s). Published by Elsevier Inc. This is an open access article under the CC BY-NC license 
+( http://creativecommons.org/licenses/by-nc/4.0/ ) 
+2 Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 
+ear trend analysis (including slope, intercept, R ², F-value, and 
+p-value) for every station and variable. 
+Value and potential for reuse: This dataset transcends a mere 
+data compilation by delivering an analysis-ready product. It 
+is designed as a community benchmark to directly facili- 
+tate crop model validation, climate-impact meta-analyses, re- 
+mote sensing product veriﬁcation, and data-driven agricul- 
+tural adaptation planning. By providing pre-computed, sta- 
+tistically robust trends, “MLYRP-rice phenology data” estab- 
+lishes an indispensable empirical foundation for detecting 
+and attributing climate impacts on one of the world’s most 
+critical agricultural systems. 
+Availability: The dataset is open-access and available at 
+https://doi.org/10.57760/sciencedb.25297 . 
+©2 0 2 6 The Author(s). Published by Elsevier Inc. 
+This is an open access article under the CC BY-NC license 
+( http://creativecommons.org/licenses/by-nc/4.0/ ) 
+1. Introduction 
+Rice serves as a staple food for more than 50% of the global population and is fundamental 
+to food security, particularly in Asia [ 1 ]. However, its productivity is highly vulnerable to cli- 
+mate change [ 2 ]. Crop phenology—the timing of key developmental stages—serves as a primary 
+integrator of environmental conditions, directly governing photosynthetic capacity, biomass ac- 
+cumulation, and ultimate yield formation [ 3 ]. Consequently, long-term, high-ﬁdelity phenological 
+records are not merely observational data; they are essential empirical constraints for validat- 
+ing and improving the next generation of Earth System Models (ESMs) and process-based crop 
+models. They provide the "ﬁngerprint” of past system behavior against which model skill is mea- 
+sured and future projections are calibrated, serving as a critical tool to reduce the "phenological 
+uncertainty” in climate impact assessments. 
+Phenology represents one of the most sensitive biological indicators of crop responses to cli- 
+matic variations. The past four decades has witnessed accelerated global warming and increasing 
+frequency of extreme weather events [ 2 , 4 , 5 , 6 ]. Examining long-term trends in the progression of 
+rice phenological stages and its duration during this period enables mechanistic quantiﬁcation 
+of climatic drivers (including temperature, precipitation, and solar radiation) on crop phenology, 
+thereby establishing an empirical foundation for comprehensive impact assessments of climate 
+change on agricultural systems [ 6 ]. Furthermore, analyzing long-term variations in rice phenol- 
+ogy and its duration facilitates optimization of agricultural production zoning and varietal adap- 
+tation. This provides data-driven support for redeﬁning cultivation suitability domains, breeding 
+stress-resilient cultivars with climate-synchronized growth cycles, and enhancing resource-use 
+eﬃciency [ 7 ]. The integration of multi-decadal crop phenology datasets enables construction of 
+“pheno-climatic-yield” nexus models, which project risks of phenological phase shifts under fu- 
+ture climate scenarios. Such predictive capacity allows proactive formulation of adaptive inter- 
+ventions (e.g., optimized sowing windows and precision ﬁeld management), thereby generating 
+targeted policy solutions for smart agriculture and ensuring sustained yield enhancement. 
+In China, rice cultivation spans vast areas, divided into 6 major rice cultivation regions and 16 
+sub-regions [ 8 , 9 ]. The Middle and Lower Yangtze River Plain (MLYRP) accounts for over one-third 
+of China’s total rice cultivation area [ 10 ]. Through the synergistic integration of natural endow- 
+ments, historical legacy, and technological innovations, this region has evolved into not merely 
+China’s "strategic agricultural nexus" but also serves as a living heritage of global paddy civiliza- 
+tion and a critical paradigm for sustainable agricultural intensiﬁcation [ 11 ]. High rice yield acts 
+as a cornerstone for food security in China and globally [ 12 ], holding signiﬁcant strategic impor- 
+Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 3 
+tance for ensuring national food security. Changes in rice developmental stages directly impact 
+photosynthesis, thereby inﬂuencing grain quality and yield [ 13 ]. Studying these developmental 
+shifts is critical for rational agricultural planning, growth regulation, prevention of agricultural 
+meteorological disasters, and yield prediction [ 3 ]. Variations in crop developmental stages—such 
+as earlier or delayed phenology, shortened or extended growth periods—affect biomass accumu- 
+lation time, ultimately threatening crop productivity and food security [ 14–16 ]. 
+Understanding climate-phenology interactions here has profound implications for regional 
+and global food security. Despite its importance, the research community has been hampered 
+by a persistent data bottleneck. Existing phenological resources are often characterized by one 
+or more critical limitations: (i) temporal fragmentation, lacking the continuous, > 40-year span 
+needed to discern robust climate-driven trends; (ii) phenological incompleteness, focusing on a 
+few key stages (e.g., heading, maturity) while omitting the full developmental sequence from 
+sowing to maturity required for comprehensive model calibration. 
+Our dataset, spanning 95 stations over 44 years with full statistical outputs, is engineered 
+speciﬁcally to dismantle this barrier. By providing pre-computed, machine-readable trend statis- 
+tics for every station and phenological stage, we address the need for analysis-ready data prod- 
+ucts that enable immediate reuse without extensive preprocessing. We move beyond presenting 
+raw observations to delivering a curated, analysis-ready data product. Our primary innovation 
+lies in bundling intuitive visualizations with a machine-readable repository of pre-computed 
+statistical trends for every phenological metric at each station. This dual offering transforms 
+the dataset from a static archive into a dynamic, foundational resource. It is purpose-built to 
+serve as a community-wide benchmark for validating and improving process-based crop and 
+land surface models, for conducting eﬃcient large-scale meta-analyses, and for informing local- 
+ized adaptation strategies with station-speciﬁc evidence. This paper details the dataset’s com- 
+pilation, rigorous quality control, structure, and its multifaceted potential for reuse across the 
+Earth system sciences. 
+Unlike previous effort s, the primary innovation of this dataset lies in transforming raw ob- 
+servations into a readily analyzable data product. This is achieved through two key offerings: 
+1) a curated collection of high-resolution visualizations depicting spatiotemporal patterns, and 
+2) a machine-readable Excel table containing all linear trend parameters, which elevates the 
+dataset from a mere collection of ﬁgures to a foundational resource for quantitative analysis. 
+The outcomes establish a robust theoretical framework for understanding climate-crop interac- 
+tions while providing empirical support for optimizing cultivation management strategies. This 
+investigation delivers a dataset that transcends previous efforts by offering an unprecedented, 
+ready-to-use resource of spatially explicit, data-driven insights, thereby directly addressing the 
+data gap and empowering the research community with a foundational tool for climate adapta- 
+tion research. 
+2. Data and Methods 
+2.1. Study region and agrometeorological station network 
+Our dataset includes the records collected from 1981 to 2024 of 95 agrometeorological obser- 
+vation stations in the MLYRP, including Jiangsu, Zhejiang, Anhui, Jiangxi, Hubei, Hunan provinces, 
+and Shanghai Municipalities. These stations were maintained by the Chinese Meteorological Ad- 
+ministration to investigate local crop production and agricultural meteorological disasters, as 
+well as provide suggestions for local farmers to manage agricultural meteorological disasters. 
+There were 1 station in Shanghai Municipalities, 8 stations in Jiangsu province, 15 stations in 
+Zhejiang province, 11 stations in Anhui province, 16 stations in Jiangxi province, 21 stations in 
+Hubei province, 23 stations in Hunan province ( Fig. 1 ). 
+All stations are located in a rice primary production region, and represent the typical crop- 
+ping system in the MLYRP. They are geographically and climatologically different, and have good 
+4 Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 
+Fig. 1. Spatial distribution of 95 agrometeorological observation stations included in the dataset. 
+records of crop data during 1981–2024. These stations provide a unique, multi-decadal record of 
+standardized observations, offering an unparalleled opportunity to analyze long term phenolog- 
+ical trends. 
+2.2. Dataset construction workﬂow 
+The dataset construction followed a structured pipeline ( Fig. 2 ) designed to ensure robust- 
+ness and reproducibility: 
+(1) Data collection: Historical data and electronic data were collected from oﬃcial archives 
+and oﬃcial website of Chinese Meteorological Administration. The detailed phenology records 
+from 1981 to 2024 included the dates of rice sowing (SO), emergence (EM), trefoil (TS), trans- 
+planting (TR), regreening (RE), tillering (TI), jointing (JO), booting (BO), heading (HE), milking 
+(MI) and maturity (MA). 
+(2) Data processing quality control: A multi-tiered quality control protocol was imple- 
+mented: 
+Firstly, the collected data are categorized by year, site, crop, and phenology. 
+Then, A multi-step quality control protocol was implemented to identify and handle potential 
+anomalies and outliers: 
+Systemic Factor Screening: Station metadata and historical records were consulted to identify 
+periods affected by non-climatic factors (e.g., station relocations, changes in observation proto- 
+cols). Data from these periods were ﬂagged for expert validation. 
+Statistical Thresholding: For each phenological stage at each individual station, observations 
+falling beyond three standard deviations ( ±3 σ) from the long-term mean were automatically 
+ﬂagged as potential outliers. 
+Expert Validation: Automatically ﬂagged values were not removed arbitrarily. Instead, 
+they were rigorously examined by agrometeorological experts. This involved cross-referencing 
+with adjacent stations to check for spatial coherence (suggesting a climatic extreme) and 
+consulting original logbooks for notations. Only values conclusively deemed erroneous af- 
+ter this contextual analysis were corrected or excluded, preserving legitimate climatic 
+extremes. 
+Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 5 
+Fig. 2. Flowchart of the dataset construction process for rice phenology in the MLYRP. 
+Finally, the validated dates were converted to day of year (DOY), calculation of 
+growth period length (GLs), and statistical analysis (e.g., mean and standard deviation 
+computation). 
+We assigned January 1 of each calendar year a reference value of 1, subsequently transform- 
+ing the date of the universal period of each phenology period to the day of year (DOY). Accord- 
+ing to the rice growth and development characteristics of each stage, the whole growth period 
+length (GLs) was divided into 3 stages, namely, sowing to jointing (SO-JO), jointing to maturity 
+(JO-MA), and sowing to maturity (SO-MA). 
+6 Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 
+(3) Data analysis and product generation 
+Kernel density estimation: We applied kernel density estimation (KDE), a nonparametric 
+probability density estimation technique, to analyze rice phenological records across agrometeo- 
+rological observation stations. The longitudinal dataset (44 years) was subjected to comprehen- 
+sive statistical characterization, including computation of central tendency measures (mean) and 
+dispersion parameters (standard deviation). These analytical outputs-integrating KDE-derived 
+density functions with descriptive statistics-formed the foundation for generating scientiﬁcally 
+rigorous visual representations in our dataset compilation. This methodology enabled robust 
+estimation of population characteristics from sample observations, outperforming conventional 
+histogram-based methods through its continuous density estimation independent of arbitrary 
+bin-width selection [ 17 , 18 ]. The basic expression of KDE function is: 
+f(x ) = 1 
+nh 
+n ∑  
+i =1 
+K
+(x − xi 
+h 
+)
+(1) 
+h = 1 . 059 · δ · n−1 
+5 (2) 
+where x1 , x2 ,. . . , xn are the DOY samples for a given phenological stage at a station; n is the 
+sample size; K is the kernel function; h is the bandwidth; δ is the standard deviation; and f(x ) 
+is the estimated probability density of DOY x . For the ﬁnal published KDE products, h was au- 
+tomatically selected using Scott’s rule, the default in OriginLab 2024. Silverman’s rule of thumb 
+was used only in the sensitivity analysis reported in Section 3.2 and was not used to generate 
+the published ﬁgures. 
+Univariate linear regression: Phenology trend analysis was conducted through ﬁrst-order 
+linear regression modeling, with temporal patterns in DOY and GLs quantiﬁed using slope coef- 
+ﬁcients. This method was selected to provide a clear, robust, and interpretable estimate of the 
+overall net change over the 44-year study period, which is a community-standard approach for 
+establishing a baseline understanding in climatological and phenological studies. The regression 
+parameters were estimated via ordinary least squares (OLS) optimization, expressed as: 
+Y = kx + b (3) 
+Where Y denotes either DOY or GLs measurements, and x represents calendar year; b represents 
+the y-intercept; k represents the annual rate of change. Decadal trends were derived as 10 ×k , 
+with negative coeﬃcients indicating phenology date advancement/GLs contraction and positive 
+values signifying phenology date delay or GLs extension. Two tailed t-test analysis was used to 
+determine the statistical signiﬁcance of the change trend. The signiﬁcance level for all regression 
+analyses was set at α = 0.05. The regression analysis revealed p-values < 0.01 for key variables. 
+2.2.1. Final product curation 
+Kernel density estimation (KDE) and linear regression were systematically executed in Orig- 
+inPro (Version 2024). The primary purpose of these analyses was to generate the standard- 
+ized graphical and numerical outputs that constitute the core of this dataset. The outputs—
+2,432 high-resolution KDE and trend graphs (JPEG) and the comprehensive statistical spread- 
+sheet (XLSX)—were organized into a structured repository. 
+All resulting statistical parameters from the linear regression (including province, station ID, 
+station name, crop types, phenology period, slope (variation trends), intercept, R2 , model mean 
+square, F-value, and p-value) for every phenological stage and growth period length at each sta- 
+tion were compiled into a comprehensive Excel spreadsheet, forming a key part of the published 
+data product. 
+2.3. Innovation in data curation framework 
+Our data curation methodology introduces three key innovations that distinguish this dataset 
+from previous efforts: 
+Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 7 
+Computational Reproducibility Framework: All analytical procedures—from quality control to 
+statistical derivation—are implemented through standardized computational workﬂows in Orig- 
+inPro, ensuring complete methodological transparency and reproducibility. 
+Multi-Scale Validation Protocol: We implement a novel validation approach combining (1) 
+automated statistical outlier detection ( ±3 σ thresholds), (2) spatial coherence analysis across 
+adjacent stations, and (3) expert domain knowledge integration, creating a robust quality assur- 
+ance framework for long-term observational data. 
+FAIR Compliance Implementation: The dataset architecture explicitly embeds FAIR principles 
+through persistent identiﬁers (DOI), rich metadata schemas, machine-readable statistical deriva- 
+tives, and open-access licensing (CC-BY), enabling both human and machine actionable data 
+reuse. 
+3. Technical Validation 
+To ensure the dataset meets the highest standards of reliability and ﬁtness for reuse, we 
+implemented a comprehensive, multi-layered validation framework. This framework assesses the 
+entire data pipeline, from the foundational raw observations to the ﬁnal derived data products 
+(statistical trends and visualizations). 
+3.1. Foundational data integrity and quality control 
+The integrity of this dataset is rooted in China’s nationally standardized agricultural meteo- 
+rological observation network, which provides the underlying raw data. 
+• Observational Standardization: All phenological data were collected in strict adherence to 
+the national "Speciﬁcation for Agrometeorological Observation” [ 19 ]. Observations were gen- 
+erally conducted every two days during the growing season, with daily observations during 
+critical stages such as heading and ﬂowering to ensure accurate recording of these short- 
+duration events. This process was carried out by a professional workforce of over 100 certi- 
+ﬁed technicians, 82% of whom possess more than a decade of ﬁeld experience, ensuring high 
+consistency and expert judgment across the network. 
+• Systematic Quality Assurance Protocol: A rigorous, multi-step quality control (QC) pipeline 
+was applied to the raw observational records: 
+∗ Automated Checks: Data underwent automated screening for completeness, duplication, 
+valid station IDs, temporal coherence, and value range plausibility. 
+∗ Expert-Driven Validation: Potential outliers ﬂagged by statistical thresholds (e.g., values 
+beyond ±3 σ from the long-term mean) were not automatically discarded. Instead, they 
+underwent expert arbitration, which involved cross-referencing with adjacent stations for 
+spatial coherence and consulting original logbooks to distinguish genuine climatic ex- 
+tremes from errors. 
+∗ Gap-ﬁlling and Correction: Anomalies and missing values were addressed using a hierar- 
+chical protocol. First, all ﬂagged records were checked against original paper logbooks and 
+oﬃcial electronic archives. Second, for isolated missing values at a station, the value was 
+estimated from the same station’s adjacent years (previous and following years) when the 
+cropping system and cultivar group were unchanged; for phenological dates, the mean of 
+the nearest available years was used. Third, for consecutive missing years, we referred 
+to neighboring stations with the same rice cropping system and similar agroclimatic 
+conditions to evaluate spatial coherence, and the ﬁnal value was determined by expert 
+agronomic judgment. Fourth, outliers beyond ±3 σ were not automatically removed; they 
+were retained as genuine climatic extremes when supported by neighboring stations and 
+logbooks, and were corrected or excluded only when conclusively identiﬁed as errors. 
+8 Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 
+Table 1 
+Basis for determining rice phenology. 
+Phenology Observation basis 
+Sowing (SO) Actual sowing date. 
+Emergence (EM) Emergence of the ﬁrst prophyll from the coleoptile. 
+Trefoil (TS) The third fully expanded true leaf emerges from the leaf sheath of the second true leaf 
+Transplanting (TR) Actual transplanting date. 
+Regreening (RE) After transplanting, the leaves turn green, the heart leaves re-expand or new leaves emerge 
+(with water droplets appearing at the leaf tips in the morning). When gently lifting the plant 
+by hand, resistance is felt, indicating that the roots have penetrated the soil and the plant has 
+reached the regreening period standard. 
+Tillering (TI) The leaf tips of newly formed tillers emerge from the leaf sheath, with the exposed portion 
+measuring approximately 0.5-1.0 cm in length. 
+Jointing (JO) The elongation of basal stem nodes marks the beginning of jointing, forming a stem with 
+distinct nodes. The jointing height (measured from the uppermost root node) is 1.0 cm for 
+early rice, 1.5 cm for medium rice, and 2.0 cm for late rice. 
+In early rice, panicle differentiation initiates before jointing with ﬁrst internode elongation; 
+medium rice starts panicle differentiation synchronously with jointing, characterized by ﬁrst 
+internode stabilization and second internode elongation; late rice begins panicle differentiation 
+post-jointing, exhibiting stabilized ﬁrst and second internodes with third internode elongation. 
+Booting (BO) The ﬂag leaf is completely emerged from the leaf sheath, with the ﬂag leaf collar becoming 
+visible. 
+Heading (HE) The panicle tip emerges from the ﬂag leaf sheath. Some panicles protrude in a curved form 
+from the sheath. When such curved emergence occurs extensively, it may be attributed to 
+meteorological inﬂuences and should be duly annotated. 
+Milking (MI) The grains at the panicle tip have attained normal size, with husks ﬁlled with milky ﬂuid, 
+exhibiting green coloration. 
+Maturity (MA) Over 80% of grains on indica rice panicles and over 90% on japonica rice panicles exhibit their 
+characteristic varietal coloration, meeting the physiological maturity standard. 
+Missing values were rare; the exact proportion varied slightly among stations and pheno- 
+logical stages, but remained negligible. Sensitivity checks indicated that the ﬁlled values 
+did not materially change the phenological trends. 
+A summary of the standardized phenological criteria used for observation is provided in 
+Table 1 , which formed the basis for consistent data collection. 
+3.2. Validation of derived data products 
+The robustness of the core data products—the linear trend statistics and kernel density esti- 
+mation (KDE) visualizations—was rigorously tested. 
+• Validation of Trend Statistics (Linear Regression): The ordinary least squares (OLS) linear 
+regression used to generate decadal trends was subjected to two key validation steps: 
+∗ Residual Analysis: An analysis of residuals conﬁrmed that the key OLS assumptions (nor- 
+mality, independence, and homoscedasticity) were not substantially violated, supporting 
+the validity of the ﬁtted models. 
+∗ Robustness to Outliers (Leave-One-Out Cross-Validation): To ensure the derived trends 
+were not unduly inﬂuenced by individual extreme years, we employed a leave-one-out 
+cross-validation (LOOCV) approach. This process systematically recalculated the linear 
+trend after excluding each year from the 44-year series. The results demonstrated excep- 
+tional stability, with slope coeﬃcients varying by less than ±0.1 days per decade across 
+all iterations, conﬁrming the robustness of the reported trends. 
+• Sensitivity Analysis of Phenological Distributions (KDE): The KDE plots, which visualize the 
+probability distribution of phenological timing, are sensitive to the selection of bandwidth. 
+For the ﬁnal published KDE products, Scott’s rule was used. To verify that the observed pat- 
+terns were genuine features of the data and not artifacts of the algorithm, we conducted a 
+Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 9 
+sensitivity analysis. We recomputed all densities using both Scott’s rule and Silverman’s rule 
+of thumb. The resulting probability density functions showed consistent modal peaks and 
+distribution shapes across both methods, conﬁrming the reliability of the visualized patterns. 
+The ﬁnal published KDE ﬁgures and statistics are based on Scott’s rule. 
+3.3. Intrinsic data quality and uncertainty assessment 
+• Uncertainty Sources and Mitigation: We acknowledge and have mitigated several potential 
+sources of observational uncertainty: 
+∗ Human Judgment: Minimized through standardized training and expert arbitration. 
+∗ Environmental Interference: Addressed via expert annotation and contextual validation. 
+∗ Instrumental Limitations: Mitigated by tool calibration and the use of relative, observer- 
+deﬁned phenological criteria. 
+∗ Historical Data Gaps: Filled using statistically and experientially informed imputation 
+methods. 
+• Intrinsic Consistency as a Quality Metric: The statistical properties of the ﬁnal dataset itself 
+provide compelling evidence of its high quality. The widespread high statistical signiﬁcance 
+(p < 0.01 for 78% of phenological stages) and substantial explanatory power (R ² > 0.5 for key 
+developmental transitions like transplanting and tillering) observed across the extensive sta- 
+tion network are indicative of an internally consistent and climatically sensitive dataset. Such 
+strong, coherent signals would be unlikely to arise from a noisy or unreliable data source. 
+In summary, this comprehensive technical validation—spanning foundational QC, product 
+robustness checks, and intrinsic consistency assessment—aﬃrms that the spatiotemporal pat- 
+terns and statistical derivatives presented in this dataset are robust and statistically sound. This 
+provides end-users with a high-conﬁdence foundation for subsequent scientiﬁc analysis and 
+decision-making. 
+4. Data Composition 
+This curated repository contains two main data products: 
+(1) Visualization Collection ( ∼2.82 GB): A curated set of 2,432 georeferenced JPEG images (1200 
+dpi) providing KDE plots and linear trend ﬁts for all 14 variables (11 phenology dates + 3 
+growth lengths) at all 95 stations. 
+(2) Statistical Core ( ∼1 MB): A machine-readable Microsoft Excel ﬁle 
+( MLYRP_Rice_Phenology .xlsx) containing the complete results of the univariate linear re- 
+gression analysis. The spreadsheet is organized with separate sheets for phenology dates and 
+growth lengths, with columns for: Province, Station ID, Station Name, Crop Type, Phenology 
+Period, Slope (change/year), Intercept, R ², Model Mean Square, F-value, and P-value. 
+No ﬁeld photographs or manually captured images were used. All graphical products were 
+generated programmatically in OriginPro 2024 from the quality-controlled DOY and GLs data. 
+KDE plots were produced using Scott’s rule; linear trend plots were produced using ordinary 
+least squares regression. A uniform template was applied to all ﬁgures, and each graph was 
+exported as a 1200 dpi JPEG without additional manual editing. The storage structure of the 
+dataset is shown in Fig. 3 . The ﬁrst level folder is named "MLYRP-rice phenology data”, which 
+includes secondary folders named after 7 provinces or municipalities and Excel spreadsheet. 
+Each secondary folders contains a tertiary folder named after observation station and single- 
+cropping rice or double-cropping late rice. Each tertiary folders contain 16 jpg diagrams, includ- 
+ing 1 probability density diagrams of phenology, 11 linear ﬁtting diagrams of DOY of phenology, 
+1 probability density diagrams of growth period length and 3 linear ﬁtting diagrams of growth 
+period length. 
+10 Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 
+Fig. 3. The storage structure of the dataset. 
+Representative data products are demonstrated in Fig. 4 , showcasing the integrated visual- 
+ization framework. 
+Fig 4 showed that the kernel density plots indicated the maximum probability density for 
+SO, EM, TS, TR, RE, TI, JO, BO, HE, MI, and MA occurred on day 90, day 95, day 106, day 
+120, day 125, day 135, day 151, day 166, day 174, day 187 and day 201, respectively. The 
+GLs SO–JO, JO–MA, and SO–MA exhibited maximum probability density at 61 days, 50 days, 
+and 111 days, respectively. The linear regression results revealed the following trends: SO, EM, 
+TS, TR, RE, TI, JO, BO, HE, MI, and MA exhibit signiﬁcant advancement with rates of −2.2 d 
+decade−¹( R2 = 0.428, P < 0.01), −2.9 d decade−¹( R2 = 0.526, P < 0.01), −2.8 d decade−¹( R2 = 0.521, 
+P < 0.01), −4.5 d decade−¹( R2 = 0.694, P < 0.01), −4.3 d decade−¹( R2 = 0.644, P < 0.01), −6.0 d 
+decade−¹( R2 = 0.730, P < 0.01), −0.4 d decade−¹( R2 = 0.008, P < 0.01), −2.9 d decade−¹( R2 = 0.375, 
+P < 0.01), −3.0 d decade−¹( R2 = 0.342, P < 0.01), −1.3 d decade−¹( R2 = 0.090, P < 0.01), and −2.1 d 
+decade−¹( R2 = 0.202, P < 0.01), respectively. SO–JO extended at rates of 2.3 d decade−¹( R2 = 0.206, 
+P < 0.01), JO–MA shorten at rates of −1.9 d decade−¹( R2 = 0.220, P < 0.01), SO–MA showed no sig- 
+niﬁcant trends. 
+5. Dataset Values and Potential for Reuse 
+This dataset provides an analysis-ready resource of rice phenology trends across China’s pri- 
+mary rice-producing region. By delivering pre-computed statistical derivatives alongside high- 
+resolution visualizations, it lowers the barrier for diverse applications. Researchers can use the 
+station-level trend statistics to benchmark crop and land surface models, conduct meta-analyses 
+of climate impacts across geographical and management gradients, and validate long-term phe- 
+nological trends derived from remote sensing products. The structured format enables eﬃcient 
+data extraction for large-scale synthesis, while the visualization collection facilitates intuitive 
+exploration of spatiotemporal patterns. For policymakers and agricultural extension services, the 
+dataset offers evidence-based insights for adaptation planning—such as optimizing planting cal- 
+endars and selecting climate-adapted cultivars based on observed rates of phenological change. 
+Educators can leverage the integrated framework as a teaching tool for climate impact assess- 
+ment and data analysis. Ultimately, this dataset serves as a foundational community resource 
+for advancing research on climate-crop interactions and supporting data-informed decisions to 
+enhance agricultural resilience and food security. 
+Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 11 
+Fig. 4. Example dataset: variation characteristics of rice phenology and its lengths at lengshuitan agrometeorological 
+observation station, Hunan Province. 
+Note: SO: sowing, EM: emergence, TS: trefoil, TR: transplanting, RE: regreening, TI: tillering, JO: jointing, BO: booting, 
+HE: heading, MI: milking, MA: maturity. 
+12 Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 
+Fig. 4. Continued 
+6. Conclusion 
+This Data Note presents a transformative resource that advances agricultural data science 
+through its FAIR-compliant architecture and computational readiness. By moving beyond tradi- 
+tional observational datasets to provide both raw data derivatives and analytical outputs, we 
+Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 13 
+establish a new paradigm for reusable agricultural data products. The dataset’s innovation lies 
+not only in its unprecedented temporal span and spatial coverage but also in its structural de- 
+sign that enables immediate computational utility. We anticipate this resource will serve as a 
+critical benchmark for climate impact studies, crop model development, and adaptive manage- 
+ment strategies, ultimately contributing to enhanced food security in a changing climate. Future 
+work will focus on developing automated data integration pipelines that leverage this dataset’s 
+machine-readable structure for real-time climate adaptation decision support. 
+Funding 
+This work was supported by the National Key R&D Program of China under Grant 
+[ 2024YFD2301301 ]. 
+Generative AI Use Disclosure Statement 
+During the preparation of this work, the author(s) used DeepSeek (speciﬁcally, the DeepSeek 
+Chat and DeepSeek-R1 tools) solely for the purpose of language polishing and proofreading. This 
+tool was used to identify and correct grammatical errors, typos, and to improve sentence ﬂuency. 
+After using this tool, the author(s) reviewed and edited the content as needed and take(s) full 
+responsibility for the content of the publication. 
+Acknowledgements 
+We extend our deepest gratitude to the more than 100 agricultural meteorological observers 
+across the 95 stations in the Middle and Lower Yangtze River Plain, whose dedicated work over 
+four decades—often under challenging ﬁeld conditions—made this dataset possible. Their metic- 
+ulous daily observations, adherence to standardized protocols, and expert judgment in pheno- 
+logical identiﬁcation form the foundation of this research. We also thank the station managers, 
+regional meteorological bureaus, and the China Meteorological Administration for maintaining 
+this invaluable long-term observational network and for supporting data sharing and scientiﬁc 
+cooperation. Thank Dr. Zhu Yong-Chao, Liu Cong, Yang Da-Sheng, Mr. Kong Xiang-Sheng, Miss. 
+Zhang Jing and Mr. Zhang Shi-Hao for their support and guidance in data collection and pro- 
+cessing. The authors would like to express their sincere gratitude to all of the data contributors 
+whose valuable inputs made this research successful. 
+Declaration of Competing Interest 
+No potential conﬂict of interest was reported by the author(s). 
+References 
+[1] J.L. MacLean, D.C. Dawe, G.P. Hettel, Rice Almanac: Source Book for the Most Important Economic Activity on Earth, 
+3rd EDN, CABI Pub., Oxon, UK, 2002 . 
+[2] IPCC, Climate Change 2021: The Physical Science Basis, 2021 [-08-01]. https://www.ipcc.ch/report/ar6/wg1/ . 
+[3] Y.J. Liu, C. Bachofen, R. Wittwer, et al., Using PhenoCams to track crop phenology and explain the effects of different 
+cropping systems on yield, Agric. Syst. 195 (2022) 103306 . 
+[4] B.R. Ara, R. Lempert, E. Ali, in: Point of Departure and Key Concepts, Cambridge University Press, Cambridge, 2023, 
+pp. 121–196. https://www.ipcc.ch/report/ar6/wg2/chapter/chapter-1/ . 
+[5] Climate Change Center of China Meteorological Administration, China Climate Change Blue Book (2023), Science 
+Press, Beijing, 2023 (in Chinese) . 
+14 Q.-J. Zhang and D.-L. Wu / Data in Brief 69 (2026) 113 310 
+[6] B.T. Zhou, J. Qian, Changes of weather and climate extremes in the IPCC AR6, Clim. Change. Res. 17 (2021) 713–718 
+(in Chinese with English abstract) . 
+[7] S. Zhang, F. Tao, Improving rice development and phenology prediction across contrasting climate zones of China, 
+Agric. For. Meteorol. 268 (2019) 224–233, doi: 10.1016/j.agrformet.2019.01.019 . 
+[8] F.Q. Mei, X.Z. Wu, C.X. Yao, et al., Rice cropping regionalization in China, Chin. J. Rice. Sci. 2 (1988) 97–110 (in 
+Chinese with English abstract) . 
+[9] X.J. Ning, L.J. Zhang, Y.C. Qin, et al., Temporal-spatial distribution of suitable areas for major food crops in China 
+over 60 years, Adv. Earth. Sci. 34 (2019) 191–201 (in Chinese with English abstract) . 
+[10] F.Y. Han, J.B. Zhang, L.L. Cheng, et al., Impact of climate change on rice yield and its regional heterogeneity in China, 
+J. Ecol. Rural Environ. 35 (3) (2019) 283–289, doi: 10.19741/j.issn.1673-4831.2018.0224 . 
+[11] Y. Zheng, G. Crawford, L. Jiang, et al., Rice domestication revealed by reduced shattering of archaeological rice from 
+the Lower Yangtze valley, Sci. Rep. 6 (2016) 28136, doi: 10.1038/srep28136 . 
+[12] F.X. Xu, X.B. Zhou, L. Zhang, et al., Effects of climatic factors in the southeast of Sichuan basin on grain yield of 
+mid-season hybrid rice, Acta. Agron. Sin. 44 (2018) 601–613 (in Chinese with English abstract) . 
+[13] W.F. Chen, Z.J. Xu, L. Tang, 20 years’ development of super rice in China: the 20th anniversary of the super rice in 
+China, J. Integr. Agric. 16 (2017) 981–983 . 
+[14] E.H. Liu, G.S. Zhou, B.Y. Wu, et al., Response of reproductive growth period length to climate warming and tech- 
+nonlogical progress in the middle and lower reaches of the Yangtze River during 1981-2010 in single-cropping rice, 
+Acta Agron Sin 49 (2023) 1305–1315 (in Chinese with English abstract) . 
+[15] Z.B. Wang, J. Chen, W.J. Tong, et al., Impacts of climate change and varietal replacement on winter wheat phenology 
+in the North China Plain, Int. J. Plant Prod. 12 (2018) 251–263 . 
+[16] W.J. Zhang, C.Q. Chen, Y. Jiang, et al., Comprehensive inﬂuence of climate warming on rice production and counter- 
+measure for food security in China, J. Agro. Environ. Sci. 39 (2020) 805–811 (in Chinese with English abstract). . 
+[17] S.J. Sheather, Density estimation, Statist. Sci. 19 (4) (2004) 588–597 . 
+[18] B.W. Silverman, Density Estimation for Statistics and Data Analysis, Routledge, London, 2018 . 
+[19] National Meteorological Administration, Speciﬁcations for Agrometeorological Observations, China Meteorological 
+Press, Beijing, 1993 . 

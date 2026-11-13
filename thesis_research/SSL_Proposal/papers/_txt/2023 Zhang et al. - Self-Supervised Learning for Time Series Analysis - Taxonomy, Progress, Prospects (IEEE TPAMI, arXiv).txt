@@ -1,0 +1,3404 @@
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 1
+Self-Supervised Learning for Time Series
+Analysis: Taxonomy, Progress, and Prospects
+Kexin Zhang, Qingsong Wen†, Chaoli Zhang, Rongyao Cai, Ming Jin, Y ong Liu†, James Y . Zhang,
+Yuxuan Liang, Guansong Pang, Dongjin Song, and Shirui Pan
+Abstract—Self-supervised learning (SSL) has recently achieved impressive performance on various time series tasks. The most
+prominent advantage of SSL is that it reduces the dependence on labeled data. Based on the pre-training and fine-tuning strategy,
+even a small amount of labeled data can achieve high performance. Compared with many published self-supervised surveys on
+computer vision and natural language processing, a comprehensive survey for time series SSL is still missing. To fill this gap, we review
+current state-of-the-art SSL methods for time series data in this article. To this end, we first comprehensively review existing surveys
+related to SSL and time series, and then provide a new taxonomy of existing time series SSL methods by summarizing them from three
+perspectives: generative-based, contrastive-based, and adversarial-based. These methods are further divided into ten subcategories
+with detailed reviews and discussions about their key intuitions, main frameworks, advantages and disadvantages. To facilitate the
+experiments and validation of time series SSL methods, we also summarize datasets commonly used in time series forecasting,
+classification, anomaly detection, and clustering tasks. Finally, we present the future directions of SSL for time series analysis.
+Index Terms—Time series analysis, self-supervised learning, representation learning, deep learning
+✦
+1 I NTRODUCTION
+T
+IME series data abound in many real-world scenar-
+ios [1], [2], including human activity recognition [3],
+industrial fault diagnosis [4], smart building management
+[5], and healthcare [6]. The key to most tasks based on time
+series analysis is to extract useful and informative features.
+In recent years, Deep Learning (DL) has shown impressive
+performance in extracting hidden patterns and features of
+the data. Generally, the availability of sufficiently large
+labeled data is one of the critical factors for a reliable DL-
+based feature extraction model, usually referred to as super-
+vised learning. Unfortunately, this requirement is difficult to
+meet in some practical scenarios, particularly for time series
+data, where obtaining labeled data is a time-consuming
+process. As an alternative, Self-Supervised Learning (SSL)
+has garnered increasing attention for its label-efficiency and
+generalization ability, and consequently, many latest time
+Kexin Zhang, Rongyao Cai, and Yong Liu are with the Institute of Cyber-
+Systems and Control, Zhejiang University. (e-mail: zhangkexin@zju.edu.cn,
+rycai@zju.edu.cn, and yongliu@iipc.zju.edu.cn)
+Qingsong Wen is with Squirrel AI, and this work was done at Alibaba Group.
+(e-mail: qingsongedu@gmail.com)
+Chaoli Zhang is with the School of Computer Science and Technology,
+Zhejiang Normal University. (e-mail: chaolizcl@zjnu.edu.cn)
+Ming Jin is with the Faculty of Information Technology, Monash University.
+(e-mail: ming.jin@monash.edu)
+James Zhang is with Ant Group. (e-mail: james.z@antgroup.com)
+Yuxuan Liang is with INTR & DSA Thrust, Hong Kong University of Science
+and Technology (Guangzhou). (e-mail: yuxliang@outlook.com)
+Guansong Pang is with the School of Computing and Information Systems,
+Singapore Management University. (e-mail: gspang@smu.edu.sg)
+Dongjin Song is with the School of Computing, University of Connecticut.
+(e-mail: dongjin.song@uconn.edu)
+Shirui Pan is with the School of Information and Communication Technology,
+Griffith University. (e-mail: s.pan@griffith.edu.au)
+†Corresponding author: Qingsong Wen and Yong Liu.
+GitHub Page: https://github.com/qingsongedu/Awesome-SSL4TS
+series modeling methods have been following this learning
+paradigm.
+SSL is a subset of unsupervised learning that utilizes
+pretext tasks to derive supervision signals from unlabeled
+data. These pretext tasks are self-generated challenges that
+the model solves to learn from the data, thereby creating
+valuable representations for downstream tasks. SSL does
+not require additional manually labeled data because the
+supervisory signal is derived from the data itself. With
+the help of well-designed pretext tasks, SSL has recently
+achieved great success in the domains of Computer Vision
+(CV) [7]–[10] and Natural Language Processing (NLP) [11],
+[12].
+With the great success of SSL in CV and NLP , it is appeal-
+ing to extend SSL to time series data. However, transferring
+the pretext tasks designed for CV/NLP directly to time
+series data is non-trivial, and often fails to work in many sce-
+narios. Here we highlight some typical challenges that arise
+when applying SSL to time series data. First, time series data
+exhibit unique properties such as seasonality, trend, and
+frequency domain information [13]–[15]. Since most pretext
+tasks designed for image or language data do not consider
+these semantics related to time series data, they cannot be
+directly adopted. Second, some techniques commonly used
+in SSL, such as data augmentation, need to be specially
+designed for time series data. For example, rotation and crop
+are the commonly used augmentation techniques for image
+data [16]. However, these two techniques may break the
+temporal dependency of the series data. Third, most time
+series data contain multiple dimensions, i.e., multivariate
+time series. However, useful information usually only exists
+in a few dimensions, making it difficult to extract useful
+information in time series using SSL methods from other
+data types.
+arXiv:2306.10125v4  [cs.LG]  8 Apr 2024
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 2
+Generative-based Methods
+THOC[52], STraTS[54], GDN[55], SSTSC[58]
+Autowarp[60],TimeNet[61], PT-LSTM-SAE[62],  
+RANSynCoders[63], DCTR[65], USAD[66], 
+FuSAGNet[67], DAETI[69], DTCRAE[71], STEP[74], 
+MVTSTrans[75], VSF[76], TARNet[77], 
+InterFusion[80], OmniAnomaly[81], GRELEN[82], 
+VGCRN[83], mTANs[84], P-VAE[85], HetVAE[86], 
+LaST[87]
+USRL[105], TNC[106], NCL[108]
+CPC[109], LNT[110], TRL-CPC[111], TS-CP2[112], 
+Skip-CPC[113], CMLF[115], TSTCC[116], 
+CA-TCC[117]
+TS2Vec[118], CoST[123], BTSF[124], TF-C[125], 
+TimeCLR[127], CLOCS[128], CLUDA[129], 
+MTFCC[130], MRLF[131], CMLF[115], SSLAPP[132], 
+Dcdetector[126], TSTCC[116], CA-TCC[117]
+CSDI[98],  TimeGrad[99], D3VAE[100], SSSD[102], 
+ImDiffusion[101], DiffLoad[103], DiffSTG[104]
+SSP-TSC[142], ExpCLR[143], SleepPriorCL[144]
+ShapeNet[136], TapNet[137], DVSL[138], MHCCL[139]
+Contrastive-based Methods Adversarial-based Methods
+Autoregressive-based forecasting
+Autoencoder-based reconstruction
+Diffusion-based generation
+Sampling contrast
+Prediction contrast
+Generation and imputation
+Auxiliary representation enhancement
+Expert knowledge contrast
+Prototype contrast
+Augmentation contrast
+C-RNN-GAN[154], TimeGAN[155], TTS-GAN[156], 
+E2GAN[157], COSCI-GAN[158], PSA-GAN[159], GT-
+GAN[160], GRUI[161], SSGAN[162]
+UASD[66], AnomalyTrans[163], DUBCNs[164], 
+CRLI[165], AST[166], ACT[167], BeatGAN[168], 
+Activity2vec[169]
+Time Series SSL
+Fig. 1: The proposed taxonomy of SSL for time series data.
+To the best of our knowledge, there has yet to be a
+comprehensive and systematic review of SSL for time series
+data, in contrast to the extensive literature on SSL for CV
+or NLP [17], [18]. The surveys proposed by Eldele et al.
+[19] and Deldari et al. [20] are partly similar to our work.
+However, these two reviews only discuss a small part of
+self-supervised contrastive learning (SSCL), which requires
+a more comprehensive literature review. Furthermore, a
+summary of benchmark time series datasets needs to be
+included, and the potential research directions for time
+series SSL are also scarce.
+This article provides a review of current state-of-the-art
+SSL methods for time series data. We begin by summarizing
+recent reviews on SSL and time series data and then propose
+a new taxonomy from three perspectives: generative-based,
+contrastive-based, and adversarial-based. The taxonomy is
+similar to the one proposed by Liu et al. [21] but specifi-
+cally concentrated on time series data. For generative-based
+methods, we describe three frameworks: autoregressive-
+based forecasting, auto-encoder-based reconstruction, and
+diffusion-based generation. For contrastive-based methods,
+we divide the existing work into five categories based on
+how positive and negative samples are generated, including
+sampling contrast, prediction contrast, augmentation con-
+trast, prototype contrast, and expert knowledge contrast.
+Then we sort out and summarize the adversarial-based
+methods based on two target tasks: time series genera-
+tion/imputation and auxiliary representation enhancement.
+The proposed taxonomy is shown in Fig. 1. We conclude
+this work by discussing possible future directions for time
+series SSL, including selection and combination of data
+augmentation, selection of positive and negative samples
+in SSCL, the inductive bias for time series SSL, theoretical
+analysis of SSCL, adversarial attacks and robust analysis on
+time series, time series domain adaption, pretraining and
+large models for time series, time series SSL in collaborative
+systems, and benchmark evaluation for time series SSL.
+Our main contributions are summarized as follows.
+• New taxonomy and comprehensive review. We provide
+a new taxonomy and a detailed and up-to-date review
+of time series SSL. We divide existing methods into ten
+categories, and for each category, we describe the basic
+frameworks, mathematical expression, fine-grained classi-
+fication, detailed comparison, advantages and disadvan-
+tages. To the best of our knowledge, this is the first work
+to comprehensively and systematically review the existing
+studies of SSL for time series data.
+• Collection of applications and datasets. We collect re-
+sources on time series SSL, including applications and
+datasets, and investigate related data sources, character-
+istics, and corresponding works.
+• Abundant future directions. We point out key problems
+in this field from both applicative and methodology per-
+spectives, analyze their causes and possible solutions, and
+discuss future research directions for time series SSL. We
+strongly believe that our efforts will ignite further research
+interests in time series SSL.
+The rest of the article is organized as follows. Section
+2 provides some review literature on SSL and time series
+data. Section 3 to Section 5 describe the generation-based,
+contrastive-based, and adversarial-based methods, respec-
+tively. Section 6 lists some commonly used time series data
+sets from the application perspective. The quantitative per-
+formance comparisons and discussions are also provided.
+Section 7 discusses promising directions of time series SSL,
+and Section 8 concludes the article.
+2 R ELATED SURVEYS
+In this section, the definition of time series data is first
+introduced, and then several recent reviews on SSL and time
+series analysis are scrutinized.
+2.1 Definition of time series data
+2.1.1 Univariate time series
+A univariate time series refers to an ordered sequence of
+observations or measurements of the same variable indexed
+by time. It can be defined asX = (x0,x 1,x 2,...,x t), where
+xi is the point at timestampi. Most often, the measurements
+are made at regular time intervals.
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 3
+2.1.2 Multivariate time series
+A multivariate time series consists of two or more interre-
+lated variables (or dimensions) that depend on time. It is
+a combination of multiple univariate time series and can be
+defined as X = [X0,X 1,X 2,...,X p], wherep is the number
+of variables.
+2.1.3 Multiple multivariate time series
+Considering the scenario where distinct sets of multivari-
+ate time series are concurrently examined. Analyzing such
+datasets involves studying each set independently and ex-
+ploring the relationships between different sets. For in-
+stance, if we study meteorological data from different cities,
+each city’s data forms a multivariate time series, collectively
+resulting in multiple multivariate time series. This can be
+articulated as X ={X0, X1, X2,..., Xn}, where n is the
+number of multivariate time series.
+2.2 Surveys on SSL
+The surveys on SSL can be categorized by different criteria.
+In this paper, we outline three widely used criteria: learning
+paradigms, pretext tasks and components/modules.
+2.2.1 Learning paradigms
+This category focuses on model architectures and train-
+ing objectives. The SSL methods can be roughly divided
+into the following categories: generative-based, contrastive-
+based, and adversarial-based methods. The characteristics
+and descriptions of the above methods can be found in
+Appendix A. Using the learning paradigm as a taxonomy is
+arguably the most popular among the existing SSL surveys,
+including [20], [22]–[27]. However, not all surveys cover the
+above three categories. The readers are referred to these
+surveys for more details. In Table 1, we also provide the data
+modalities involved in each survey, which can help readers
+quickly find the research work closely related to them.
+2.2.2 Pretext tasks
+The pretext task serves as a means to learn informative
+representations for downstream tasks. Unlike the learning-
+paradigm-based criterion, the pretext-task-based criterion is
+also related to data modality. For example, Ericsson et al.
+[28] provides a very comprehensive review of pretext tasks
+for multiple modalities, including image, video, text, audio,
+time series, and graph. The various self-supervised pretexts
+are divided into five broad families: transformation predic-
+tion, masked prediction, instance discrimination, clustering,
+and contrastive instance discrimination. Jing and Tian [18]
+summarize the self-supervised feature learning methods on
+image and video data, and four categories are discussed:
+generation-based, context-based, free semantic label-based,
+and cross modal-based, where cross-modal-based methods
+construct learning task using RGB frame sequence an optical
+flow sequence, which are unique features in the video. Gui
+et al. [30] explore four kinds of pretext tasks in computer
+vision and natural language processing, including context-
+based methods, contrastive learning methods, generative
+algorithms, and contrastive generative methods. Essentially,
+TABLE 1: An overview of recent SSL surveys on different
+modalities. The yellow part indicates the proportion of this
+modality in all six modalities. It can be seen that this article
+is mainly concerned with SSL on time series data.
+Paper Modality
+Image Video Audio Graph Text Time Series
+[21]
+[22]
+[28]
+[29]
+[17]
+[20]
+[18]
+[30]
+[31]
+[23]
+[24]
+[25]
+[26]
+[32]
+[27]
+Ours
+the core of the pretext tasks is how to construct pseudo-
+supervision signals. Generally speaking, ignoring the dif-
+ferences in data modalities, existing pretext tasks can be
+roughly summarized into three categories: context predic-
+tion, instance discrimination, and instance generation. The
+main differences and examples are summarized in Table 3.
+It should be noted that here we only list some commonly
+used pretexts tasks, and some special pretext tasks are
+not the focus of this article. The details can be found in
+Appendix B.2.
+2.2.3 Components and modules
+The literature categorizing SSCL methods according to their
+modules and components throughout the pipeline is also an
+important direction. Jaiswal et al. [17], Le-Khac et al. [29]
+and Liu et al. [33] sort out the modules and components
+required in SSL from different perspectives. Specifically,
+Liu et al. [33] summarizes the research progress of self-
+supervised contrastive learning on medical time series data.
+In summary, the pipeline can be divided into four compo-
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 4
+nents: positive and negative samples, pretext task, model
+architecture, and training loss.
+The basic intuition behind SSCL is to pull positive sam-
+ples closer and push negative samples away. Therefore,
+the first component is to construct positive and negative
+samples. According to the suggestions of Le-Khac et al.
+[29], the main methods can be divided into the following
+categories: multisensory signals, data augmentation, local-
+global consistency, and temporal consistency. Additional
+descriptions regarding the characteristics of these categories
+can be found in Appendix B.1.
+The second component is pretext tasks, which is a self-
+supervised task that acts as an important strategy to learn
+data representations using pseudo-labels [17]. Pretext tasks
+have been summarized and categorized in the previous
+subsection, so repeated content will not be introduced again.
+The details can be found in Section 2.2.2 and Appendix B.2.
+The third component is model architecture, which deter-
+mines how positive and negative samples are encoded dur-
+ing training. The major categories include end-to-end [16],
+memory bank [34], momentum encoder [35], and clustering
+[36]. More details of these four architectures are summarized
+in Appendix B.3.
+The fourth component is training loss. As summarized
+in [29], commonly used contrastive loss functions generally
+include scoring functions (cosine similarity), energy-based
+margin functions (pair loss and triplet loss), probabilistic
+NCE-based functions, and mutual information based func-
+tions. More details of these loss functions are summarized
+in Appendix B.4.
+2.3 Surveys on time series data
+The surveys on time series data can be roughly divided
+into two categories. The first category focuses on different
+tasks, such as classification [37], [38], forecasting [39]–[42],
+and anomaly detection [43], [44]. These surveys compre-
+hensively sort out the existing methods for each task. The
+second category focuses on the key components of time
+series modeling based on deep neural networks, such as
+data augmentation [33], [45]–[47], model structure [33], [48],
+[49]. [45] proposed a new taxonomy that divides the exist-
+ing data augmentation techniques into basic and advanced
+approaches. [46] also provides a taxonomy and outlines
+four families: transformation-based methods, pattern mix-
+ing, generative models, and decomposition methods. More-
+over, both [45] and [46] empirically compare different data
+augmentation methods for time series classification tasks.
+[48] systematically reviews transformer schemes for time
+series modeling from two perspectives: network structure
+and applications. Liu et al. [33] provide a comprehensive
+summary of the various augmentations applied to medical
+time series data, the architectures of pre-training encoders,
+the types of fine-tuning classifiers and clusters, and the pop-
+ular contrastive loss functions. The taxonomies proposed
+by Eldele et al. [19], Deldari et al. [20] and Liu et al. [33]
+are somewhat similar to our proposed taxonomy, i.e., three
+taxonomies involve time series self-supervised contrastive
+learning methods. However, our taxonomy provides more
+detailed categories and more literature in the contrastive-
+based approach. Although the taxonomy proposed by Liu
+et al. [33] also focuses on time series data. They emphasize
+discussion of medical time series data, while we focus more
+on general time series SSL. More importantly, in addition
+to contrastive-based approaches, we also thoroughly re-
+view a large set of literature for the generative-based and
+adversarial-based approaches.
+3 G ENERATIVE -BASED METHODS
+In this category, the pretext task is to generate the expected
+data based on a given view of the data. In the context
+of time series modeling, the commonly used pretext tasks
+include using the past series to forecast the future windows
+or specific time stamps, using the encoder and decoder to
+reconstruct the input, and forecasting the unseen part of
+the masked time series. This section sorts out the existing
+self-supervised representation learning methods in time
+series modeling from the perspectives of autoregressive-
+based forecasting, autoencoder-based reconstruction, and
+diffusion-based generation. It should be noted that the
+autoencoder-based reconstruction task is also viewed as an
+unsupervised framework. In the context of SSL, we mainly
+use the reconstruction task as a pretext task, and the final
+goal is to obtain the representations through autoencoder
+models. The illustration of the generative-based SSL for
+time series is shown in Fig. 2. In Appendix C.1 - C.3, the
+main advantages and disadvantages of three generative-
+based submethods are summarized. Furthermore, the direct
+comparison of the three methods is shown in Appendix C.4.
+3.1 Autoregressive-based forecasting
+Given the current time step t, the goal of an autoregressive-
+based forecasting (ARF) task is to forecastK future horizons
+based ont historical time steps, which can be expressed as:
+ˆx[t+1:t+K] =f (x[1:t]), (1)
+where ˆx[t+1:t+K] represents the target window, and K rep-
+resents the length of the target window. When K = 1 , (1)
+is a single-step forecasting model, and it is a multi-step
+forecasting model when K > 1. x[1:t] represents the input
+series before time t (including t), which is usually used
+as the input of the model. f (·) represents the forecasting
+model. The learning objective is to minimize the distance
+between the predicted target window and the ground truth,
+thus the loss function can be defined as:
+L =D(ˆx[t+1:t+K],x [t+1:t+K]), (2)
+where D(·) represents the distance between the predicted
+future window ˆx[t+1:t+K] and the ground-truth future win-
+dowx[t+1:t+K], usually measured by the mean square error
+(MSE), i.e.,
+L = 1
+K
+KX
+k=1
+(ˆx[t+k]−x[t+k])2. (3)
+In the time series modeling with autoregressive-based
+forecasting task as a pretext task, Recurrent neural networks
+(RNNs) are widely used thanks to their strong capability
+in spatiotemporal dynamic behavior modeling or sequence
+prediction [41], [42], [50], [51]. Therefore, it is also naturally
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 5
+Encoder
+ Forecasting 
+decoder
+Representations
+History window
+Encoder
+Input transform 
+(Masking, Noising)
+Reconstructed time-series
+Input time series
+Input time series
+Representations
+Random noise
+Forward process Reverse process
+Time series
+Forecasted 
+Future window
+Reconstruction 
+decoder
+(a) Autoregressive-based forecasting task
+Encoder
+ Forecasting 
+decoder
+Representations
+Histroy window
+Encoder
+Input transform 
+(Masking, Noising)
+Reconstructed time-series
+Input time series
+Input time series
+Representations
+Random noise
+Forward process Reverse process
+Time series
+Forecasted 
+Future window
+Reconstruction 
+decoder
+(b) Autoencoder-based reconstruction task
+Encoder
+ Forecasting 
+decoder
+Representations
+Histroy window
+Encoder
+Input transform 
+(Masking, Noising)
+Reconstructed time-series
+Input time series
+Input time series
+Representations
+Random noise
+Forward process Reverse process
+Time series
+Forecasted 
+Future window
+Reconstruction 
+decoder
+(c) Diffusion-based generation task
+Fig. 2: Three categories of generative-based SSL for time
+series data.
+applied in the pretext task based on autoregressive fore-
+casting. THOC [52] constructs a self-supervised pretext task
+for multi-resolution single-step forecasting called Temporal
+Self-Supervision (TSS). TSS takes the L-layer dilated RNN
+with skip-connection structure as the model. By setting
+skip length, it can ensure that the forecasting tasks can be
+performed with different resolutions at the same time. In
+addition to RNNs, the forecasting models based on Convo-
+lutional neural networks (CNNs) also have been developed
+[53]. Moreover, STraTS [54] first encodes the time series
+data into triple representations to avoid the limitations
+of using basic RNN and CNN in modeling irregular and
+sparse time series data and then builds the transformer-
+based forecasting model for modeling multivariate medical
+clinical time series. Graph-based time series forecasting
+methods can also be used as a self-supervised pretext task.
+Compared with RNNs and CNNs, Graph Neural Networks
+(GNNs) can better capture the correlation among variables
+and constituent in multivariate time series data, such as
+GDN [55] and GTS [56]. Graph-augmented normalizing
+flow (GANF) is another graph-based approach that can
+model the conditional dependencies among constituent time
+series [57]. In order to choose a more appropriate model
+in building time series SSL task, we further give the ad-
+vantages and disadvantages of these three commonly used
+models. The details can be found in Appendix D. Unlike
+the above methods, SSTSC [58] proposes a temporal relation
+learning prediction task based on the “Past-Anchor-Future”
+strategy as a self-supervised pretext task. Instead of directly
+forecasting the values of the future time windows, SSTSC
+predicts the relationships of the time windows, which can
+fully mine the temporal relationship in the data.
+3.2 Autoencoder-based reconstruction
+The autoencoder is an unsupervised artificial neural net-
+work composed of an encoder and a decoder [59]. The
+encoder maps the input x to the representation z, and then
+the decoder re-maps the representation z back to the input.
+The output of the decoder is defined as the reconstructed
+input ˜x. The process can be expressed as:
+z =E(x), ˜x =D(z), (4)
+where E(·) and D(·) represent the encoder and decoder,
+respectively. The difference between the original input x
+and the reconstructed input ˜x is called the reconstruction
+error, and the goal of the self-supervised pretext task using
+autoencoder structure is to minimize the error between x
+and ˜x, i.e.,
+L =∥x− ˜x∥2. (5)
+The model structure of (4) is defined as the basic au-
+toencoder (BAE). Most BAE-based methods jointly train
+the encoder E(·) and the decoder D(·). Then removing
+the decoder D(·) and leaving only the encoder E(·) that
+is used as a feature extractor, and the representation z is
+used for downstream tasks [60]–[63]. For example, TimeNet
+[61], PT-LSTM-SAE [62], and Autowarp [60] all use RNN
+to build a sequence autoencoder model including encoder
+and decoder, which tries to reconstruct the input series.
+Once the model is learned, the encoder is used as a feature
+extractor to obtain an embedded representation of time
+series samples, which can help downstream tasks, such as
+classification and forecasting, achieve better performance.
+Zhang et al. [64] build a CNN-based autoencoder model
+and keep the encoder as a feature extractor after minimizing
+(5). The experimental results show that using the encoded
+representation is better than directly using the original time
+series data in industrial fault detection tasks.
+However, the representations obtained by (5) are some-
+times task-agnostic. Therefore, it is feasible to introduce ad-
+ditional training constraints based on (5). Abdulaal et al. [63]
+focus on the complex asynchronous multivariate time series
+data and introduce the spectral analysis in the autoencoder
+model. The synchronous representation of the time series
+is extracted by learning the phase information in the data,
+which is eventually used for the anomaly detection task.
+DTCR [65] is a temporal clustering-friendly representation
+learning model. It introduces K-means constraints in the
+reconstruction task, making the learned representation more
+friendly to clustering tasks. USAD [66] uses an encoder and
+two decoders to build an autoencoder model and introduces
+adversarial training based on (5) to enhance the representa-
+tion ability of the model. FuSAGNet [67] introduces graph
+learning on the sparse autoencoder to model relationships
+in multivariate time series explicitly.
+Denoising autoencoder (DAE) is another widely used
+approach, which is based on the addition of noise to the
+input series to corrupt the data, and then followed by the
+reconstruction task [68]. DAE can be formulated as:
+xn =T (x), Z =E(xn), ˜x =D(z), (6)
+whereT indicates the operation that adds noise. The learn-
+ing objective of a DAE is the same as that of a BAE, which is
+to minimize the difference between x and ˜x. In time series
+modeling, more than one method can add noise to the input,
+such as adding Gaussian noise [69], [70] and randomly
+setting some time steps to zero [71], [72].
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 6
+Mask autoencoder (MAE) is a structure widely used in
+language models and vision models in recent years [11],
+[73]. The core idea behind MAE is that in the pre-training
+phase, the model first masks part of the input and then
+tries to predict the masked part through the unmasked part.
+Unlike BAE and DAE, the loss of MAE is only computed on
+the masked part. MAE can be formulated as:
+xm =M(x), z =E(xm), ˜x =D(z), (7)
+L =M(∥x− ˜x∥2), (8)
+whereM(·) represents the mask operation, and Xm repre-
+sents the masked input. In language models, since the input
+is usually a sentence, the mask operation masks some words
+in a sentence or replaces them with other words. In vision
+models, the mask operation will mask the pixels or patches
+in an image. For time series data, a feasible operation is to
+mask part of the time steps and then use the unmasked
+part to predict the masked time steps. Existing masking
+methods for time series data can be divided into three
+categories: time-step-wise masking, segment-wise masking,
+and variable-wise masking.
+The time-step-wise masking randomly selects a certain
+proportion of time-steps in the series to mask, so the fine-
+grained information is easier to capture, but it is difficult
+to learn contextual semantic information in time series.
+The segment-wise masking randomly selects segments to
+mask, which allows the model to pay more attention to
+slow features in the time series, such as trends or high-
+level semantic information. STEP [74] divided the series
+into multiple non-overlapping segments of equal length
+and then randomly selected a certain proportion of the
+segments for masking. Moreover, STEP pointed out two
+advantages of using segment-wise masking: the ability to
+capture semantic information and reduce the input length
+to the encoder. Different from STEP , Zerveas et al. [75]
+performed a more complex masking operation on the time
+series, i.e., the multivariate time series was randomly di-
+vided into multiple non-overlapping segments of unequal
+length on each variable. Variable-wise masking was intro-
+duced by Chauhan et al. [76], who defined a new time series
+forecasting task called variable subset forecast (VSF). In VSF,
+the time series samples used for training and inference have
+different dimensions or variables, which may be caused by
+the absence of some sensor data. This new forecasting task
+brings the feasibility of self-supervised learning based on
+variable-wise masking. Unlike random masking, TARNet
+[77] considers the pre-trained model based on the masking
+strategy irrelevant to the downstream task, which leads
+to sub-optimal representations. TARNet uses self-attention
+score distribution from downstream task training to deter-
+mine the time steps that require masking.
+Variational autoencoder (VAE) is a model based on
+variational inference [78], [79]. The encoder encodes the
+input x to the probability distribution P (z|x) instead of
+the explicit representation z. When the decoder is used to
+reconstruct the input, a vector generated by sampling from
+the distributionP (z|x) will be used as input to the decoder.
+The process can be expressed as:
+P (z|x) = E(x), z =S(P (z|x)), ˜x =D(z), (9)
+whereS(·) represents the sampling operation. Unlike (5),
+the loss function of a VAE includes two terms: the recon-
+struction item and the regularization item, i.e.,
+L =∥x− ˜x∥2 + KL(N (µ,δ ),N (0,I )), (10)
+where KL (·) represents the Kullback-Leibler divergence.
+The role of the regularization term is to ensure that the
+learned distribution P (z|x) is close to the standard normal
+distribution, thereby regulating the representation of the
+latent space. The representation learning method based on
+VAE can model the distribution of each time step to bet-
+ter capture the complex spatiotemporal dependencies and
+provide better interpretability in time series modeling tasks.
+For example, InterFusion [80] is a hierarchical VAE that
+models inter-variable and temporal dependencies in time
+series data. OmniAnomaly [81] combines VAE and Planar
+Normalizing Flow to propose an interpretable time series
+anomaly detection algorithm. In order to better capture the
+dependencies between different variables in multivariate
+time series, GRELEN [82] and VGCRN [83] introduce the
+graph structure and in VAE. In addition to modeling on
+regular time series, the methods based on VAE have made
+progress in sparse and irregular time series data representa-
+tion learning, such as mTANs [84], P-VAE [85] and HetVAE
+[86]. The latest work attempts to extract seasonal and trend
+representations in time series data based on VAE. LaST
+[87] is a disentangled variational inference framework with
+mutual information constraints. It separates seasonal and
+trend representations in the latent space to achieve accurate
+time series forecasting.
+3.3 Diffusion-based generation
+As a new kind of deep generative model, diffusion models
+have achieved great success recently in many fields, includ-
+ing image synthesis, video generation, speech generation,
+bioinformatics, and natural language processing due to their
+powerful generating ability [88]–[92]. The key design of the
+diffusion model contains two inverse processes: the forward
+process of injecting random noise to destruct data and the
+reverse process of sample generation from noise distribution
+(usually normal distribution). The intuition is that if the
+forward process is done step-by-step with a transition kernel
+between any two adjacent states, then the reverse process
+can follow a reverse state transition operation to generate
+samples from noise (the final state of the forward process).
+However, it is usually not easy to formulate the reverse
+transition kernel, and thus diffusion models learn to ap-
+proximate the kernel by deep neural networks. Nowadays,
+there are mainly three basic formulations of diffusion mod-
+els: denoising diffusion probabilistic models (DDPMs) [88],
+[93], score matching diffusion models [94], [95], and score
+SDEs [96], [97].
+For DDPMs, the forward and reverse processes are two
+Markov chains: a forward chain that adds random noise to
+data and a reverse chain that transforms noise back into
+data. Formally, denote the data distribution as x0∼ q(x0),
+the forward Markov process gradually adds Gaussian noise
+to the data according to transition kernel q(xt|xt−1). It
+generates a sequence of random variables x1, x2,..., xT .
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 7
+Thus the joint distribution of x1, x2,..., xT conditioned on
+x0 is
+q(x1, x2,..., xT|x0) =
+TY
+t=1
+q(xt|xt−1). (11)
+For simplicity of calculation, the transition kernel is usually
+set as
+q(xt|xt−1) =N (xt;
+p
+1−βtxt−1,βtI), (12)
+whereβ1,β 2,...,β T is a variance schedule of the forward
+process (usually chosenβt∈ (0, 1) ahead of model training)
+andp(xT ) =N (xT ; 0,I ). Similarly, the joint distribution of
+the reverse process is
+pθ(x0, x1,..., xT ) = p(xT )
+TY
+t=1
+pθ(xt−1|xt), (13)
+where θ is the model parameters and pθ(xt−1|xt) =
+N (xt−1;µθ(xt,t ),P
+θ(xt,t )). The key to achieving the suc-
+cess of sample generating is training the parameters θ to
+match the actual reverse process, that is, minimizing the
+Kullback-Leibler divergence between the two joint distri-
+butions. Thus, according to Jensen’s inequality, the training
+loss is
+KL(q(x1, x2,..., xT )||pθ(x0, x1,..., xT ))
+≥ E[− logpθ(x0)] +const. (14)
+For score-based diffusion models, the key idea is to per-
+turb data with a sequence of Gaussian noise and then jointly
+estimate the score functions for all noisy data distributions
+by training a deep neural network conditioned on noise
+levels. The motivation of the idea is that, in many situations,
+it is easier to model and estimate the score function than the
+original probability density function. Langevin dynamics is
+one of the proper techniques. With a step size α > 0, the
+number of iterations T , and an initial sample x0, Langevin
+dynamics iteratively does the following estimation to gain a
+close approximation ofp(x)
+xt← xt−1 +α∇x logp(xt−1) +
+√
+2αzt, 1≤t≤T, (15)
+where zt ∼N (0,I ). However, the score function is inac-
+curate without the training data, and Langevin dynamics
+may not converge correctly. Thus, the key approach (NCSN,
+a noise-conditional score network), perturbing data with a
+noise sequence and jointly estimating the score function for
+all the noisy data with a deep neural network conditioned
+on noise levels, is proposed [94]. Training and sampling are
+decoupled in score-based generative models, which inspires
+different choices in such two processes [95].
+For score SDEs, the diffusion operation is processed
+according to the stochastic differential equation (SDE) [97]:
+dx =f (x,t )dt +g(t)dw, (16)
+where f (x,t ) and g(t) are diffusion function and drift
+function of the SDE, respectively, and w is a standard
+Wiener process. Different from DDPMs and SGMs, Score
+SDEs generalize the diffusion process to the case of infinite
+time steps. Fortunately, DDPMs and SGMs also can be
+formulated with corresponding SDEs. For DDPMs, the SDE
+is
+dx =− 1
+2β(t)xdt +
+q
+β(t)dw, (17)
+whereβ(t
+T ) = Tβt when T goes to infinity; for SGMs, the
+SDE is
+dx =
+s
+d[δ(t)2]
+dt dw, (18)
+where δ(t
+T ) = δt as T goes to infinity. With any diffusion
+process in the form of (16), the reverse process can be gained
+by solving the following SDE:
+dx = [f (x,t )−g(t)2∇x logqt(x)]dt +g(t)dw, (19)
+where w is a standard Wiener process when time flows
+reversely and dt is an infinitesimal time step. Besides that,
+the existence of an ordinary differential equation, which is
+also called the probability flow ODE, is defined as follows.
+dx = [f (x,t )− 1
+2g(t)2∇x logqt(x)]dt. (20)
+The trajectories of the probability flow ODE have the same
+marginals as the reverse-time SDE. Once the score function
+at each time step is known, the reverse SDE can be solved
+with various numerical techniques. Similar objective is de-
+signed with SGMs.
+Diffusion models have also been applied in time series
+analysis recently. We briefly summarize them based on
+the designed architectures and the main diffusion tech-
+niques used. Conditional score-based diffusion models for
+imputation (CSDI) [98] were proposed for time series im-
+putation task. CSDI utilizes score-based diffusion models
+conditioned on observed data. In time series forecasting
+tasks, TimeGrad [99] takes an RNN conditioned diffu-
+sion probabilistic model at some time step to depict the
+fixed forward process and the learned reverse process.
+D3VAE [100] is a bidirectional variational auto-encoder
+(BVAE) equipped with diffusion, denoise, and disentangle-
+ment. In D 3VAE, the coupled diffusion process augments
+the input time series and output time series simultaneously.
+ImDiffusion [101] combines imputation and diffusion mod-
+els for time series anomaly detection. SSSD [102] combines
+diffusion models and structured state space models for
+time series imputation and forecasting tasks. DiffLoad [103]
+proposes a diffusion-based structure for electrical load
+probabilistic forecasting by considering both epistemic and
+aleatoric uncertainties. DiffSTG [104] presents the first shot
+to predict the evolution of spatio-temporal graphs using
+DDPMs.
+4 C ONTRASTIVE -BASED METHODS
+Contrastive learning is a widely used self-supervised learn-
+ing strategy, showing a strong learning ability in computer
+vision and natural language processing. Unlike discrimina-
+tive models that learn a mapping rule to true labels and
+generative models that try to reconstruct inputs, contrastive-
+based methods aim to learn data representations by con-
+trasting between positive and negative samples. Specifically,
+positive samples should have similar representations, while
+negative samples have different representations. Therefore,
+the selection of positive samples and negative samples is
+very important to contrastive-based methods. This section
+sorts out and summarizes the existing contrastive-based
+methods in time series modeling according to the selection
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 8
+Future 
+series
+History series
+Positive pair
+Predicted 
+series Jitter JitterPerm Perm
+Negative pairs
+PredictionPredictionSamplingSampling
+Negative pairs Negative pairs
+Positive pair Positive pair Positive pair
+AugmentationAugmentation
+Augmentation
+ AugmentationAugmentation
+Augmentation
+Representations
+Push away
+Representations
+Augmentation
+Jitter JitterPerm Perm
+Positive pair Positive pair
+Prior 
+knowledge
+True 
+negatives ?
+Prototype 1 Prototype 2
+Series 1
+Series 2
+Series 1
+Series 2
+Series 1
+Series 2
+S1-a S1-b
+S1-a S1-b S1-a S1-b S2-a S2-b
+S2-a S2-b
+S2-a S2-b
+Series 1
+Series 2
+Series 1
+Series 2
+(a) Sampling contrast
+Future 
+series
+History series
+Positive pair
+Predicted 
+series Jitter JitterPerm Perm
+Negative pairs
+PredictionPredictionSamplingSampling
+Negative pairs Negative pairs
+Positive pair Positive pair Positive pair
+AugmentationAugmentation
+Augmentation
+ AugmentationAugmentation
+Augmentation
+Representations
+Push away
+Representations
+Augmentation
+Jitter JitterPerm Perm
+Positive pair Positive pair
+Prior 
+knowledge
+True 
+negatives ?
+Prototype 1 Prototype 2
+Series 1
+Series 2
+Series 1
+Series 2
+Series 1
+Series 2
+S1-a S1-b
+S1-a S1-b S1-a S1-b S2-a S2-b
+S2-a S2-b
+S2-a S2-b
+Series 1
+Series 2
+Series 1
+Series 2 (b) Prediction contrast
+Future 
+series
+History series
+Positive pair
+Predicted 
+series Jitter JitterPerm Perm
+Negative pairs
+PredictionPredictionSamplingSampling
+Negative pairs Negative pairs
+Positive pair Positive pair Positive pair
+AugmentationAugmentation
+Augmentation
+ AugmentationAugmentation
+Augmentation
+Representations
+Push away
+Representations
+Augmentation
+Jitter JitterPerm Perm
+Positive pair Positive pair
+Leverage Prior 
+knowledge
+Select true 
+negatives
+Prototype 1 Prototype 2
+Series 1
+Series 2
+Series 1
+Series 2
+Series 1
+Series 2
+S1-a S1-b
+S1-a S1-b S1-a S1-b S2-a S2-b
+S2-a S2-b
+S2-a S2-b
+Series 1
+Series 2
+Series 1
+Series 2 (c) Augmentation contrast
+Future 
+series
+History series
+Positive pair
+Predicted 
+series Jitter JitterPerm Perm
+Negative pairs
+PredictionPredictionSamplingSampling
+Negative pairs Negative pairs
+Positive pair Positive pair Positive pair
+AugmentationAugmentation
+Augmentation
+ AugmentationAugmentation
+Augmentation
+Representations
+Push away
+Representations
+Augmentation
+Jitter JitterPerm Perm
+Positive pair Positive pair
+Prior 
+knowledge
+True 
+negatives ?
+Prototype 1 Prototype 2
+Series 1
+Series 2
+Series 1
+Series 2
+Series 1
+Series 2
+S1-a S1-b
+S1-a S1-b S1-a S1-b S2-a S2-b
+S2-a S2-b
+S2-a S2-b
+Series 1
+Series 2
+Series 1
+Series 2 (d) Prototype contrast
+Future 
+series
+History series
+Positive pair
+Predicted 
+series Jitter JitterPerm Perm
+Negative pairs
+PredictionPredictionSamplingSampling
+Negative pairs Negative pairs
+Positive pair Positive pair Positive pair
+AugmentationAugmentation
+Augmentation
+ AugmentationAugmentation
+Augmentation
+Representations
+Push away
+Representations
+Augmentation
+Jitter JitterPerm Perm
+Positive pair Positive pair
+Leverage Prior 
+knowledge
+Select true 
+negatives
+Prototype 1 Prototype 2
+Series 1
+Series 2
+Series 1
+Series 2
+Series 1
+Series 2
+S1-a S1-b
+S1-a S1-b S1-a S1-b S2-a S2-b
+S2-a S2-b
+S2-a S2-b
+Series 1
+Series 2
+Series 1
+Series 2 (e) Expert knowledge con-
+trast
+Fig. 3: Five categories of contrastive-based SSL for time series data.
+of positive and negative samples. The illustration of the
+contrastive-based SSL for time series is shown in Fig. 3. In
+Appendix E.1 - E.5, the main advantages and disadvantages
+of five contrastive-based submethods are summarized.
+4.1 Sampling contrast
+Sampling contrast follows a widely used assumption in time
+series analysis that two neighboring time windows or time
+stamps have a high degree of similarity, so positive and
+negative samples are directly sampled from the raw time
+series, as shown in Fig. 3(a). Specifically, given a time win-
+dow (or a timestamp) as an anchor, its nearby window (or
+the time stamp) is more likely to be similar (small distance),
+and the distant window (or the time stamp) should be less
+similar (large distance). The term “similar” indicates that
+two windows (or two-time stamps) have more common
+patterns, such as the same amplitude, the same periodicity,
+and the same trend.
+As mentioned in [105], suppose one anchor xref ,
+one positive sample xpos, and K negative samples
+xneg
+k , k∈1,2,···,K are chosen, we expect to assimilatexref and
+xpos and to distinguish between xref andxneg
+k , i.e.,
+L =− log(S(xref,xpos))−
+KX
+k=1
+log(−S(xref,xneg
+k )), (21)
+whereS(·) denotes the similarity of the two representations.
+However, due to the non-stationary characteristics of most
+time series data, it is still a challenge to choose the correct
+positive and negative samples based on contextual infor-
+mation in time series data. Temporal neighborhood coding
+(TNC) was recently proposed to deal with this problem
+[106]. TNC uses augmented Dickey-Fuller (ADF) statisti-
+cal test to determine the stationary region and introduces
+positive-unlabeled (PU) learning to handle the problem of
+sampling bias by treating negative samples as unknown
+samples and then assigning weights to these samples. The
+learning objective is extended to
+L =− Expos[∈N logS(xref,xpos)]
+− Exneg∈ ˜N [(1−w)× log−S(xref,xneg)
++w× logS(xref,xneg)],
+(22)
+where w is the probability of sampling false negative
+samples,N denotes the neighboring area, and ˜N denotes
+the non-neighboring area. Supervised contrastive learning
+(SCL) [107] effectively addresses sampling bias, so introduc-
+ing the supervised signal to identify positive and negative
+samples is a feasible solution. Neighborhood contrastive
+learning (NCL) is a recent time series modeling method
+that combines context sampling and the supervised signal to
+generate positive and negative samples [108]. NCL assumes
+that if two samples share some predefined attributes, then
+they are considered to share the same neighboring area.
+4.2 Prediction contrast
+In this category, prediction tasks that use the context
+(present) to predict the target (future information) are con-
+sidered self-supervised pretext tasks, and the goal is to
+maximally preserve the mutual information of the context
+and the target. Contrastive predictive coding (CPC) pro-
+posed by [109] provides a contrastive learning framework
+to perform the prediction task using InfoNCE loss. As
+shown in Fig. 3(b), the context ct and the sample from
+p(xt+k|ct) constructs positive pairs, and the samples from
+the ‘proposal’ distribution p(xt+k) are negative samples.
+The learning objective is as follows:
+L =−E
+X
+"
+log fk (xt+k,ct)P
+xj∈Xfk (xj,ct)
+#
+, (23)
+where fk(·) is the density ratio that preserves the mutual
+information ofct andxt+k [109], and it can be estimated by
+a simple log-bilinear model:
+fk (xt+k,ct) = exp(zT
+t+kWkct). (24)
+It can be seen that CPC does not directly predict future
+observations xt+k. Instead, it tries to preserve the mutual
+information ofct andxt+k. This allows the model to capture
+the “slow features” that span multiple time steps. Following
+the architecture of CPC, LNT [110], TRL-CPC [111], TS-CP 2
+[112], and Skip-Step CPC [113] were proposed. LNT and
+TRL-CPC use the same structure as the original CPC [109]
+to build a representation learning model, and the purpose
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 9
+is to capture the local semantics across the time to detect
+the anomaly points. TS-CP 2 and Skip-Step CPC replace the
+autoregressive model in the original CPC structure with
+TCN [114], which improves feature learning ability and
+computational efficiency. Moreover, Skip-Step CPC points
+out that adjusting the distance between context representa-
+tionct andxt+k can construct different positive pairs, which
+leads to different results in time series anomaly detection.
+In addition to the basic contextual prediction tasks men-
+tioned before, some more complex prediction tasks were
+constructed and proved useful. CMLF [115] transforms time
+series into coarse-grained and fine-grained representations
+and proposes a multi-granularity prediction task. This al-
+lows the model to represent the time series at different
+scales. TS-TCC [116] and its extended version CA-TCC [117]
+designed a cross prediction task, which uses the context of
+xT 1 to predict the target in xT 2, and vice versa uses the
+context ofxT 2 to predict the target in xT 1.
+4.3 Augmentation contrast
+Augmentation contrast is one of the most widely used
+contrastive frameworks, as shown in Fig. 3(c). Most methods
+utilize data augmentation techniques to generate different
+views of an input sample and then learn representations
+by maximizing the similarity of the views that come from
+the same sample and minimizing the similarity of the views
+that come from the different samples. SimCLR [16] is a very
+typical multi-view invariance-based representation learning
+framework, which has been used in many subsequent meth-
+ods. The objective function based on this framework is:
+L =− log exp (sim (z1, z2)/τ )
+P2N
+k=1 1 [k̸=1] exp (sim (z1, zk)/τ )
+, (25)
+where τ is temperature parameter, sim(·) represents the
+similarity between two representation vectors, and zk rep-
+resents the training samples in a batch. It can be considered
+that in the feature learning framework based on multi-view
+invariance, the core is to obtain different views of the input
+samples. When handling images in computer vision, com-
+monly used data augmentation methods include cropping,
+scaling, adding noise, rotation, and resizing [16]. However,
+compared with augmentation methods for images, the aug-
+mentation methods for time series needs to consider both
+temporal and variable dependencies.
+Since time series data can be converted to frequency
+domain representations through Fourier transform, the aug-
+mentation method can be developed from the time and
+frequency domains. In the time domain, TS-TCC [116] and
+its extended version CA-TCC [117] designed two time series
+data augmentation techniques, one is strong augmentation
+(permutation-and-jitter), and the other is weak augmenta-
+tion (jitter-and-scale). TS2Vec [118] generates different views
+through masking operations that randomly mask out some
+time steps. Generally speaking, there is no one-size-fits-
+all answer to the choice of data augmentation methods.
+Therefore, some works comprehensively compare and study
+the augmentation methods and further evaluate the per-
+formance on different tasks [45], [119]–[121]. All the above
+methods only need a single time series sample in the aug-
+mentation operation, while Mixing-up [122] fuses two time
+series samples to generate a newly augmented view, while
+the pretext task is to correctly predict the proportion of two
+original time series samples in augmented view.
+Data augmentation in the frequency domain is also
+feasible for time series data. CoST [123] is a disentan-
+gled seasonal-trend representation learning method, which
+uses fast Fourier transform to convert different augmented
+views into amplitude and phase representations, and then
+uses (25) to train the model. BTSF [124] is a contrastive-
+based method based on a time-frequency fusion strategy,
+which first generates an augmented view in the time do-
+main through the dropout operation and then generates
+another augmented view in the frequency domain through
+Fourier transform. Finally, the bilinear temporal-spectral
+fusion mechanism is used to achieve the fusion of time-
+frequency information. However, CoST and BTSF do not
+modify the frequency representation, while TF-C [125] di-
+rectly augments the time series data through frequency
+perturbations, which has achieved better performance than
+TS2Vec [118] and TS-TCC [116]. Specifically, TF-C imple-
+ments three augmentation strategies: low- vs. high-band
+perturbations, single- vs. multi-component perturbations,
+and random vs. distributional perturbations.
+In addition to the above methods, many view generation
+methods are closely related to downstream tasks. Recently,
+DCdetector [126] proposes a dual attention contrastive rep-
+resentation framework for time series anomaly detection.
+The in-patch and patch-wise representations are designed
+to gain two views of the input samples, as normal samples
+behave differently from abnormal ones in such two views.
+TimeCLR [127] proposed DTW augmentation, which can
+not only simulate phase shifts and amplitude changes but
+also retain the structure and characteristics of the time series.
+CLOCS [128] is a self-supervised pre-training method for
+medical and physiological signals, which uses multi-view
+invariance contrast in the three perspectives of time, space,
+and patient to promote higher similarity of representations
+from the same source. CLUDA [129] introduces multi-view
+invariance contrast in the time series domain adaptation
+problem, which captures the contextual representation of
+time series data through intra-domain and inter-domain
+contrast. MTFCC [130] is another view generation method
+based on multi-scale characteristics, which samples time
+series samples at multiple scales and considers that the
+views from the same sample have similar representations,
+even if their scales are different. Methods for constructing
+multiple contrastive views based on multi-granularity or
+multi-scale augmentations also include MRLF [131], CMLF
+[115], and SSLAPP [132].
+4.4 Prototype contrast
+The contrastive learning framework based on (23) and (25)
+is essentially an instance discrimination task, which encour-
+ages samples to form a uniform distribution in the feature
+space [133]. However, the real data distribution should sat-
+isfy that the samples of the same class are more concentrated
+in a cluster, while the distance between different clusters
+should be farther. SCL [107] is an ideal solution when real
+labels are available, but this is difficult to implement in
+practice, especially for time series data. Therefore, introduc-
+ing clustering constraints into existing contrastive learning
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 10
+frameworks is an alternative, such as CC [134], PCL [135],
+and SwAV [36]. PCL and SwAV contrast the samples with
+the constructed prototypes, i.e., the cluster centers, which
+reduces the computation and encourages the samples to
+present a cluster-friendly distribution in the feature space.
+An illustration of prototype contrast is shown in Fig. 3(d).
+In time series modeling based on prototypes contrast,
+ShapeNet [136] takes shapelets as input and constructs a
+cluster-level triplet loss, which considers the distance be-
+tween the anchor and multiple positive (negative) samples
+as well as the distance between positive (negative) samples.
+ShapeNet is an implicit prototype contrast because it does
+not introduce explicit prototypes (cluster centers) during the
+training phase. TapNet [137] and DVSL [138] are explicit
+prototypes contrast because explicit prototypes are intro-
+duced. TapNet introduces a learnable prototype for each
+predefined class and classifies the input time series sample
+according to the distance between the sample and each class
+prototype. DVSL defines virtual sequences, which have the
+same function as prototypes, i.e., minimize the distance
+between samples and virtual sequences, but maximize the
+distance between virtual sequences. MHCCL [139] proposes
+a hierarchical clustering based on the upward masking strat-
+egy and a contrastive pairs selection strategy based on the
+downward masking strategy. In the upward mask strategy,
+MHCCL believes that outliers greatly impact prototypes,
+so these outliers should be removed when updating pro-
+totypes. The downward masking strategy, in turn, uses the
+clustering results to select positive and negative samples,
+i.e., samples belonging to the same prototype are regarded
+as true positive samples, and samples belonging to different
+prototypes are regarded as true negative samples.
+4.5 Expert knowledge contrast
+Expert knowledge contrast is a relatively new representa-
+tion learning framework. Generally speaking, this modeling
+framework incorporates expert prior knowledge or infor-
+mation into deep neural networks to guide model training
+[140], [141]. In the contrastive learning framework, prior
+knowledge can help the model choose the correct positive
+and negative samples during training. An example of expert
+knowledge contrast is shown in Fig. 3(e).
+Here we sort out three typical works of expert knowl-
+edge contrast for time series data. Shi et al. [142] used the
+DTW distance of time series samples as prior information
+and believed that two samples with a small DTW distance
+have a higher similarity. Specifically, given the anchor xref
+and the other two samples xi and xj, the DTW distance
+betweenxref and the other two samples is calculated first,
+then the sample with a small distance from xref is consid-
+ered as the positive sample of xref . This selection process is
+defined as
+label =
+
+1, DTW
+
+xref, xi
+
+≥ DTW
+
+xref, xj
+
+0, otherwise . (26)
+Based on pair-loss, ExpCLR [143] introduces expert features
+of time series data to obtain more informative representa-
+tions. Given two input samplesxi andxj and corresponding
+representationsfi and fj, ExpCLR defines the normalized
+distance between two samples:
+sij = 1− ∥fi−fj∥2
+max∥fk−fl∥ 2
+, (27)
+where fk and fl are the two representation vectors with
+the largest distance among all samples. Compared with the
+original pair-loss, the distance between samples xi and xj
+is changed from a discrete value (0 and 1) to a continuous
+valuesij, which enables the model to learn more accurately
+about the relationship between samples, thus thereby en-
+hancing the representation ability of the model. In addition
+to the above two works, SleepPriorCL [144] was proposed
+to alleviate the sampling bias problem faced by (25). Like
+ExpCLR, SleepPriorCL also introduces prior features to
+ensure the model can identify correct positive and negative
+samples.
+Actually, introducing more prior knowledge in
+contrastive-based SSL can help the model extract better
+representations. The trend of this family of methods can
+be summarized from two perspectives: (i) Addressing
+sampling bias. Sampling bias is caused by inappropriate
+selection of positive and negative samples, so introducing
+prior knowledge useful for selecting positive and negative
+samples can deal with this problem, such as a clustering-
+based negative sample detection algorithm [145] and
+sample identification strategy based on real labels [107],
+[108]. (ii) Addressing representation bias. Representation
+bias means that the extracted representations cannot be
+guaranteed to be strongly related to the downstream task.
+The essential reason is that there may be a big difference
+between the goals of the pretext task and the downstream
+task. An interesting trend is to fuse semi-supervised
+learning and contrastive-based SSL to guide the training of
+the encoder through a small amount of labeled data [146],
+[147].
+5 A DVERSARIAL -BASED METHODS
+Adversarial-based self-supervised representation learning
+methods utilize generative adversarial networks (GANs)
+to construct pretext tasks. GAN contains a generator G
+and a discriminator D. The generator G is responsible for
+generating synthetic data similar to real data, while the
+discriminatorD is responsible for determining whether the
+generated data is real data or synthetic data. Therefore, the
+goal of the generator is to maximize the decision failure rate
+of the discriminator, and the goal of the discriminator is to
+minimize its failure rate [49], [148]. The generator G and
+the discriminatorD are a mutual game relationship, so the
+learning objective is:
+L = Ex∼Pdata(x)[logD(x)] + Ez∼Pz(z)[log(1−D (G(z)))].
+(28)
+According to the final task, the existing adversarial-
+based representation learning methods can be divided into
+time series generation and imputation, and auxiliary repre-
+sentation enhancement. The illustration of the adversarial-
+based SSL for time series is shown in Fig. 4. In Ap-
+pendix F.1 - F.2, the main advantages and disadvantages
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 11
+Discriminator
+Real time series
+Real/Fake
+GeneratorRandom
+noise
+Generate
+Discriminator
+Non-complete time series
+Real/Fake
+GeneratorRandom
+noise
+Imputation
+Gradients
+Gradients
+Gradients
+Gradients
+Real time series
+Encoder
+Representations
+Base loss
+Auxiliary adversarial training 
+strategy (Generation/Imputation) Adv loss
+Gradients
+Add
+Encoder Base loss
+Gradients
+Enhanced 
+Representations
+Real time series
+(a) Time series generation
+Discriminator
+Real time series
+Real/Fake
+GeneratorRandom
+noise
+Generate
+Discriminator
+Non-complete time series
+Real/Fake
+GeneratorRandom
+noise
+Imputation
+Gradients
+Gradients
+Gradients
+Gradients
+Real time series
+Encoder
+Representations
+Base loss
+Auxiliary adversarial training 
+strategy (Generation/Imputation) Adv loss
+Gradients
+Add
+Encoder Base loss
+Gradients
+Enhanced 
+Representations
+Real time series
+(b) Time series imputation
+Discriminator
+Real time series
+Real/Fake
+GeneratorRandom
+noise
+Generate
+Discriminator
+Non-complete time series
+Real/Fake
+GeneratorRandom
+noise
+Imputation
+Gradients
+Gradients
+Gradients
+Gradients
+Real time series
+Encoder
+Representations
+Base loss
+Auxiliary adversarial training 
+strategy (Generation/Imputation) Adv loss
+Gradients
+Add
+Encoder Base loss
+Gradients
+Enhanced 
+Representations
+Real time series
+(c) Auxiliary representation enhancement
+Fig. 4: Three categories of adversarial-based SSL for time
+series data.
+of two adversarial-based submethods are summarized. Fur-
+thermore, the main differences in characteristics and lim-
+itations between the adversarial-based methods and the
+previous two methods (generative-based and contrastive-
+based) are shown in Appendix G.
+5.1 Time series generation and imputation
+The generator in the GAN can generate synthetic data close
+to the real data, so adversarial representation learning has a
+wide range of applications in the data generation field [149],
+especially in image generation [150]–[153]. In recent years,
+many scholars have also explored the potential of genera-
+tive representation learning in time series generation and
+imputation, such as C-RNN-GAN [154], TimeGAN [155],
+TTS-GAN [156], and E2GAN [157]. It should be emphasized
+that although Brophy et al. [49] have reviewed the GAN-
+based time series generation methods in the latest survey,
+it differs from the proposed taxonomy. We sort out the
+two aspects of complete time series generation and missing
+value imputation, while Brophy et al. sorted out from the
+perspective of discrete and continuous time series modeling.
+Complete time series generation refers to generating a
+new time series that does not exist in the existing data set.
+The new sample can be a univariate or multivariate time
+series. C-RNN-GAN [154] is an early method of generat-
+ing time series samples using GAN. The generator is an
+RNN, and the discriminator is a bidirectional RNN. RNN-
+based structures can capture the dynamic dependencies in
+multiple time steps but ignore the static features of the
+data. TimeGAN [155] is an improved time series gener-
+ation framework that combines the basic GAN with the
+autoregressive model, allowing the preservation of temporal
+dynamic characteristics of the series. TimeGAN also em-
+phasizes that static features and temporal characteristics are
+crucial to the generation task.
+Some recently proposed methods consider more com-
+plex time series generative tasks [156], [158]–[160]. For ex-
+ample, COSCI-GAN [158] is a time series generation frame-
+work that considers the correlation between each dimension
+of the multivariate time series. It includes Channel GANs
+and Central Discriminator. Channel GANs are responsi-
+ble for generating data in each dimension independently,
+while Central Discriminator is responsible for determining
+whether the correlation between different dimensions of the
+generated series is the same as the raw series. PSA-GAN
+[159] is a framework for long-time series generation and
+introduces a self-attention mechanism. It further presents
+Context-FID, a new metric for evaluating the quality of
+generated series. Li et al. [156] explored the generation of
+time series data with irregular spatiotemporal relationships
+and proposed TTS-GAN, which uses a Transformer instead
+of an RNN to build the discriminator and the generator and
+treats the time series data as image data of height one.
+Different from generating a new time series, the task of
+time series imputation refers to that given a non-complete
+time series sample (for example, the data of some time steps
+is missing), and the missing values need to be filled based on
+the contextual information. Luo et al. [161] treat the problem
+of missing value imputation as a data generation task and
+then use GAN to learn the distribution of the training data
+set. In order to better capture the dynamic characteristics
+of the series, the GRUI module was proposed. The GRUI
+uses the time-lag matrix to record the time-lag information
+between effective values of incomplete time series data,
+which follow the unknown non-uniform distribution and
+are very helpful for analyzing the dynamic characteristics
+of the series. The GRUI module was also further used in
+E2GAN [157]. SSGAN [162] is a semi-supervised framework
+for time series data imputation, which includes a generative
+network, a discriminative network, and a classification net-
+work. Unlike previous frameworks, SSGAN’s classification
+network makes full use of label information, which helps
+the model achieve more accurate imputations.
+5.2 Auxiliary representation enhancement
+In addition to generation and interpolation tasks, an
+adversarial-based representation learning strategy can be
+added to existing learning frameworks as additional aux-
+iliary learning modules, which we call adversarial-based
+auxiliary representation enhancement. The auxiliary repre-
+sentation enhancement aims to promote the model to learn
+more informative representations for downstream tasks by
+adding adversarial-based learning strategies. It can be de-
+fined as:
+L =Lbase +Ladv, (29)
+whereLbase is the basic learning objective and Ladv is the
+additional adversarial-based learning objective. It should be
+noted that when Ladv is not available, the model can still
+extract representations from the data, soLadv is regarded as
+an auxiliary learning objective.
+USAD [66] is a time series anomaly detection framework
+that includes two BAE models, and two BAE are defined as
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 12
+AE1 andAE2, respectively. The core idea behind USAD is
+to amplify the reconstruction error by adversarial training
+between two BAEs. In USAD, AE1 is regarded as the
+generator, and AE2 is regarded as the discriminator. The
+auxiliary goal is to use AE2 to distinguish real data from
+reconstructed data from AE1, and train AE1 to deceive
+AE2, the whole process can be expressed as:
+Ladv = min
+AE1
+max
+AE2
+∥W−AE2(AE1(W ))∥2, (30)
+whereW is the real input series. Similar to USAD, Anoma-
+lyTrans [163] also uses an adversarial strategy to amplify the
+anomaly score of anomalies. But unlike (30), which uses re-
+construction error, AnomalyTrans defines prior-association
+and series-association and then uses the Kulback-Leibler
+divergence to measure the error of the two associations.
+DUBCNs [164] and CRLI [165] are used for series re-
+trieval and clustering tasks, respectively. Both methods
+adopt RNN-based BAE as the model, and the clustering-
+based loss and adversarial-based loss are added to the basic
+reconstruction loss, i.e.,
+L =Lmse +λ1Lcluster +λ2Ladv. (31)
+whereλ1 andλ2 are the weight coefficients of the auxiliary
+objective.
+The adversarial-based strategy is also effective in other
+time series modeling tasks. For example, introducing ad-
+versarial training in time series forecasting can improve the
+accuracy and capture long-term repeated patterns, such as
+AST [166] and ACT [167]. BeatGAN [168] introduces adver-
+sarial representation learning in the abnormal beat detection
+task of ECG data and provides an interpretable detection
+framework. In modeling behavior data, Activity2vec [169]
+uses adversarial-based training to model target invariance
+and enhance the representation ability of the model in
+different behavior stages.
+6 A PPLICATIONS AND DATASETS
+SSL has many applications across different time series tasks.
+This section summarizes the most widely used datasets and
+representative references according to the application area,
+including anomaly detection, forecasting, classification, and
+clustering. As shown in Table 2, we provide useful informa-
+tion, including dataset name, dimension, size, source, and
+useful comments. For each task, we summarize from the
+following aspects: task description, related methods, evalu-
+ation metrics, examples, and task flow. Due to space limita-
+tions, relevant descriptions of evaluation metrics, examples,
+and task flow can be found in Appendix H. In addition,
+we provide performance comparison results of different
+methods on the same dataset and further summarize the
+correlation between methods and tasks, the details can also
+be found in Appendix I.
+6.1 Anomaly detection
+• Task description.The anomaly detection problem for time
+series is usually formulated as identifying outlier time
+points or unexpected time sequences relative to some
+norm or usual signal.
+TABLE 2: Summary of time series applications and widely
+used datasets. The UCR and UEA datasets have multiple
+sub-datasets respectively, so their size and dimension are
+not fixed values. The size and dimension of each sub-dataset
+are represented byM andD, respectively. AnRa represents
+Anomaly Ratio. SaIn represents Sampling Interval. Datasets
+for classification tasks and clustering tasks are listed to-
+gether because the goals of these two tasks are similar. AD
+represents anomaly detection. F represents forecasting. C&C
+represents classification and clustering.
+App Dataset Size Dim Comment
+AD
+PSM∗ [63] 132,481 / 87,841 26 AnRa: 27.80%
+SMD∗ [81] 708,405 / 708,405 38 AnRa: 4.16%
+MSL∗ [170] 58,317 / 73,729 55 AnRa: 10.72%
+SMAP∗ [170] 135,183 / 427,617 25 AnRa: 13.13%
+SWaT∗ [171] 475,200 / 449,919 51 AnRa: 12.98%
+WADI∗ [172] 1,048,571 / 172,801 103 AnRa: 5.99%
+F
+ETTh∗ [173] 17,420 7 SaIn: 1h
+ETTm∗ [173] 69,680 7 SaIn: 15min
+Wind∗ [174] 10,957 28 SaIn: 1day
+Electricity∗ [175] 26,304 321 SaIn: 1hour
+ILI∗ [176] 966 7 SaIn: 1weak
+Weather∗ [177] 52,696 21 SaIn: 10min
+Traffic∗ [178] 17,544 862 SaIn: 1hour
+Exchange∗ [179] 7,588 8 SaIn: 1day
+Solar∗ [180] 52,560 137 SaIn: 10min
+C&C
+HAR∗ [181] 17,3056 / 173,056 9 Classes: 6
+UCR 128∗ [182] 128 * M 1 N/A
+UEA 30∗ [183] 30 * M D N/A
+• Related methods. Most time series anomaly detection
+methods are constructed under an unsupervised learn-
+ing framework because obtaining labels for anomalous
+data is challenging. Autoregressive-based forecasting and
+autoencoder-based reconstruction are the most commonly
+used modeling strategies. To be concrete, THOC [52] and
+GDN [55] employ autoregressive-based forecasting SSL
+framework, which assumes that anomalous sequences
+or time points are not predictable. RANSynCoders [63],
+USAD [66], AnomalyTrans [163], and DAEMON [184] em-
+ploy autoencoder-based reconstruction SSL framework.
+Furthermore, VGCRN [83] and FuSAGNet [67] combine
+two frameworks to achieve more robust and accurate
+results. It is beneficial to introduce an adversarial-based
+SSL, which can further amplify the difference between
+normal and anomalous data, such as USAD [66] and
+DAEMON [184].
+6.2 Forecasting
+• Task description. Time series forecasting is the process of
+analyzing time series data using statistics and modeling
+to make predictions of future windows or time points.
+• Related methods. The pretext task based on
+autoregressive-based forecasting is essentially a time
+series forecasting task. Therefore, various models based
+on forecasting tasks are proposed, such as Pyraformer
+[185], FilM [15], Quatformer [186], Informer [173],
+Triformer [187], Scaleformer [188], Crossformer [189], and
+Timesnet [190]. Moreover, we found that decomposing
+the series (seasonality and trend) and then learning
+and forecasting on the decomposed components will
+help improve the final forecasting accuracy, such as
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 13
+MICN [191] and CoST [123]. Besides, introducing an
+adversarial SSL is viable when missing values are in the
+series. For example, LGnet [192] introduces adversarial
+training to enhance the modeling of global temporal
+distribution, which mitigates the impact of missing
+values on forecasting accuracy.
+6.3 Classification and clustering
+• Task description. The goal of classification and clustering
+tasks is similar, i.e., to identify the real category to which
+a certain time series sample belongs.
+• Related methods. Contrastive-based SSL methods are the
+most suitable choice for these two tasks since the core of
+contrastive learning is identifying positive and negative
+samples. Specifically, TS-TCC [116] introduces temporal
+contrast and contextual contrast in order to obtain more
+robust representations. TS2Vec [118] and MHCCL [139]
+perform a hierarchical contrastive learning strategy over
+augmented views, which enables robust representations.
+Similar to anomaly detection and prediction tasks, an
+adversarial-based SSL strategy can also be introduced into
+classification and clustering tasks. DTCR [65] propose a
+fake-sample generation strategy to assist the encoder in
+obtaining more expressive representations.
+7 D ISCUSSION AND FUTURE DIRECTIONS
+In this section, we point out some critical problems in cur-
+rent studies and outline several research directions worthy
+of further investigation.
+7.1 Selection and combination of data augmentation
+Data augmentation is one of the effective methods to gener-
+ate augmented views in SSCL [47], [193]. The widely used
+methods for time series data include jitter, scaling, rotation,
+permutation, and warping [45], [119]–[121], [194]. In Sim-
+CLR [16], nine different augmentation methods for image
+data were discussed. The experiments show that “no single
+transformation suffices to learn good representations” and
+“the composition of random cropping and random color
+distortion is the most effective augmentation method”. This
+naturally raises the question of which one or composition
+of data augmentation methods is optimal for time series.
+Recently, Um et al. [195] show that the combination of
+three basic augmentation methods (permutation, rotation,
+and time warping) is better than that of a single method
+and achieves the best performance in time series classifi-
+cation task. Iwana et al. [121] evaluate twelve time series
+data augmentation methods on 128 time series classification
+datasets with six different types of neural networks. Differ-
+ent evaluation frameworks give different recommendations
+and results. Therefore, an interesting direction is to construct
+a reasonable evaluation framework for time series data aug-
+mentation methods, then further select the optimal method
+or combination strategy.
+7.2 Inductive bias for time series SSL
+Existing SSL methods often pursue an entirely data-driven
+modeling approach. However, introducing reasonable in-
+ductive bias or prior is helpful for many deep neural
+networks-based modeling tasks [140], [196], [197]. On the
+one hand, although a purely data-driven model can be easily
+extended to various tasks, it requires much data to train
+it. On the other hand, time series data usually has some
+available characteristics, such as seasonal, periodic, trend,
+and frequency domain biases [198]–[200]. Thus one future
+direction is to consider more effective ways to induce induc-
+tive biases into time series SSL based on the understanding
+of time series data and characteristics of specific tasks.
+7.3 SSL for irregular and sparse time series
+Irregular and sparse time series also widely exist in various
+scenarios. This data is measured at irregular time intervals,
+and not all the variables are available for each sample [201].
+The straightforward approach to deal with irregular and
+sparse time series data is to use interpolation algorithms
+to estimate missing values [161], [162], [202]. However,
+interpolation-based models add undesirable noise and extra
+overhead to the model which usually worsens as the time
+series become increasingly sparse [54]. Moreover, irregular
+and sparse time series data is often expensive to obtain suf-
+ficient labeled data, which motivates us to build time series
+analysis models based on SSL in various tasks. Therefore,
+building SSL models directly on irregular and sparse time
+series data without interpolation is a valuable direction.
+7.4 Pretraining and large models for time series
+Nowadays, many large language models have shown their
+powerful perception and learning capability for many dif-
+ferent tasks. A similar phenomenon also appears in compu-
+tational vision [203]. It is naturally an interesting question,
+how about the time series analysis field? As far as we know,
+there is limited work on pretraining models in large-scale
+time series. Exploring the potentiality of pretraining and
+large time series models is a promising direction.
+7.5 Adversarial attacks and robust analysis on time
+series
+With the widespread use of deep neural networks in time
+series forecasting, classification, and anomaly detection, the
+vulnerability and robustness of deep models under adver-
+sarial have become a significant concern [204]–[207]. In the
+field of time series forecasting, Liu et al. [205] study the
+indirect and sparse adversarial attacks on multivariate prob-
+abilistic forecasting models for time series forecasting and
+propose two defense mechanisms: randomized smoothing
+and mini-max defense. Wu et al. [206] propose an attack
+strategy for generating an adversarial time series by adding
+malicious perturbations to the original time series to dete-
+riorate the performance of time series prediction models.
+Zhuo et al. [208] summarize and compare various recent
+and typical adversarial attack and defense methods for fault
+classifiers in data-driven fault detection and classification
+systems, including white-box attack (FGSM [209], IGSM
+[210], C&W attack [211], DeepFool [212]) and gray-box and
+black-box attack (UAP [213], SPSA [214], Random noise).
+The research on adversarial attacks and defenses against
+time series data is a worthwhile direction, but there is much
+less literature on this topic. Existing studies mainly involve
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 14
+forecasting and classification tasks. However, the impact
+of adversarial examples on time series self-supervised pre-
+training tasks is still unknown.
+7.6 Benchmark evaluation for time series SSL
+SSL has many applications in time series classification, fore-
+casting, clustering, and anomaly detection. However, most
+current research seeks to achieve the best performance on
+specific tasks and needs more discussion and evaluation
+of the self-supervised technique. One interesting direction
+is to pay more attention to SSL, analyze its properties in
+time series modeling tasks, and give reliable benchmark
+evaluation.
+7.7 Time series SSL in collaborative systems
+Distributed systems have been widely deployed in many
+scenarios, including intelligent control systems, wireless
+sensor networks, network file systems, etc. On the one hand,
+an appropriate collaborative learning strategy is fundamen-
+tal in these systems, as users can train their own local
+models without sharing their private local data and cir-
+cumventing the relevant privacy policy [215]. On the other
+hand, time series data is also widely distributed in various
+places in the system, and obtaining sufficient labeled data
+is also difficult, so time series SSL has great deployment
+potential. In recent years, federated learning has been the
+most popular collaborative learning framework and has
+been used successfully in various applications. Combining
+time series self-supervised learning and federated learning
+is a valuable research direction that can provide additional
+modeling tools for modern distributed systems.
+8 C ONCLUSION
+This article concentrates on time series SSL methods and
+provides a new taxonomy. We categorize the existing meth-
+ods into three broad categories according to their learn-
+ing paradigms: generative-based, contrastive-based, and
+adversarial-based. Moreover, we sort out all methods into
+ten detailed subcategories: autoregressive-based forecasting,
+autoencoder-based reconstruction, diffusion-based genera-
+tion, sampling contrast, prediction contrast, augmentation
+contrast, prototypes contrast, expert knowledge contrast,
+generation and imputation, and auxiliary representation
+enhancement. We also provide useful information about
+applications and widely used time series datasets. Finally,
+multiple future directions are summarized. We believe this
+review fills the gap in time series SSL and ignites further
+research interests in SSL for time series data.
+REFERENCES
+[1] Q. Wen, L. Yang, T. Zhou, and L. Sun, “Robust time series analysis
+and applications: An industrial perspective,” in Proceedings of the
+28th ACM SIGKDD Conference on Knowledge Discovery and Data
+Mining, 2022, pp. 4836–4837.
+[2] P . Esling and C. Agon, “Time-series data mining,” ACM Comput-
+ing Surveys (CSUR), vol. 45, no. 1, pp. 1–34, 2012.
+[3] J. B. Yang, M. N. Nguyen, P . P . San, X. L. Li, and S. Krishnaswamy,
+“Deep convolutional neural networks on multichannel time se-
+ries for human activity recognition,” in Proceedings of the 24th
+International Conference on Artificial Intelligence, 2015, p. 3995–4001.
+[4] K. Zhang, Y. Liu, Y. Gu, X. Ruan, and J. Wang, “Multiple-
+timescale feature learning strategy for valve stiction detection
+based on convolutional neural network,” IEEE/ASME Transac-
+tions on Mechatronics, vol. 27, no. 3, pp. 1478–1488, 2022.
+[5] S. Li, D. Hong, and H. Wang, “Relation inference among sensor
+time series in smart buildings with metric learning,” Proceedings
+of the AAAI Conference on Artificial Intelligence , vol. 34, no. 04, pp.
+4683–4690, Apr. 2020.
+[6] Y. Xu, S. Biswal, S. R. Deshpande, K. O. Maher, and J. Sun,
+“RAIM: Recurrent attentive and intensive model of multimodal
+patient monitoring data,” in Proceedings of the 24th ACM SIGKDD
+International Conference on Knowledge Discovery& Data Mining, ser.
+KDD ’18, 2018, p. 2565–2573.
+[7] S. Gidaris, P . Singh, and N. Komodakis, “Unsupervised repre-
+sentation learning by predicting image rotations,” in International
+Conference on Learning Representations, 2018.
+[8] R. Zhang, P . Isola, and A. A. Efros, “Split-brain autoencoders: Un-
+supervised learning by cross-channel prediction,” in 2017 IEEE
+Conference on Computer Vision and Pattern Recognition (CVPR) ,
+2017, pp. 645–654.
+[9] A. Dosovitskiy, J. T. Springenberg, M. Riedmiller, and T. Brox,
+“Discriminative unsupervised feature learning with convolu-
+tional neural networks,” in Advances in Neural Information Pro-
+cessing Systems, vol. 27, 2014.
+[10] Y. Tian, D. Krishnan, and P . Isola, “Contrastive multiview cod-
+ing,” in Computer Vision – ECCV 2020, Cham, 2020, pp. 776–794.
+[11] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “BERT: Pre-
+training of deep bidirectional transformers for language un-
+derstanding,” in Proceedings of the 2019 Conference of the North
+American Chapter of the Association for Computational Linguistics:
+Human Language Technologies, Volume 1 (Long and Short Papers) ,
+Minneapolis, Minnesota, Jun. 2019, pp. 4171–4186.
+[12] T. Gao, X. Yao, and D. Chen, “SimCSE: Simple contrastive learn-
+ing of sentence embeddings,” in Empirical Methods in Natural
+Language Processing (EMNLP), 2021.
+[13] R. B. Cleveland, W. S. Cleveland, J. E. McRae, and I. Terpenning,
+“STL: A seasonal-trend decomposition,” J. Off. Stat, vol. 6, no. 1,
+pp. 3–73, 1990.
+[14] Q. Wen, Z. Zhang, Y. Li, and L. Sun, “Fast RobustSTL: Efficient
+and robust seasonal-trend decomposition for time series with
+complex patterns,” in Proceedings of the 26th ACM SIGKDD Inter-
+national Conference on Knowledge Discovery & Data Mining , 2020,
+pp. 2203–2213.
+[15] T. Zhou, Z. Ma, Q. Wen, L. Sun, T. Yao, W. Yin, R. Jin et al. ,
+“Film: Frequency improved legendre memory model for long-
+term time series forecasting,” Advances in Neural Information
+Processing Systems, vol. 35, pp. 12 677–12 690, 2022.
+[16] T. Chen, S. Kornblith, M. Norouzi, and G. Hinton, “A simple
+framework for contrastive learning of visual representations,” in
+Proceedings of the 37th International Conference on Machine Learning,
+ser. ICML’20, 2020.
+[17] A. Jaiswal, A. R. Babu, M. Z. Zadeh, D. Banerjee, and F. Makedon,
+“A survey on contrastive self-supervised learning,” Technologies,
+vol. 9, no. 1, 2021.
+[18] L. Jing and Y. Tian, “Self-supervised visual feature learning with
+deep neural networks: A survey,” IEEE Transactions on Pattern
+Analysis and Machine Intelligence , vol. 43, no. 11, pp. 4037–4058,
+2021.
+[19] E. Eldele, M. Ragab, Z. Chen, M. Wu, C.-K. Kwoh, and X. Li,
+“Label-efficient time series representation learning: A review,”
+2023.
+[20] S. Deldari, H. Xue, A. Saeed, J. He, D. V . Smith, and F. D.
+Salim, “Beyond just vision: A review on self-supervised repre-
+sentation learning on multimodal and temporal data,” CoRR, vol.
+abs/2206.02353, 2022.
+[21] X. Liu, F. Zhang, Z. Hou, L. Mian, Z. Wang, J. Zhang, and
+J. Tang, “Self-supervised learning: Generative or contrastive,”
+IEEE Transactions on Knowledge and Data Engineering , pp. 1–1,
+2021.
+[22] Y. Bengio, A. Courville, and P . Vincent, “Representation learning:
+A review and new perspectives,” IEEE Transactions on Pattern
+Analysis and Machine Intelligence , vol. 35, no. 8, pp. 1798–1828,
+2013.
+[23] S. Liu, A. Mallol-Ragolta, E. Parada-Cabaleiro, K. Qian, X. Jing,
+A. Kathan, B. Hu, and B. W. Schuller, “Audio self-supervised
+learning: A survey,” Patterns, vol. 3, no. 12, p. 100616, 2022.
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 15
+[24] A. Mohamed, H.-y. Lee, L. Borgholt, J. D. Havtorn, J. Edin, C. Igel,
+K. Kirchhoff, S.-W. Li, K. Livescu, L. Maaløe, T. N. Sainath, and
+S. Watanabe, “Self-supervised speech representation learning: A
+review,” IEEE Journal of Selected Topics in Signal Processing , pp.
+1–34, 2022.
+[25] Y. Liu, M. Jin, S. Pan, C. Zhou, Y. Zheng, F. Xia, and P . Yu,
+“Graph self-supervised learning: A survey,” IEEE Transactions on
+Knowledge and Data Engineering, pp. 1–1, 2022.
+[26] Y. Xie, Z. Xu, J. Zhang, Z. Wang, and S. Ji, “Self-supervised
+learning of graph neural networks: A unified review,” IEEE
+Transactions on Pattern Analysis and Machine Intelligence , pp. 1–1,
+2022.
+[27] X. Qiu, T. Sun, Y. Xu, Y. Shao, N. Dai, and X. Huang, “Pre-trained
+models for natural language processing: A survey,” CoRR, vol.
+abs/2003.08271, 2020.
+[28] L. Ericsson, H. Gouk, C. C. Loy, and T. M. Hospedales, “Self-
+supervised representation learning: Introduction, advances, and
+challenges,” IEEE Signal Processing Magazine , vol. 39, no. 3, pp.
+42–62, 2022.
+[29] P . H. Le-Khac, G. Healy, and A. F. Smeaton, “Contrastive repre-
+sentation learning: A framework and review,”IEEE Access, vol. 8,
+pp. 193 907–193 934, 2020.
+[30] J. Gui, T. Chen, J. Zhang, Q. Cao, Z. Sun, H. Luo, and D. Tao,
+“A survey on self-supervised learning: Algorithms, applications,
+and future trends,” 2023.
+[31] S. Latif, R. Rana, S. Khalifa, R. Jurdak, J. Qadir, and B. W. Schuller,
+“Deep representation learning in speech processing: Challenges,
+recent advances, and future trends,” CoRR, vol. abs/2001.00378,
+2020.
+[32] L. Wu, H. Lin, C. Tan, Z. Gao, and S. Z. Li, “Self-supervised
+learning on graphs: Contrastive, generative,or predictive,” IEEE
+Transactions on Knowledge and Data Engineering, pp. 1–1, 2021.
+[33] Z. Liu, A. Alavi, M. Li, and X. Zhang, “Self-supervised con-
+trastive learning for medical time series: A systematic review,”
+Sensors, vol. 23, no. 9, 2023.
+[34] I. Misra and L. van der Maaten, “Self-supervised learning of
+pretext-invariant representations,” CoRR, vol. abs/1912.01991,
+2019.
+[35] K. He, H. Fan, Y. Wu, S. Xie, and R. Girshick, “Momentum
+contrast for unsupervised visual representation learning,” in2020
+IEEE/CVF Conference on Computer Vision and Pattern Recognition
+(CVPR), 2020, pp. 9726–9735.
+[36] M. Caron, I. Misra, J. Mairal, P . Goyal, P . Bojanowski, and
+A. Joulin, “Unsupervised learning of visual features by contrast-
+ing cluster assignments,” in Proceedings of the 34th International
+Conference on Neural Information Processing Systems , ser. NIPS’20,
+Red Hook, NY, USA, 2020.
+[37] A. Abanda, U. Mori, and J. A. Lozaono, “A review on distance
+based time series classification,” Data Mining and Knowledge Dis-
+covery, vol. 33, pp. 378–412, 2019.
+[38] H. I. Fawaz, G. Forestier, J. Weber, L. Idoumghar, and P .-A.
+Muller, “Deep learning for time series classification: a review,”
+Data Mining and Knowledge Discovery, vol. 33, pp. 917–963, 2019.
+[39] B. Lim and S. Zohren, “Time-series forecasting with deep learn-
+ing: a survey,” Philosophical Transactions of the Royal Society A:
+Mathematical, Physical and Engineering Sciences , vol. 379, no. 2194,
+p. 20200209, feb 2021.
+[40] O. B. Sezer, M. U. Gudelek, and A. M. Ozbayoglu, “Financial time
+series forecasting with deep learning : A systematic literature
+review: 2005–2019,” Applied Soft Computing , vol. 90, p. 106181,
+2020.
+[41] Z. Liu, Z. Zhu, J. Gao, and C. Xu, “Forecast methods for time
+series data: A survey,”IEEE Access, vol. 9, pp. 91 896–91 912, 2021.
+[42] K. Benidis, S. S. Rangapuram, V . Flunkert, Y. Wang, D. Mad-
+dix, C. Turkmen, J. Gasthaus, M. Bohlke-Schneider, D. Salinas,
+L. Stella, F.-X. Aubet, L. Callot, and T. Januschowski, “Deep learn-
+ing for time series forecasting: Tutorial and literature survey,”
+ACM Comput. Surv., vol. 55, no. 6, dec 2022.
+[43] A. Bl ´azquez-Garc´ıa, A. Conde, U. Mori, and J. A. Lozano, “A
+review on outlier/anomaly detection in time series data,” ACM
+Comput. Surv., vol. 54, no. 3, apr 2021.
+[44] A. A. Cook, G. Mısırlı, and Z. Fan, “Anomaly detection for iot
+time-series data: A survey,” IEEE Internet of Things Journal, vol. 7,
+no. 7, pp. 6481–6494, 2020.
+[45] Q. Wen, L. Sun, F. Yang, X. Song, J. Gao, X. Wang, and H. Xu,
+“Time series data augmentation for deep learning: A survey,” in
+Proceedings of the Thirtieth International Joint Conference on Artificial
+Intelligence (IJCAI), 8 2021, pp. 4653–4660.
+[46] B. K. Iwana and S. Uchida, “An empirical survey of data aug-
+mentation for time series classification with neural networks,”
+CoRR, vol. abs/2007.15951, 2020.
+[47] G. Iglesias, E. Talavera, ´A. Gonz ´alez-Prieto, A. Mozo, and
+S. G´omez-Canaval, “Data augmentation techniques in time series
+domain: a survey and taxonomy,” Neural Computing and Applica-
+tions, vol. 35, no. 14, pp. 10 123–10 145, 2023.
+[48] Q. Wen, T. Zhou, C. Zhang, W. Chen, Z. Ma, J. Yan, and L. Sun,
+“Transformers in time series: A survey,” in International Joint
+Conference on Artificial Intelligence (IJCAI), 2023.
+[49] E. Brophy, Z. Wang, Q. She, and T. Ward, “Generative adversarial
+networks in time series: A systematic literature review,” ACM
+Comput. Surv., vol. 55, no. 10, feb 2023.
+[50] M. Schirmer, M. Eltayeb, S. Lessmann, and M. Rudolph, “Mod-
+eling irregular time series with continuous recurrent units,” in
+Proceedings of the 39th International Conference on Machine Learning,
+ser. Proceedings of Machine Learning Research, vol. 162, 17–23
+Jul 2022, pp. 19 388–19 405.
+[51] Q. Tan, M. Ye, B. Yang, S. Liu, A. J. Ma, T. C.-F. Yip, G. L.-H. Wong,
+and P . Yuen, “DATA-GRU: Dual-attention time-aware gated re-
+current unit for irregular multivariate time series,” Proceedings of
+the AAAI Conference on Artificial Intelligence , vol. 34, no. 01, pp.
+930–937, Apr. 2020.
+[52] L. Shen, Z. Li, and J. Kwok, “Timeseries anomaly detection using
+temporal hierarchical one-class network,” in Advances in Neural
+Information Processing Systems, vol. 33, 2020, pp. 13 016–13 026.
+[53] S. Jawed, J. Grabocka, and L. Schmidt-Thieme, “Self-supervised
+learning for semi-supervised time series classification,” in Ad-
+vances in Knowledge Discovery and Data Mining , Cham, 2020, pp.
+499–511.
+[54] S. Tipirneni and C. K. Reddy, “Self-supervised transformer for
+sparse and irregularly sampled multivariate clinical time-series,”
+ACM Trans. Knowl. Discov. Data, vol. 16, no. 6, jul 2022.
+[55] A. Deng and B. Hooi, “Graph neural network-based anomaly
+detection in multivariate time series,” Proceedings of the AAAI
+Conference on Artificial Intelligence , vol. 35, no. 5, pp. 4027–4035,
+May 2021.
+[56] C. Shang, J. Chen, and J. Bi, “Discrete graph structure learning for
+forecasting multiple time series,” arXiv preprint arXiv:2101.06861,
+2021.
+[57] E. Dai and J. Chen, “Graph-augmented normalizing flows for
+anomaly detection of multiple time series,” in International Con-
+ference on Learning Representations, 2022.
+[58] L. Xi, Z. Yun, H. Liu, R. Wang, X. Huang, and H. Fan, “Semi-
+supervised time series classification model with self-supervised
+learning,” Engineering Applications of Artificial Intelligence , vol.
+116, p. 105331, 2022.
+[59] P . Baldi, “Autoencoders, unsupervised learning, and deep archi-
+tectures,” in Proceedings of ICML Workshop on Unsupervised and
+Transfer Learning, ser. Proceedings of Machine Learning Research,
+vol. 27, Bellevue, Washington, USA, 02 Jul 2012, pp. 37–49.
+[60] A. Abid and J. Zou, “Autowarp: Learning a warping distance
+from unlabeled time series using sequence autoencoders,” in Pro-
+ceedings of the 32nd International Conference on Neural Information
+Processing Systems , ser. NIPS’18, Red Hook, NY, USA, 2018, p.
+10568–10578.
+[61] P . Malhotra, V . TV , L. Vig, P . Agarwal, and G. Shroff, “TimeNet:
+Pre-trained deep recurrent neural network for time series classi-
+fication,” CoRR, vol. abs/1706.08838, 2017.
+[62] A. Sagheer and M. Kotb, “Unsupervised pre-training of a deep
+LSTM-based stacked autoencoder for multivariate time series
+forecasting problems,” Scientific Reports, vol. 9, p. 19038, 2019.
+[63] A. Abdulaal, Z. Liu, and T. Lancewicki, “Practical approach to
+asynchronous multivariate time series anomaly detection and
+localization,” in Proceedings of the 27th ACM SIGKDD Conference
+on Knowledge Discovery & Data Mining, ser. KDD ’21, New York,
+NY, USA, 2021, p. 2485–2494.
+[64] K. Zhang and Y. Liu, “Unsupervised feature learning with data
+augmentation for control valve stiction detection,” in 2021 IEEE
+10th Data Driven Control and Learning Systems Conference (DDCLS),
+2021, pp. 1385–1390.
+[65] Q. Ma, J. Zheng, S. Li, and G. W. Cottrell, “Learning representa-
+tions for time series clustering,” in Advances in Neural Information
+Processing Systems, vol. 32, 2019.
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 16
+[66] J. Audibert, P . Michiardi, F. Guyard, S. Marti, and M. A. Zuluaga,
+“USAD: Unsupervised anomaly detection on multivariate time
+series,” in Proceedings of the 26th ACM SIGKDD International
+Conference on Knowledge Discovery & Data Mining, ser. KDD ’20,
+2020, p. 3395–3404.
+[67] S. Han and S. S. Woo, “Learning sparse latent graph represen-
+tations for anomaly detection in multivariate time series,” in
+Proceedings of the 28th ACM SIGKDD Conference on Knowledge
+Discovery and Data Mining , ser. KDD ’22, New York, NY, USA,
+2022, p. 2977–2986.
+[68] P . Vincent, H. Larochelle, Y. Bengio, and P .-A. Manzagol, “Ex-
+tracting and composing robust features with denoising autoen-
+coders,” in Proceedings of the 25th International Conference on
+Machine Learning , ser. ICML ’08, New York, NY, USA, 2008, p.
+1096–1103.
+[69] G. Jiang, P . Xie, H. He, and J. Yan, “Wind turbine fault detec-
+tion using a denoising autoencoder with temporal information,”
+IEEE/ASME Transactions on Mechatronics , vol. 23, no. 1, pp. 89–
+100, 2018.
+[70] J. Zhang and P . Yin, “Multivariate time series missing data
+imputation using recurrent denoising autoencoder,” in2019 IEEE
+International Conference on Bioinformatics and Biomedicine (BIBM) ,
+2019, pp. 760–764.
+[71] Z. Zheng, Z. Zhang, L. Wang, and X. Luo, “Denoising temporal
+convolutional recurrent autoencoders for time series classifica-
+tion,” Information Sciences, vol. 588, pp. 159–173, 2022.
+[72] J. Li, Z. Struzik, L. Zhang, and A. Cichocki, “Feature learning
+from incomplete eeg with denoising autoencoder,” Neurocomput-
+ing, vol. 165, pp. 23–31, 2015.
+[73] K. He, X. Chen, S. Xie, Y. Li, P . Doll ´ar, and R. Girshick, “Masked
+autoencoders are scalable vision learners,” in 2022 IEEE/CVF
+Conference on Computer Vision and Pattern Recognition (CVPR) ,
+2022, pp. 15 979–15 988.
+[74] Z. Shao, Z. Zhang, F. Wang, and Y. Xu, “Pre-training enhanced
+spatial-temporal graph neural network for multivariate time
+series forecasting,” in Proceedings of the 28th ACM SIGKDD Con-
+ference on Knowledge Discovery and Data Mining, ser. KDD ’22, New
+York, NY, USA, 2022, p. 1567–1577.
+[75] G. Zerveas, S. Jayaraman, D. Patel, A. Bhamidipaty, and C. Eick-
+hoff, “A transformer-based framework for multivariate time
+series representation learning,” in Proceedings of the 27th ACM
+SIGKDD Conference on Knowledge Discovery & Data Mining , ser.
+KDD ’21, 2021, p. 2114–2124.
+[76] J. Chauhan, A. Raghuveer, R. Saket, J. Nandy, and B. Ravindran,
+“Multi-variate time series forecasting on variable subsets,” in
+Proceedings of the 28th ACM SIGKDD Conference on Knowledge
+Discovery and Data Mining , ser. KDD ’22, New York, NY, USA,
+2022, p. 76–86.
+[77] R. R. Chowdhury, X. Zhang, J. Shang, R. K. Gupta, and
+D. Hong, “TARNet: Task-aware reconstruction for time-series
+transformer,” in Proceedings of the 28th ACM SIGKDD Conference
+on Knowledge Discovery and Data Mining, ser. KDD ’22, New York,
+NY, USA, 2022, p. 212–220.
+[78] D. P . Kingma and M. Welling, “Auto-Encoding Variational
+Bayes,” in 2nd International Conference on Learning Representations,
+ICLR 2014, Banff, AB, Canada, April 14-16, 2014, Conference Track
+Proceedings, 2014.
+[79] Diederik P . Kingma and Max Welling, “An introduction to varia-
+tional autoencoders,” CoRR, vol. abs/1906.02691, 2019.
+[80] Z. Li, Y. Zhao, J. Han, Y. Su, R. Jiao, X. Wen, and D. Pei,
+“Multivariate time series anomaly detection and interpretation
+using hierarchical inter-metric and temporal embedding,” in
+Proceedings of the 27th ACM SIGKDD Conference on Knowledge
+Discovery & Data Mining, ser. KDD ’21, 2021, p. 3220–3230.
+[81] Y. Su, Y. Zhao, C. Niu, R. Liu, W. Sun, and D. Pei, “Robust
+anomaly detection for multivariate time series through stochas-
+tic recurrent neural network,” in Proceedings of the 25th ACM
+SIGKDD International Conference on Knowledge Discovery & Data
+Mining, ser. KDD ’19, 2019, p. 2828–2837.
+[82] W. Zhang, C. Zhang, and F. Tsung, “GRELEN: Multivariate
+time series anomaly detection from the perspective of graph
+relational learning,” in Proceedings of the Thirty-First International
+Joint Conference on Artificial Intelligence, IJCAI-22, 7 2022, pp. 2390–
+2397, main Track.
+[83] W. Chen, L. Tian, B. Chen, L. Dai, Z. Duan, and M. Zhou,
+“Deep variational graph convolutional recurrent network for
+multivariate time series anomaly detection,” in Proceedings of the
+39th International Conference on Machine Learning, ser. Proceedings
+of Machine Learning Research, vol. 162, 17–23 Jul 2022, pp. 3621–
+3633.
+[84] S. N. Shukla and B. M. Marlin, “Multi-time attention networks
+for irregularly sampled time series,” in Proceedings of the ICLR ,
+2021.
+[85] S. C.-X. Li and B. Marlin, “Learning from irregularly-sampled
+time series: A missing data perspective,” in Proceedings of the 37th
+International Conference on Machine Learning , ser. Proceedings of
+Machine Learning Research, vol. 119, 13–18 Jul 2020, pp. 5937–
+5946.
+[86] S. N. Shukla and B. M. Marlin, “Heteroscedastic temporal vari-
+ational autoencoder for irregularly sampled time series,” CoRR,
+vol. abs/2107.11350, 2021.
+[87] Z. Wang, X. Xu, G. Trajcevski, W. Zhang, T. Zhong, and F. Zhou,
+“Learning latent seasonal-trend representations for time series
+forecasting,” in Advances in Neural Information Processing Systems,
+2022.
+[88] J. Ho, A. Jain, and P . Abbeel, “Denoising diffusion probabilis-
+tic models,” Advances in Neural Information Processing Systems ,
+vol. 33, pp. 6840–6851, 2020.
+[89] P . Dhariwal and A. Nichol, “Diffusion models beat gans on image
+synthesis,” Advances in Neural Information Processing Systems ,
+vol. 34, pp. 8780–8794, 2021.
+[90] L. Yang, Z. Zhang, Y. Song, S. Hong, R. Xu, Y. Zhao, Y. Shao,
+W. Zhang, B. Cui, and M.-H. Yang, “Diffusion models: A com-
+prehensive survey of methods and applications,” arXiv preprint
+arXiv:2209.00796, 2022.
+[91] H. Cao, C. Tan, Z. Gao, G. Chen, P .-A. Heng, and S. Z.
+Li, “A survey on generative diffusion model,” arXiv preprint
+arXiv:2209.02646, 2022.
+[92] C. Luo, “Understanding diffusion models: A unified perspec-
+tive,” arXiv preprint arXiv:2208.11970, 2022.
+[93] J. Sohl-Dickstein, E. Weiss, N. Maheswaranathan, and S. Ganguli,
+“Deep unsupervised learning using nonequilibrium thermody-
+namics,” in International Conference on Machine Learning. PMLR,
+2015, pp. 2256–2265.
+[94] Y. Song and S. Ermon, “Generative modeling by estimating
+gradients of the data distribution,” Advances in neural information
+processing systems, vol. 32, 2019.
+[95] Y. Song and S. Ermon, “Improved techniques for training score-
+based generative models,” Advances in neural information process-
+ing systems, vol. 33, pp. 12 438–12 448, 2020.
+[96] Y. Song, C. Durkan, I. Murray, and S. Ermon, “Maximum like-
+lihood training of score-based diffusion models,” Advances in
+Neural Information Processing Systems, vol. 34, pp. 1415–1428, 2021.
+[97] Y. Song, J. Sohl-Dickstein, D. P . Kingma, A. Kumar, S. Ermon, and
+B. Poole, “Score-based generative modeling through stochastic
+differential equations,” arXiv preprint arXiv:2011.13456, 2020.
+[98] Y. Tashiro, J. Song, Y. Song, and S. Ermon, “CSDI: Conditional
+score-based diffusion models for probabilistic time series impu-
+tation,” Advances in Neural Information Processing Systems, vol. 34,
+pp. 24 804–24 816, 2021.
+[99] K. Rasul, C. Seward, I. Schuster, and R. Vollgraf, “Autoregressive
+denoising diffusion models for multivariate probabilistic time
+series forecasting,” in International Conference on Machine Learning.
+PMLR, 2021, pp. 8857–8868.
+[100] Y. Li, X. Lu, Y. Wang, and D. Dou, “Generative time series fore-
+casting with diffusion, denoise, and disentanglement,” NeurIPS,
+2022.
+[101] Y. Chen, C. Zhang, M. Ma, Y. Liu, R. Ding, B. Li, S. He, S. Raj-
+mohan, Q. Lin, and D. Zhang, “ImDiffusion: Imputed diffusion
+models for multivariate time series anomaly detection,” arXiv
+preprint arXiv:2307.00754, 2023.
+[102] J. M. L. Alcaraz and N. Strodthoff, “Diffusion-based time series
+imputation and forecasting with structured state space models,”
+arXiv preprint arXiv:2208.09399, 2022.
+[103] Z. Wang, Q. Wen, C. Zhang, L. Sun, and Y. Wang, “Diffload:
+Uncertainty quantification in load forecasting with diffusion
+model,” arXiv preprint arXiv:2306.01001, 2023.
+[104] H. Wen, Y. Lin, Y. Xia, H. Wan, Q. Wen, R. Zimmermann,
+and Y. Liang, “DiffSTG: Probabilistic spatio-temporal graph
+forecasting with denoising diffusion models,” arXiv preprint
+arXiv:2301.13629, 2023.
+[105] J.-Y. Franceschi, A. Dieuleveut, and M. Jaggi, “Unsupervised
+scalable representation learning for multivariate time series,” in
+Advances in Neural Information Processing Systems , vol. 32, 2019.
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 17
+[106] S. Tonekaboni, D. Eytan, and A. Goldenberg, “Unsupervised rep-
+resentation learning for time series with temporal neighborhood
+coding,” CoRR, vol. abs/2106.00750, 2021.
+[107] P . Khosla, P . Teterwak, C. Wang, A. Sarna, Y. Tian, P . Isola,
+A. Maschinot, C. Liu, and D. Krishnan, “Supervised contrastive
+learning,” in Advances in Neural Information Processing Systems ,
+vol. 33, 2020, pp. 18 661–18 673.
+[108] H. Y `eche, G. Dresdner, F. Locatello, M. H ¨user, and G. R ¨atsch,
+“Neighborhood contrastive learning applied to online patient
+monitoring,” in Proceedings of the 38th International Conference on
+Machine Learning, ser. Proceedings of Machine Learning Research,
+vol. 139, 18–24 Jul 2021, pp. 11 964–11 974.
+[109] A. van den Oord, Y. Li, and O. Vinyals, “Representation learning
+with contrastive predictive coding,” CoRR, vol. abs/1807.03748,
+2018.
+[110] T. Schneider, C. Qiu, M. Kloft, D. Aspandi-Latif, S. Staab,
+S. Mandt, and M. Rudolph, “Detecting anomalies within
+time series using local neural transformations,” CoRR, vol.
+abs/2202.03944, 2022.
+[111] T. Pranavan, T. Sim, A. Ambikapathi, and S. Ramasamy, “Con-
+trastive predictive coding for anomaly detection in multi-variate
+time series data,” CoRR, vol. abs/2202.03639, 2022.
+[112] S. Deldari, D. V . Smith, H. Xue, and F. D. Salim, “Time series
+change point detection with self-supervised contrastive predic-
+tive coding,” in Proceedings of the Web Conference 2021, ser. WWW
+’21, New York, NY, USA, 2021, p. 3124–3135.
+[113] K. Zhang, Q. Wen, C. Zhang, L. Sun, and Y. Liu, “Time series
+anomaly detection using skip-step contrastive predictive cod-
+ing,” in NeurIPS 2022 Workshop: Self-Supervised Learning - Theory
+and Practice, 2022.
+[114] S. Bai, J. Z. Kolter, and V . Koltun, “An empirical evaluation
+of generic convolutional and recurrent networks for sequence
+modeling,” CoRR, vol. abs/1803.01271, 2018.
+[115] M. Hou, C. Xu, Y. Liu, W. Liu, J. Bian, L. Wu, Z. Li, E. Chen,
+and T.-Y. Liu, “Stock trend prediction with multi-granularity
+data: A contrastive learning approach with adaptive fusion,”
+Proceedings of the 30th ACM International Conference on Information
+& Knowledge Management, p. 700–709, 2021.
+[116] E. Eldele, M. Ragab, Z. Chen, M. Wu, C. K. Kwoh, X. Li, and
+C. Guan, “Time-series representation learning via temporal and
+contextual contrasting,” in Proceedings of the Thirtieth International
+Joint Conference on Artificial Intelligence, IJCAI-21, 8 2021, pp. 2352–
+2359.
+[117] E. Eldele, M. Ragab, Z. Chen, M. Wu, C.-K. Kwoh, X. Li, and
+C. Guan, “Self-supervised contrastive representation learning
+for semi-supervised time-series classification,” IEEE Transactions
+on Pattern Analysis and Machine Intelligence , vol. 45, no. 12, pp.
+15 604–15 618, 2023.
+[118] Z. Yue, Y. Wang, J. Duan, T. Yang, C. Huang, Y. Tong, and
+B. Xu, “TS2Vec: Towards universal representation of time series,”
+Proceedings of the AAAI Conference on Artificial Intelligence , vol. 36,
+no. 8, pp. 8980–8987, Jun. 2022.
+[119] J. P ¨oppelbaum, G. S. Chadha, and A. Schwung, “Contrastive
+learning based self-supervised time-series analysis,” Applied Soft
+Computing, vol. 117, p. 108397, 2022.
+[120] T. Peng, C. Shen, S. Sun, and D. Wang, “Fault feature extractor
+based on bootstrap your own latent and data augmentation
+algorithm for unlabeled vibration signals,” IEEE Transactions on
+Industrial Electronics, vol. 69, no. 9, pp. 9547–9555, 2022.
+[121] B. K. Iwana and S. Uchida, “An empirical survey of data aug-
+mentation for time series classification with neural networks,”
+PLOS ONE, vol. 16, no. 7, p. e0254841, jul 2021.
+[122] K. Wickstrøm, M. Kampffmeyer, K. Øyvind Mikalsen, and
+R. Jenssen, “Mixing up contrastive learning: Self-supervised rep-
+resentation learning for time series,” Pattern Recognition Letters ,
+vol. 155, pp. 54–61, 2022.
+[123] G. Woo, C. Liu, D. Sahoo, A. Kumar, and S. Hoi, “CoST: Con-
+trastive learning of disentangled seasonal-trend representations
+for time series forecasting,” in International Conference on Learning
+Representations, 2022.
+[124] L. Yang and S. Hong, “Unsupervised time-series representation
+learning with iterative bilinear temporal-spectral fusion,” in Pro-
+ceedings of the 39th International Conference on Machine Learning ,
+ser. Proceedings of Machine Learning Research, vol. 162, 17–23
+Jul 2022, pp. 25 038–25 054.
+[125] Zhang, Xiang and Zhao, Ziyuan and Tsiligkaridis, Theodoros
+and Zitnik, Marinka, “Self-supervised contrastive pre-training
+for time series via time-frequency consistency,” in Proceedings of
+Neural Information Processing Systems, NeurIPS, 2022.
+[126] Y. Yang, C. Zhang, T. Zhou, Q. Wen, and L. Sun, “Dcdetector:
+Dual attention contrastive representation learning for time series
+anomaly detection,” in Proc. 29th ACM SIGKDD International
+Conference on Knowledge Discovery & Data Mining (KDD 2023),
+Long Beach, CA, Aug., 2023.
+[127] X. Yang, Z. Zhang, and R. Cui, “TimeCLR: A self-supervised
+contrastive learning framework for univariate time series rep-
+resentation,” Knowledge-Based Systems, vol. 245, p. 108606, 2022.
+[128] D. Kiyasseh, T. Zhu, and D. A. Clifton, “CLOCS: Contrastive
+learning of cardiac signals across space, time, and patients,” in
+Proceedings of the 38th International Conference on Machine Learning,
+ser. Proceedings of Machine Learning Research, vol. 139, 18–24
+Jul 2021, pp. 5606–5615.
+[129] Y. Ozyurt, S. Feuerriegel, and C. Zhang, “Contrastive learning for
+unsupervised domain adaptation of time series,” in The Eleventh
+International Conference on Learning Representations, 2023.
+[130] K. Zhang, Y. Liu, Y. Gu, J. Wang, and X. Ruan, “Valve stiction
+detection using multitimescale feature consistent constraint for
+time-series data,” IEEE/ASME Transactions on Mechatronics , pp.
+1–12, 2022.
+[131] M. Hou, C. Xu, Z. Li, Y. Liu, W. Liu, E. Chen, and J. Bian, “Multi-
+granularity residual learning with confidence estimation for time
+series prediction,” in Proceedings of the ACM Web Conference 2022,
+ser. WWW ’22, 2022, p. 112–121.
+[132] H. Lee, E. Seong, and D.-K. Chae, “Self-supervised learning with
+attention-based latent signal augmentation for sleep staging with
+limited labeled data,” in Proceedings of the Thirty-First International
+Joint Conference on Artificial Intelligence, IJCAI-22, 7 2022, pp. 3868–
+3876, main Track.
+[133] T. Wang and P . Isola, “Understanding contrastive representation
+learning through alignment and uniformity on the hypersphere,”
+in Proceedings of the 37th International Conference on Machine Learn-
+ing, ser. ICML’20, 2020.
+[134] Y. Li, P . Hu, Z. Liu, D. Peng, J. T. Zhou, and X. Peng, “Contrastive
+clustering,” Proceedings of the AAAI Conference on Artificial Intelli-
+gence, vol. 35, no. 10, pp. 8547–8555, May 2021.
+[135] J. Li, P . Zhou, C. Xiong, and S. Hoi, “Prototypical contrastive
+learning of unsupervised representations,” in International Con-
+ference on Learning Representations, 2021.
+[136] G. Li, B. Choi, J. Xu, S. S Bhowmick, K.-P . Chun, and G. L.-
+H. Wong, “Shapenet: A shapelet-neural network approach for
+multivariate time series classification,” Proceedings of the AAAI
+Conference on Artificial Intelligence , vol. 35, no. 9, pp. 8375–8383,
+May 2021.
+[137] X. Zhang, Y. Gao, J. Lin, and C.-T. Lu, “Tapnet: Multivariate
+time series classification with attentional prototypical network,”
+Proceedings of the AAAI Conference on Artificial Intelligence , vol. 34,
+no. 04, pp. 6845–6852, Apr. 2020.
+[138] A. Dorle, F. Li, W. Song, and S. Li, “Learning discriminative
+virtual sequences for time series classification,” in Proceedings
+of the 29th ACM International Conference on Information & Knowl-
+edge Management , ser. CIKM ’20, New York, NY, USA, 2020, p.
+2001–2004.
+[139] Q. Meng, H. Qian, Y. Liu, L. Cui, Y. Xu, and Z. Shen, “MHCCL:
+masked hierarchical cluster-wise contrastive learning for multi-
+variate time series,” in AAAI, 2023, pp. 9153–9161.
+[140] X. Wu, L. Xiao, Y. Sun, J. Zhang, T. Ma, and L. He, “A survey
+of human-in-the-loop for machine learning,” Future Generation
+Computer Systems, vol. 135, pp. 364–381, 2022.
+[141] Y. Chen and D. Zhang, “Integration of knowledge and data in
+machine learning,” arXiv preprint arXiv:2202.10337v2, 2022.
+[142] P . Shi, W. Ye, and Z. Qin, “Self-supervised pre-training for time
+series classification,” in 2021 International Joint Conference on Neu-
+ral Networks (IJCNN), 2021, pp. 1–8.
+[143] M. T. Nonnenmacher, L. Oldenburg, I. Steinwart, and D. Reeb,
+“Utilizing expert features for contrastive learning of time-series
+representations,” in Proceedings of the 39th International Conference
+on Machine Learning , ser. Proceedings of Machine Learning Re-
+search, vol. 162, 17–23 Jul 2022, pp. 16 969–16 989.
+[144] H. Zhang, J. Wang, Q. Xiao, J. Deng, and Y. Lin, “SleepPriorCL:
+Contrastive representation learning with prior knowledge-based
+positive mining and adaptive temperature for sleep staging,”
+2021.
+[145] T.-S. Chen, W.-C. Hung, H.-Y. Tseng, S.-Y. Chien, and M.-H. Yang,
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 18
+“Incremental false negative detection for contrastive learning,” in
+International Conference on Learning Representations, 2022.
+[146] K. Zhang, R. Cai, and Y. Liu, “Industrial fault detection using
+contrastive representation learning on time-series data,” IFAC-
+PapersOnLine, vol. 56, no. 2, pp. 3197–3202, 2023, 22nd IFAC
+World Congress.
+[147] Y. Zhang, X. Zhang, J. Li, R. C. Qiu, H. Xu, and Q. Tian, “Semi-
+supervised contrastive learning with similarity co-calibration,”
+IEEE Transactions on Multimedia, vol. 25, pp. 1749–1759, 2023.
+[148] I. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-
+Farley, S. Ozair, A. Courville, and Y. Bengio, “Generative adver-
+sarial nets,” in Advances in Neural Information Processing Systems ,
+vol. 27, 2014.
+[149] Z. Wang, Q. She, and T. E. Ward, “Generative adversarial net-
+works in computer vision: A survey and taxonomy,” ACM Com-
+put. Surv., vol. 54, no. 2, feb 2021.
+[150] P . Isola, J.-Y. Zhu, T. Zhou, and A. A. Efros, “Image-to-image
+translation with conditional adversarial networks,” in 2017 IEEE
+Conference on Computer Vision and Pattern Recognition (CVPR) ,
+2017, pp. 5967–5976.
+[151] J.-Y. Zhu, T. Park, P . Isola, and A. A. Efros, “Unpaired image-to-
+image translation using cycle-consistent adversarial networks,”
+in 2017 IEEE International Conference on Computer Vision (ICCV) ,
+2017, pp. 2242–2251.
+[152] A. Brock, J. Donahue, and K. Simonyan, “Large scale GAN
+training for high fidelity natural image synthesis,” inInternational
+Conference on Learning Representations, 2019.
+[153] T. Karras, S. Laine, and T. Aila, “A style-based generator archi-
+tecture for generative adversarial networks,” in 2019 IEEE/CVF
+Conference on Computer Vision and Pattern Recognition (CVPR) ,
+2019, pp. 4396–4405.
+[154] O. Mogren, “C-RNN-GAN: continuous recurrent neural net-
+works with adversarial training,” CoRR, vol. abs/1611.09904,
+2016.
+[155] J. Yoon, D. Jarrett, and M. van der Schaar, Time-Series Generative
+Adversarial Networks, Red Hook, NY, USA, 2019.
+[156] X. Li, V . Metsis, H. Wang, and A. H. H. Ngu, “TTS-GAN: A
+transformer-based time-series generative adversarial network,”
+in Artificial Intelligence in Medicine: 20th International Conference on
+Artificial Intelligence in Medicine, AIME 2022, Halifax, NS, Canada,
+June 14–17, 2022, Proceedings, Berlin, Heidelberg, 2022, p. 133–143.
+[157] Y. Luo, Y. Zhang, X. Cai, and X. Yuan, “E²gan: End-to-end genera-
+tive adversarial network for multivariate time series imputation,”
+in Proceedings of the Twenty-Eighth International Joint Conference on
+Artificial Intelligence, IJCAI-19, 7 2019, pp. 3094–3100.
+[158] A. Seyfi, J.-F. Rajotte, and R. T. Ng, “Generating multivariate time
+series with COmmon source coordinated GAN (COSCI-GAN),”
+in Advances in Neural Information Processing Systems , 2022.
+[159] P . Jeha, M. Bohlke-Schneider, P . Mercado, S. Kapoor, R. S. Nir-
+wan, V . Flunkert, J. Gasthaus, and T. Januschowski, “PSA-GAN:
+Progressive self attention GANs for synthetic time series,” in
+International Conference on Learning Representations, 2022.
+[160] J. Jeon, J. KIM, H. Song, S. Cho, and N. Park, “GT-GAN: Gen-
+eral purpose time series synthesis with generative adversarial
+networks,” in Advances in Neural Information Processing Systems ,
+2022.
+[161] Y. Luo, X. Cai, Y. ZHANG, J. Xu, and Y. xiaojie, “Multivariate
+time series imputation with generative adversarial networks,” in
+Advances in Neural Information Processing Systems , vol. 31, 2018.
+[162] X. Miao, Y. Wu, J. Wang, Y. Gao, X. Mao, and J. Yin, “Generative
+semi-supervised learning for multivariate time series imputa-
+tion,” Proceedings of the AAAI Conference on Artificial Intelligence ,
+vol. 35, no. 10, pp. 8983–8991, May 2021.
+[163] J. Xu, H. Wu, J. Wang, and M. Long, “Anomaly transformer:
+Time series anomaly detection with association discrepancy,” in
+International Conference on Learning Representations, 2022.
+[164] D. Zhu, D. Song, Y. Chen, C. Lumezanu, W. Cheng, B. Zong,
+J. Ni, T. Mizoguchi, T. Yang, and H. Chen, “Deep unsupervised
+binary coding networks for multivariate time series retrieval,”
+Proceedings of the AAAI Conference on Artificial Intelligence , vol. 34,
+no. 02, pp. 1403–1411, Apr. 2020.
+[165] Q. Ma, C. Chen, S. Li, and G. W. Cottrell, “Learning represen-
+tations for incomplete time series clustering,” Proceedings of the
+AAAI Conference on Artificial Intelligence, vol. 35, no. 10, pp. 8837–
+8846, May 2021.
+[166] S. Wu, X. Xiao, Q. Ding, P . Zhao, Y. Wei, and J. Huang, “Adversar-
+ial sparse transformer for time series forecasting,” in Proceedings
+of the 34th International Conference on Neural Information Processing
+Systems, ser. NIPS’20, Red Hook, NY, USA, 2020.
+[167] Y. Li, H. Wang, J. Li, C. Liu, and J. Tan, “Act: Adversarial
+convolutional transformer for time series forecasting,” in 2022
+International Joint Conference on Neural Networks (IJCNN) , 2022,
+pp. 1–8.
+[168] B. Zhou, S. Liu, B. Hooi, X. Cheng, and J. Ye, “Beatgan: Anoma-
+lous rhythm detection using adversarially generated time series,”
+in Proceedings of the Twenty-Eighth International Joint Conference on
+Artificial Intelligence, IJCAI-19, 7 2019, pp. 4433–4439.
+[169] K. Aggarwal, S. Joty, L. Fernandez-Luque, and J. Srivastava, “Ad-
+versarial unsupervised representation learning for activity time-
+series,” Proceedings of the AAAI Conference on Artificial Intelligence,
+vol. 33, no. 01, pp. 834–841, Jul. 2019.
+[170] K. Hundman, V . Constantinou, C. Laporte, I. Colwell, and
+T. Soderstrom, “Detecting spacecraft anomalies using lstms and
+nonparametric dynamic thresholding,” in Proceedings of the 24th
+ACM SIGKDD International Conference on Knowledge Discovery &
+Data Mining, ser. KDD ’18, New York, NY, USA, 2018, p. 387–395.
+[171] J. Goh, S. Adepu, K. N. Junejo, and A. Mathur, “A dataset to sup-
+port research in the design of secure water treatment systems,”
+in Critical Information Infrastructures Security: 11th International
+Conference, CRITIS 2016, Paris, France, October 10–12, 2016, Revised
+Selected Papers 11. Springer, 2017, pp. 88–99.
+[172] C. M. Ahmed, V . R. Palleti, and A. P . Mathur, “Wadi: A water
+distribution testbed for research in the design of secure cyber
+physical systems,” in Proceedings of the 3rd International Workshop
+on Cyber-Physical Systems for Smart Water Networks , ser. CySWA-
+TER ’17, New York, NY, USA, 2017, p. 25–28.
+[173] H. Zhou, S. Zhang, J. Peng, S. Zhang, J. Li, H. Xiong, and
+W. Zhang, “Informer: Beyond efficient transformer for long se-
+quence time-series forecasting,” Proceedings of the AAAI Confer-
+ence on Artificial Intelligence, vol. 35, no. 12, pp. 11 106–11 115, May
+2021.
+[174] European Commission’s STETIS program, “30 years of european
+wind generation,” https://www.kaggle.com/datasets/sohier/
+30-years-of-european-wind-generation.
+[175] UCI Machine Learning Repository, “Electricityloaddia-
+grams20112014 data set,” https://archive.ics.uci.edu/ml/
+datasets/ElectricityLoadDiagrams20112014, 2011.
+[176] Centers for Disease Control and Prevention, “National, regional,
+and state level outpatient illness and viral surveillance,” https:
+//gis.cdc.gov/grasp/fluview/fluportaldashboard.html.
+[177] Max-Planck-Institut fur Biogeochemie, Jena, “Weather data set,”
+https://www.bgc-jena.mpg.de/wetter/.
+[178] California Department of Transportation, “Traffic data set,” http:
+//pems.dot.ca.gov/.
+[179] G. Lai, W.-C. Chang, Y. Yang, and H. Liu, “Modeling long-
+and short-term temporal patterns with deep neural networks,”
+in The 41st International ACM SIGIR Conference on Research &
+Development in Information Retrieval , ser. SIGIR ’18, New York,
+NY, USA, 2018, p. 95–104.
+[180] National Renewable Energy Laboratory, “Solar power
+data for integration studies,” https://www.nrel.gov/grid/
+solar-power-data.html, 2006.
+[181] D. Anguita, A. Ghio, L. Oneto, X. Parra, and J. L. Reyes-Ortiz,
+“A public domain dataset for human activity recognition using
+smartphones,” in The European Symposium on Artificial Neural
+Networks, 2013.
+[182] H. A. Dau, A. Bagnall, K. Kamgar, C.-C. M. Yeh, Y. Zhu,
+S. Gharghabi, C. A. Ratanamahatana, and E. Keogh, “The ucr
+time series archive,” IEEE/CAA Journal of Automatica Sinica, vol. 6,
+no. 6, pp. 1293–1305, 2019.
+[183] A. Bagnall, H. A. Dau, J. Lines, M. Flynn, J. Large, A. Bostrom,
+P . Southam, and E. Keogh, “The uea multivariate time series
+classification archive, 2018,” arXiv preprint arXiv:1811.00075, 2018.
+[184] X. Chen, L. Deng, Y. Zhao, and K. Zheng, “Adversarial au-
+toencoder for unsupervised time series anomaly detection and
+interpretation,” in Proceedings of the Sixteenth ACM International
+Conference on Web Search and Data Mining , ser. WSDM ’23, New
+York, NY, USA, 2023, p. 267–275.
+[185] S. Liu, H. Yu, C. Liao, J. Li, W. Lin, A. X. Liu, and S. Dust-
+dar, “Pyraformer: Low-complexity pyramidal attention for long-
+range time series modeling and forecasting,” in International
+Conference on Learning Representations, 2022.
+[186] W. Chen, W. Wang, B. Peng, Q. Wen, T. Zhou, and L. Sun, “Learn-
+ing to rotate: Quaternion transformer for complicated periodical
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 19
+time series forecasting,” in Proceedings of the 28th ACM SIGKDD
+Conference on Knowledge Discovery and Data Mining , ser. KDD ’22,
+New York, NY, USA, 2022, p. 146–156.
+[187] R.-G. Cirstea, C. Guo, B. Yang, T. Kieu, X. Dong, and S. Pan, “Tri-
+former: Triangular, variable-specific attentions for long sequence
+multivariate time series forecasting,” in Proceedings of the Thirty-
+First International Joint Conference on Artificial Intelligence, IJCAI-22,
+7 2022, pp. 1994–2001, main Track.
+[188] M. A. Shabani, A. H. Abdi, L. Meng, and T. Sylvain, “Scale-
+former: Iterative multi-scale refining transformers for time series
+forecasting,” in The Eleventh International Conference on Learning
+Representations, 2023.
+[189] Y. Zhang and J. Yan, “Crossformer: Transformer utilizing cross-
+dimension dependency for multivariate time series forecasting,”
+in The Eleventh International Conference on Learning Representations,
+2023.
+[190] H. Wu, T. Hu, Y. Liu, H. Zhou, J. Wang, and M. Long, “Timesnet:
+Temporal 2d-variation modeling for general time series analysis,”
+in International Conference on Learning Representations, 2023.
+[191] H. Wang, J. Peng, F. Huang, J. Wang, J. Chen, and Y. Xiao, “MICN:
+Multi-scale local and global context modeling for long-term series
+forecasting,” in The Eleventh International Conference on Learning
+Representations, 2023.
+[192] X. Tang, H. Yao, Y. Sun, C. Aggarwal, P . Mitra, and S. Wang, “Joint
+modeling of local and global temporal dynamics for multivariate
+time series forecasting with missing values,” Proceedings of the
+AAAI Conference on Artificial Intelligence, vol. 34, no. 04, pp. 5956–
+5963, Apr. 2020.
+[193] X. Wang, K. Wang, and S. Lian, “A survey on face data augmen-
+tation for the training of deep neural networks,” Neural Comput.
+Appl., vol. 32, no. 19, p. 15503–15531, oct 2020.
+[194] J. Gao, X. Song, Q. Wen, P . Wang, L. Sun, and H. Xu, “RobustTAD:
+Robust time series anomaly detection via decomposition and
+convolutional neural networks,” KDD Workshop on Mining and
+Learning from Time Series (KDD-MileTS’20), 2020.
+[195] T. T. Um, F. M. J. Pfister, D. Pichler, S. Endo, M. Lang, S. Hirche,
+U. Fietzek, and D. Kuli ´c, “Data augmentation of wearable sensor
+data for parkinson’s disease monitoring using convolutional
+neural networks,” in Proceedings of the 19th ACM International
+Conference on Multimodal Interaction , ser. ICMI 2017, New York,
+NY, USA, 2017, pp. 216–220.
+[196] C. Deng, X. Ji, C. Rainey, J. Zhang, and W. Lu, “Integrating
+machine learning with human knowledge,” iScience, vol. 23,
+no. 11, p. 101656, 2020.
+[197] Y. Chen and D. Zhang, “Integration of knowledge and data in
+machine learning,” 2022.
+[198] Q. Wen, J. Gao, X. Song, L. Sun, H. Xu, and S. Zhu, “RobustSTL:
+A robust seasonal-trend decomposition algorithm for long time
+series,” in AAAI Conference on Artificial Intelligence (AAAI) , 2019,
+pp. 5409–5416.
+[199] Q. Wen, K. He, L. Sun, Y. Zhang, M. Ke, and H. Xu, “Robust-
+Period: Robust time-frequency mining for multiple periodicity
+detection,” in Proceedings of the 2021 International Conference on
+Management of Data (SIGMOD), 2021, pp. 2328–2337.
+[200] T. Zhou, Z. Ma, Q. Wen, X. Wang, L. Sun, and R. Jin, “FEDformer:
+Frequency enhanced decomposed transformer for long-term se-
+ries forecasting,” in Proc. 39th International Conference on Machine
+Learning (ICML 2022), 2022.
+[201] S. N. Shukla and B. M. Marlin, “A survey on principles, models
+and methods for learning from irregularly sampled time series:
+From discretization to attention and invariance,” CoRR, vol.
+abs/2012.00168, 2020.
+[202] Y. Wu, J. Ni, W. Cheng, B. Zong, D. Song, Z. Chen, Y. Liu,
+X. Zhang, H. Chen, and S. B. Davidson, “Dynamic gaussian
+mixture based deep generative model for robust forecasting on
+sparse multivariate time series,” Proceedings of the AAAI Confer-
+ence on Artificial Intelligence, vol. 35, no. 1, pp. 651–659, May 2021.
+[203] A. Kirillov, E. Mintun, N. Ravi, H. Mao, C. Rolland, L. Gustafson,
+T. Xiao, S. Whitehead, A. C. Berg, W.-Y. Lo, P . Doll ´ar, and
+R. Girshick, “Segment anything,” arXiv:2304.02643, 2023.
+[204] C. Szegedy, W. Zaremba, I. Sutskever, J. Bruna, D. Erhan, I. Good-
+fellow, and R. Fergus, “Intriguing properties of neural networks,”
+arXiv preprint arXiv:1312.6199v4, 2013.
+[205] L. Liu, Y. Park, T. N. Hoang, H. Hasson, and L. Huan, “Ro-
+bust multivariate time-series forecasting: Adversarial attacks and
+defense mechanisms,” in The Eleventh International Conference on
+Learning Representations, 2023.
+[206] T. Wu, X. Wang, S. Qiao, X. Xian, Y. Liu, and L. Zhang, “Small
+perturbations are enough: Adversarial attacks on time series
+prediction,” Information Sciences, vol. 587, pp. 794–812, 2022.
+[207] F. Karim, S. Majumdar, and H. Darabi, “Adversarial attacks on
+time series,” IEEE Transactions on Pattern Analysis and Machine
+Intelligence, vol. 43, no. 10, pp. 3309–3320, 2021.
+[208] Y. Zhuo, Z. Yin, and Z. Ge, “Attack and defense: Adversarial se-
+curity of data-driven fdc systems,” IEEE Transactions on Industrial
+Informatics, vol. 19, no. 1, pp. 5–19, 2023.
+[209] I. J. Goodfellow, J. Shlens, and C. Szegedy, “Explaining and
+harnessing adversarial examples,” 2015.
+[210] K. Lee, J. Kim, S. Chong, and J. Shin, “Making stochastic neural
+networks from deterministic ones,” 2017.
+[211] N. Carlini and D. Wagner, “Towards evaluating the robustness of
+neural networks,” in 2017 IEEE Symposium on Security and Privacy
+(SP), 2017, pp. 39–57.
+[212] S.-M. Moosavi-Dezfooli, A. Fawzi, and P . Frossard, “Deepfool: A
+simple and accurate method to fool deep neural networks,” in
+2016 IEEE Conference on Computer Vision and Pattern Recognition
+(CVPR), 2016, pp. 2574–2582.
+[213] S.-M. Moosavi-Dezfooli, A. Fawzi, O. Fawzi, and P . Frossard,
+“Universal adversarial perturbations,” in 2017 IEEE Conference on
+Computer Vision and Pattern Recognition (CVPR), 2017, pp. 86–94.
+[214] J. Uesato, B. O’Donoghue, P . Kohli, and A. van den Oord, “Adver-
+sarial risk and the dangers of evaluating against weak attacks,” in
+Proceedings of the 35th International Conference on Machine Learning,
+ser. Proceedings of Machine Learning Research, vol. 80, 10–15 Jul
+2018, pp. 5025–5034.
+[215] J. Li, L. Lyu, D. Iso, C. Chakrabarti, and M. Spranger, “MocoSFL:
+enabling cross-client collaborative self-supervised learning,” in
+The Eleventh International Conference on Learning Representations ,
+2023.
+[216] Z. Zhang, Z. Zhao, and Z. Lin, “Unsupervised representation
+learning from pre-trained diffusion probabilistic models,” in
+Advances in Neural Information Processing Systems , 2022.
+[217] S. Sørbø and M. Ruocco, “Navigating the metric maze: A taxon-
+omy of evaluation metrics for anomaly detection in time series,”
+2023.
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 20
+APPENDIX A
+LEARNING PARADIGMS OF SSL
+The model architectures of generative-based, contrastive-
+based, and adversarial-based methods are shown in Fig. 5
+and can be summarized as:
+• The generative-based approach first uses an encoder to
+map the input x to the representation z, and then a
+decoder to reconstruct x from z. The training objective
+is to minimize the reconstruction error between the input
+x and the reconstructed input ˆx.
+• The contrastive-based approach is one of the most widely
+used SSL strategies, which constructs positive and nega-
+tive samples through data augmentation or context sam-
+pling. The model is then trained by maximizing the Mu-
+tual Information (MI) between the two positive samples.
+Contrastive-based methods usually use a contrastive sim-
+ilarity metric, such as InfoNCE loss [109].
+• The adversarial-based approach usually consists of a gen-
+erator and a discriminator. The generator generates fake
+samples, and the discriminator is used to distinguish them
+from real samples.
+APPENDIX B
+FURTHER DESCRIPTION AND SUMMARY OF FOUR
+PIPELINES OF SSL
+B.1 Summary regarding positive and negative samples
+• Multisensory signals: One direct approach to construct
+positive and negative samples is to record the information
+with multiple sensors. These sensors can be of the same
+modality or of different modalities.
+• Data augmentation: The most simple yet effective method
+is to generate positive and negative samples through
+hand-crafted transformation rules, often called data aug-
+mentation. The choice of rules depends on the data modal-
+ity. For example, the augmentation methods of image data
+include crop, color distort, resize, and rotate [16], while
+for time series, the augmentation methods involve noise
+injection, window slicing, and window wrapping [45].
+• Local-global consistency: Explicitly constraining the rep-
+resentation of the local view to be similar to the repre-
+sentation of the global view, while being different from
+the representation of other instances is also an effective
+approach for generating positive and negative samples.
+• Temporal consistency: Using temporal dependence to
+construct positive and negative samples is a common
+method in sequential data, such as time series and video
+data. Generally, the representation of continuous or close
+views in a sequence is considered as a positive pair while
+discontinuous and far away pairs in the same sequence or
+different sequences are considered negative pairs.
+B.2 Further classification of pretexts
+The main differences of three types of pretext tasks are as
+follows:
+• Context prediction: This family of methods uses the
+inherent context relationship of the provided instances
+to construct pretext tasks. This relationship can involve
+spatial structure, temporal structure, and local and global
+TABLE 3: Classification of commonly used pretext tasks.
+Category Pretext tasks
+Context prediction
+Spatial transformation [17], [28], [30]
+Temporal prediction [17], [18]
+Masked prediction [28]
+Cross-modal-view prediction [17]
+Instance discrimination
+Clustering based [18], [28]
+Regularization based [28]
+Negative example SSCL based [30]
+Self-distillation SSCL based [30]
+Feature decorrelation SSCL based [30]
+Instance generation Perturbation and reconstruction [25]
+GAN-based instance generation [18]
+consistency. The model is trained to predict the contextual
+structure of the instance itself.
+• Instance discrimination: In this family of methods, the
+pretext tasks focus on the similarities between different
+views or modalities of the same instance. Each instance
+is treated as its own class, or assigning pseudo-labels to
+training instances through natural clustering and dividing
+the training instances into a number of groups with high-
+intragroup and low-intergroup similarity. The model is
+trained to discriminate between different instances or
+groups.
+• Instance generation: This family of methods constructs
+pretext tasks by reconstructing perturbed instances or
+generating instances through models based on generative
+adversarial networks (GANs). The core is to regenerate a
+new instance based on a model or rule, and use the pre-
+defined relationship between the original instance of the
+newly generated instance to construct pseudo-supervision
+signals.
+B.3 Characteristics of four SSL model architectures
+• End-to-End: This architecture utilizes two encoders of the
+same structure to encode different views of the instance,
+and then updates the two encoders simultaneously based
+on the contrastive loss. This architecture prefers large
+batch sizes to accumulate a greater number of negative
+samples.
+• Memory bank: Maintaining a large training batch places
+high demands on computing resources. Memory bank is a
+possible solution, which constructs a dictionary that stores
+and updates the embeddings of samples with the most
+recent ones at regular intervals. However, the consistency
+of the representations cannot be guaranteed.
+• Momentum encoder: To address the issues with End-to-
+End and Memory bank architectures, using a momentum
+encoder which acts as a dynamic dictionary lookup for en-
+codings of negative samples during training is a possible
+architecture.
+• Clustering: Another way to reduce the burden of a large
+training batch is to introduce a clustering mechanism. This
+architecture not only makes a pair of samples close to each
+other but also makes sure that all other features that are
+similar to each other form clusters together.
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 21
+Encoder Decoder
+(a) Generative-based
+z
+Generative Loss
+Encoder
+Encoder
+Projection 
+head
+Projection 
+head
+z
+(b) Contrastive-based
+Contrastive
+Loss
+z
+(c) Adversarial-based
+Gradients Gradients
+Gradients
+Gradients
+Generator
+Adversarial
+LossDiscriminator
+Gradients
+Gradients
+Forward Process
+Reverse Process
+Fig. 5: Learning paradigms of SSL.
+B.4 Objectives of four SSL losses
+• Scoring functions: The scoring function measures compat-
+ibility between two vectors either in terms of similarity
+or distance. Depending on the specific loss function, for
+positive pairs either the similarity score is maximized or
+the distance metric is minimized.
+• Energy-based margin functions: Energy-based models are
+a general class of models that associate an energy (dis-
+tance score) with each configuration of the variables to be
+modeled (pairs of query and keys vectors). This family
+of loss functions involves associating a low energy (small
+distance) to desired configurations of the variable (posi-
+tive pairs) and high energy to undesired configurations of
+variables (negative pairs).
+• Probabilistic NCE-based functions: This family of func-
+tions is a non-parametric version for the softmax function
+that correctly identifies the positive for a given query and
+contains all negative keys with one one positive key.
+• Mutual information based functions: Motivated by mu-
+tual information, this family maximizes the mutual infor-
+mation between representations of different views of the
+same instance.
+APPENDIX C
+ADVANTAGES AND DISADVANTAGES OF THREE
+GENERATIVE -BASED METHODS
+C.1 Autoregressive-based forecasting
+Using autoregressive-based forecasting tasks as a pretext
+task for time series SSL has the following advantages. (i)
+Autoregressive-based forecasting tasks leverage the inher-
+ent structure of raw time series without the need for man-
+ually annotated labels. It is easy to construct an abundant
+training data set through slicing operations. (ii) The inher-
+ent structure of time series data allows the autoregressive
+forecasting task to directly build upon the temporal depen-
+dencies in the data, allowing the representations to capture
+the dynamic characteristics and patterns of the time series.
+Their main disadvantages are as follows. (i) The objective of
+autoregressive-based forecasting tasks is to forecast future
+values of a time series, which can be constrained by the
+predictability of the target and the availability of data. If the
+sequence exhibits high uncertainty or sudden events, the
+autoregressive prediction model may struggle to accurately
+forecast future values, thereby affecting the effectiveness of
+SSL. (ii) Forecasting errors in autoregressive models may ac-
+cumulate over time, especially in long-term prediction tasks.
+This can lead to the extracted representations exhibiting bias
+over time.
+C.2 Autoencoder-based reconstruction
+The advantages are as follows. (i) Autoencoder-based recon-
+struction is the easiest-to-use pretext task in SSL, especially
+MAE models. It can be used for tasks such as feature learn-
+ing and dimensionality reduction. (ii) Autoencoders are
+often trained by adding noise or applying random transfor-
+mations. This enables the model to better handle noise and
+uncertainties in the time series data during the reconstruc-
+tion process, thereby enhancing representation robustness.
+Their disadvantages are as follows. (i) Autoencoder-based
+reconstruction tasks face challenges in handling long-term
+dependencies in time series data. A single reconstruction
+constraint cannot guarantee that the extracted representa-
+tions capture the temporal dependencies in time series data.
+(ii) Time series data often has complex characteristics, in-
+cluding seasonality, trends, and noise. It can be challenging
+for an autoencoder to capture and represent these complex
+features, especially for large-scale and high-dimensional
+time series data.
+C.3 Diffusion-based generation
+The advantages of diffusion-based models are as follows. (i)
+Diffusion models make many record-making performances
+in different kinds of applications showing the power of such
+new deep generative models. (ii) The workflow of diffusion
+models is concise and flexible, making it possible to combine
+diffusion models with other generative models to improve
+the generative power, such as PDAE [216]. (iii) Diffusion
+models are usually straightforward to define and efficient to
+train. However, there are also disadvantages and challenges
+to overcome. Although the original definition of diffusion
+model is concise, it is not efficient when doing sampling and
+making likelihood estimations. There is still much work to
+do to make diffusion models more powerful.
+C.4 Advantages and disadvantages of three
+generative-based submethods
+The details are shown in Table. 4.
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 22
+TABLE 4: Summary of advantages and disadvantages of three generative-based submethods.
+Method Advantages Disadvantages
+Autoregressive-based forecasting Preserve inherent temporal dependencies Inaccurate forecasting of extreme points
+Capture dynamic features and patterns Error accumulation in long-term forecasting
+Autoencoder-based reconstruction Flexible structure (BAE, DAE, MAE, VAE, etc) Difficulty in extracting temporal dependencies
+Extract robust and low-dimensional representations Struggle with complex time series data
+Diffusion-based generation Concise and flexible workflow Difficulty in obtaining semantic information
+Potential for integration with other models Inefficient sampling and likelihood estimation
+APPENDIX D
+ADVANTAGES AND DISADVANTAGES OF RNN,
+CNN, AND GNN
+The main advantages of RNN, CNN, and GNN are as
+follows:
+• RNN: (i) Long-term dependencies. RNN is suitable for
+capturing long-term dependencies in time series as it
+maintains internal states (hidden states) to memorize past
+information. (ii) Adaptable to varying lengths. RNN can
+handle variable-length sequences, making it suitable for
+dynamic-length time series. (iii) Global context informa-
+tion extraction. Considers the entire history at each time
+step, aiding in learning global information.
+• CNN: (i) Local pattern extraction. CNN effectively cap-
+tures local patterns and features in input series, espe-
+cially with 1D-CNN for time series. (ii) Computational
+efficiency. Comparison with RNN, CNN exhibits higher
+computational efficiency when dealing with longer time
+series data.
+• GNN: (i) Adaptability to graph structures. GNN is suit-
+able for handling multivariate time series data, where
+nodes represent variables and edges represent relation-
+ships between variables. (ii) Dynamic relationship cap-
+ture. GNN can capture dynamic relationships between
+nodes, suitable for complex interactions between nodes
+at different variables.
+The disadvantages of RNN, CNN, and GNN are as
+follows:
+• RNN: (i) Vanishing/exploding gradients. Faces chal-
+lenges of vanishing or exploding gradients during train-
+ing, especially with deeper networks and long series. (ii)
+Computational efficiency. Compared to CNN, RNN ex-
+hibits lower computational efficiency when dealing with
+large-scale datasets.
+• CNN: (i) Long-term dependencies. CNN may struggle to
+capture long-term dependencies in longer time series due
+to limited convolutional kernel size. (ii) Information loss.
+With increasing layers, information may gradually be lost
+during the propagation process.
+• GNN: (i) Computational and storage complexity. GNN
+may face computational and storage complexity issues
+when dealing with large-scale graphs, especially those
+with a large number of nodes and edges. Fixed-size
+graphs. For fixed-size graph structures, GNN may strug-
+gle to adapt to time series of varying lengths. Hyperpa-
+rameter sensitivity. GNN’s performance may be sensitive
+to hyperparameter selection and the specific structure of
+the graph.
+APPENDIX E
+ADVANTAGES AND DISADVANTAGES OF FIVE
+CONTRASTIVE -BASED METHODS
+E.1 Sampling contrast
+The advantages of this category of methods are as follows.
+Sampling contrast follows the most commonly used as-
+sumption in time series analysis. It has a simple principle
+and can model local correlations well. However, its disad-
+vantage lies in the possibility of introducing fake negative
+sample pairs when analyzing long-term dependencies, lead-
+ing to suboptimal representations.
+E.2 Prediction contrast
+Prediction contrast is a self-supervised task based on context
+prediction. By predicting future information, it can learn
+meaningful and informative representations of time series
+data, capturing important features and patterns within
+the data. It focuses more on the slow-changing trends in
+time series data and can extract slow features. However,
+prediction contrast primarily focuses on local information
+and may not accurately model long-term dependencies in
+time series data. It is also sensitive to noise and outliers,
+which can affect the model’s representation capacity and
+generalization performance.
+E.3 Augmentation contrast
+Augmentation contrast is an efficient and straightforward
+self-supervised task. Its greatest advantage is its ease of
+implementation and understanding, making it applicable to
+various types of time series modeling tasks. However, their
+disadvantages are as follows. (i) Handling temporal depen-
+dencies is also a challenge since the essence of augmentation
+contrast lies in differentiating the feature representations
+of positive and negative sample pairs, rather than explic-
+itly capturing time dependencies. (ii) Selecting appropriate
+augmentation methods for time series data is a challenging
+problem. (iii) Sampling bias is another issue, as it can lead
+to the generation of false negative samples.
+E.4 Prototype contrast
+Prototype contrast introduces the concept of prototypes,
+allowing samples to be assigned to a finite number of
+classes. Moreover, prototype contrast leverages high-level
+semantic information to encourage samples to exhibit clus-
+tered distributions in the feature space rather than uniform
+distributions, which is more consistent with real data distri-
+bution. However, the main issue with prototype contrast is
+that the number of prototypes needs to be predetermined,
+which still requires some prior information.
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 23
+TABLE 5: Summary of characteristics and limitations of three SSL methods.
+Method Characteristics Limitations
+Generative-based Learn the distribution of the original data Sensitivity to rare instances
+Obtain compressed representation of data Lack of high-level semantic information
+Contrastive-based Good performance in classification tasks Sampling bias of negative samples
+Light-weight model (Encoder-only) Uncertainty in data augmentation
+Adversarial-based Useful auxiliary strategies for obtaining robust representations Unstable training and easy to collapse
+Strong sample generation capability Rarely used for feature extraction
+E.5 Expert knowledge contrast
+This category is a relatively new self-supervised contrastive
+strategy. Its main feature is the incorporation of prior knowl-
+edge during the training process to guide the selection
+of positive and negative samples or the measurement of
+similarity. Its major advantage lies in the ability to accurately
+select positive and negative samples. However, its limitation
+lies in the requirement of providing reliable prior knowl-
+edge. In most scenarios, obtaining reliable prior knowledge
+for time series data is not easy. Incorrect or misleading
+knowledge can lead to biased representations.
+APPENDIX F
+ADVANTAGES AND DISADVANTAGES OF TWO
+ADVERSARIAL -BASED METHODS
+F.1 Time series generation and imputation
+The advantages of adversarial-based methods are as fol-
+lows. GANs can generate high-quality time series samples.
+By learning the distribution of the data, GANs can perform
+imputation or generation task according to the seasonality
+and trends of different time series data, thereby improving
+the coherence and rationality of the results. Furthermore,
+there have been many efficient adversarial-based methods
+proposed in the field of image generation. It is possible that
+these methods can be transferred and applied to time series
+data generation or imputation tasks. However, the training
+process of GANs is relatively complex, requiring a trade-
+off between the generator and the discriminator, as well as
+addressing issues such as mode collapse. Since the generator
+is learned through training, if the training dataset is insuffi-
+cient or of poor quality, the imputation or generation results
+may lack consistency in some specific cases. In extreme
+situations, the generated results may exhibit abnormalities
+or appear unreasonable.
+F.2 Auxiliary representation enhancement
+Adversarial strategies can help the model learn more robust
+representations, thereby improving the model’s generaliza-
+tion ability. By introducing adversarial signals, the model
+can better adapt to the training data and resist interference
+or attacks. However, introducing adversarial strategies as
+a regularization term in the loss function increases the
+complexity of the training process. The competition between
+training the generator and the discriminator requires care-
+ful balancing, which may require more training time and
+computational resources. This can even lead to training
+instability.
+APPENDIX G
+CHARACTERISTICS AND LIMITATIONS OF THREE
+SSL METHODS
+The details are shown in Table 5.
+APPENDIX H
+EVALUATION METRICS , E XAMPLES , AND TASK
+FLOW
+H.1 Anomaly detection
+• Evaluation metrics. Anomaly detection is essentially a bi-
+nary classification problem, that is, determining whether
+a time step is normal or anomaly, so the most commonly
+used evaluation metrics include precision ( P ), recall (R),
+and F1-score (F 1) [217]. Note that in time series anomaly
+detection task, the adjustment strategy is widely adopted:
+if a time point in a certain successive abnormal segment
+is detected, all anomalies in this abnormal segment are
+viewed to be correctly detected [81], [126], [163].
+Precision is the fraction of anomalous predictions that are
+actual anomalies, i.e.,
+P =TP/ (TP +FP ), (32)
+Recall is the fraction of true anomalies that are correctly
+classified, i.e.,
+R =TP/ (TP +FN ), (33)
+F1-score is the harmonic mean of precision and recall, i.e.,
+F 1 = (2·P·R)/ (P +R), (34)
+whereTP is True Positive which represents the number
+of points that are labeled and predicted as anomalies. FP
+is False Positive which represents the number of points
+that the predicted labels are anomalous, but the actual
+labels are normal. Contrary to FP ,FN is False Negative
+which denotes the number of points that the predicted
+labels are normal, but the actual labels are anomalous.
+Generally, a high P means that the predicted anomalous
+points are correct and a high R means that most real
+anomalous points are found, so both P andR should be
+high. In addition to the above metrics, there are also many
+available metrics in time series anomaly detection tasks,
+such as point-wise f-score, temporal distance, area under
+the curve, and etc. More details can be found in [217].
+• Example and task flow. Fig. 6(a)gives a time series exam-
+ple containing anomalies and the basic task flow for de-
+tecting anomalies. As shown in Fig. 6(a), the detector first
+converts input time series sample into the anomaly score,
+and then generates binary predictions by comparing the
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 24
+Anomaly score
+Anomalies
+Binary prediction
+Threshold line
+Detector 0 0 1 1 00000 1 1 1 10 0 00000
+SSL
+(a) Anomaly detection
+Historical window Future window
+Encoder Decoder
+RepresentationInput Output
+SSL
+(b) Forecasting
+class 1
+class 2
+class 0
+Predicted Labels
+Classifier
+Clustering
+x1 x2
+x3
+x4x5
+x6
+x3
+x4
+x5
+x6
+0x1
+x2 0
+1
+1
+2
+2
+Encoder
+SSL
+Representations
+(c) Classification and clustering
+Fig. 6: Examples and task flows. The blue boxes represent
+modules where SSL can be deployed.
+anomaly score to the given threshold. Finally, anomalies
+can be annotated through the comparison results.
+H.2 Forecasting
+• Evaluation metrics. For the time series forecasting task,
+the (MSE) and mean absolute error (MAE) are widely
+used, i.e.,
+MSE = 1
+m
+mX
+i=1
+(xi− ˆxi)2, (35)
+MAE = 1
+m
+mX
+i=1
+|xi− ˆxi|. (36)
+wherexi is the true value and ˆxi is the predicted value.
+• Example and task flow . Fig. 6(b) gives a time series
+example and the task flow of time series forecasting. As
+shown in Fig. 6(b), a time series sample is first divided into
+the historical window and the future window, and then
+the context information of the historical window is en-
+coded into the feature space through an encoder, and then
+the representation containing the historical information is
+decoded through the decoder to output the forecasting
+value of the future window. Here, SSL can help encoders
+obtain better historical window representations.
+H.3 Classification and clustering
+• Evaluation metrics. For the time series classification and
+clustering task, the accuracy (Acc) is the widely used
+metric. Note that there is a difference in the accuracy
+calculation for classification and clustering. The clustering
+accuracy is defined as
+Accu = max
+perm∈P
+1
+n
+n−1X
+i=0
+1 [perm(ˆyi)=yi], (37)
+where P is the set of all permutations in [1, 2,...,K ]
+where K is the number of clusters. Alternatively, the
+classification accuracy is defined as
+Accs= 1
+n
+n−1X
+i=0
+1 [ˆyi=yi], (38)
+where 1 ∈{ 0, 1} is the indicator function evaluating to 1
+if ˆyi = yi. ˆyi is predicted label and yi is the true label of
+i-th time series sample.
+• Example and task flow . Fig. 6(c) provides six time series
+samples and illustrates the task flow of classification and
+clustering. These six samples belong to three different
+classes. In the classification and clustering tasks, the clas-
+sifier and clustering algorithm take these six samples
+as inputs and finally output the predicted label of each
+sample. SSL is usually applied in the training phase of
+the encoder to make the extracted representations more
+suitable for downstream label prediction tasks.
+APPENDIX I
+QUANTITATIVE COMPARISONS AND CORRELATION
+ANALYSIS
+I.1 Quantitative performance comparisons
+The most direct way to compare the performance of dif-
+ferent methods is to collect experimental results using the
+same dataset. In this subsection, we collect and compare the
+performances of these methods according to their down-
+stream tasks. For time series anomaly detection, five popular
+datasets, PSM, SMD, MSL, SMAP , and SWaT, have been
+used by most of the methods. Similarly, for time series fore-
+casting, four datasets, ETTh, ETTm, Electricity, and Weather,
+have often been referred to for evaluation where these
+methods have outperformed the best end-to-end forecasting
+models. For time series classification and clustering, we
+have chosen a total of 30 datasets from HAR dataset [181],
+the UCR archive [182], and the UEA archive [183], including
+Beef, ChlorineConcentration (ChCo), Coffee, CricketX, Dis-
+talPhalanxOutlineAgeGroup (DiPOA), DistalPhalanxOut-
+lineCorrect (DiPOC), ECG200, ECGFiveDays (ECGF), Car,
+Ham, Herring, Wine, Meat, MiddlePhalanxOutlineAge-
+Group(MiPOA), Wafer, Yoga, HAR, ArticularyWordRecog-
+nition (AWR), AtrialFibrillation (AF), CharacterTrajectories
+(CT), FaceDetection (FD), HandMovementDirection (HMD),
+Heartbeat (Hb), InsectWingbeat (IWB), JapaneseVowels (JV),
+LSST, MotorImagery (MI), NATOPS, PEMS-SF (PS), PenDig-
+its (PD), EigenWorms (EW), and FingerMovements (FM).
+The details of these datasets can be found in Table 2.
+Table 6 highlights the performance of several methods
+on five datasets in time series anomaly detection task. Ac-
+cording to the results, we have the following observations.
+(i) It can be seen that generative and contrastive-based
+methods are the preferred choices for performing anomaly
+detection tasks. Furthermore, the latest research shows
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 25
+TABLE 6: Quantitative comparisons of time series anomaly detection task.
+Method PSM SMD MSL SMAP SWaT
+P R F1 P R F1 P R F1 P R F1 P R F1
+THOC [52] 88.14 90.99 89.54 79.76 90.95 84.99 88.45 90.97 89.69 92.06 89.34 90.68 98.08 79.94 88.09
+RANSynCoder [63] 99 96 93 90 85 83 - - - - - - 95 75 84
+USAD [66] - - - 93.14 96.17 93.82 88.1 97.86 91.09 76.97 98.31 81.86 98.7 74.02 84.6
+Interfusion [80] 83.61 83.45 83.52 87.02 85.43 86.22 81.28 92.70 86.62 89.77 88.52 89.14 80.59 85.58 83.01
+OmniAnomaly [81] 88.39 74.46 80.83 83.34 94.49 88.57 88.67 91.17 89.89 74.16 97.76 84.34 81.42 84.30 82.83
+GRELEN [82] 94.2 92.1 93.1 88.2 95.1 91.5 - - - - - - 95.6 83.5 89.1
+VGCRN [83] - - - 95 88.3 91.5 88.8 94.1 91.4 91.6 92 91.4 - - -
+ImDiffusion [101] 98.11 97.53 97.81 95.2 95.09 94.88 89.3 86.38 87.79 87.71 96.18 91.75 89.88 84.65 87.09
+Skip-CPC [113] 98.36 98.74 98.55 91.75 97.34 94.46 90.84 94.73 92.75 - - - - - -
+TS-CP2 [112] 82.67 78.16 80.35 87.42 66.25 75.38 86.45 68.48 76.42 87.65 83.18 85.36 - - -
+Dcdetector [126] 97.14 98.74 97.94 83.59 91.1 87.18 93.69 99.69 96.6 95.63 98.92 97.02 93.11 99.77 96.33
+AnomalyTrans [163] 96.91 98.9 97.89 89.4 95.45 92.33 92.09 95.15 93.59 94.13 99.4 96.69 91.55 96.73 94.07
+DAEMON [184] - - - 96.3 96.2 96.3 91 1 95.3 92.9 89.2 91 96.6 92.9 94.7
+BeatGAN [168] 90.30 93.84 92.04 72.90 84.09 78.10 89.75 85.42 87.53 92.38 55.85 69.61 64.01 87.46 73.92
+TABLE 7: Quantitative comparisons of time series forecast-
+ing task.
+Method H ETTh ETTm Electricity Weather
+MSE MAE MSE MAE MSE MAE MSE MAE
+LaST [87] 24 0.324 0.368 0.218 0.289 0.125 0.222 0.105 0.134
+48 0.351 0.380 0.280 0.329 0.146 0.245 0.131 0.174
+CoST [123] 24 0.386 0.429 0.246 0.329 0.136 0.242 0.298 0.360
+48 0.437 0.464 0.331 0.386 0.153 0.258 0.359 0.411
+USRL [105] 24 0.942 0.729 0.689 0.592 0.564 0.578 0.522 0.533
+48 0.975 0.746 0.752 0.624 0.569 0.581 0.539 0.543
+CPC [109] 24 0.728 0.600 0.478 0.459 0.403 0.459 0.328 0.383
+48 0.774 0.629 0.641 0.550 0.424 0.473 0.390 0.433
+BTSF [124] 24 0.541 0.519 0.302 0.342 - - 0.324 0.369
+48 0.613 0.524 0.395 0.387 - - 0.366 0.427
+TS-TCC [116] 24 0.653 0.610 0.473 0.490 0.311 0.396 0.372 0.404
+48 0.720 0.693 0.671 0.665 0.326 0.407 0.418 0.445
+TS2Vec [118] 24 0.590 0.531 0.453 0.444 0.287 0.375 0.170 0.309
+48 0.624 0.555 0.592 0.521 0.309 0.391 0.231 0.375
+TNC [106] 24 0.708 0.592 0.522 0.472 0.354 0.423 0.200 0.312
+48 0.749 0.619 0.695 0.567 0.376 0.438 0.284 0.367
+D3VAE [100] 8 0.292 - 0.527 - 0.251 - 0.169 -
+16 0.374 - 0.968 - 0.308 - 0.187 -
+TimeGrad [99] 8 4.259 - 1.877 - 2.703 - 2.715 -
+16 1.332 - 2.032 - 2.770 - 1.110 -
+that contrastive-based methods, such as Skip-CPC [113]
+and Dcdetector [126], have achieved the best performance
+on four datasets. (ii) Two key factors can promote more
+accurate detection of anomalies: global/local association
+modeling and regularization constraints. Skip-CPC [113],
+Dcdetector [126], and AnomalyTrans [163] follow the same
+assumption, i.e., anomalies are difficult to have a strong
+association with the whole time series. This assumption
+has been proven to be reasonable in the task of anomaly
+detection. Adversarial-based regularization constraints can
+amplify the score difference between anomalies and normal
+points, thereby enhancing the accuracy of anomalies identi-
+fication from another perspective, such as Minmax learning
+[66], [163] and adversarial learning [184].
+Table 7 provides experimental results for some meth-
+ods in time series forecasting tasks on four datasets. It is
+important to note that time series forecasting is a highly
+popular task, and as a result, there are numerous methods
+related to this task [15], [74], [87], [166], [173], [185], [200].
+Since our focus is on SSL, the methods in Table 7 are based
+on self-supervised representation learning, distinguishing
+them from directly end-to-end methods. It can be seen that
+LaST [87] and CoST [123] show significant advantages com-
+pared to other methods. We believe the key lies in extracting
+disentangled representations of time series data, typically
+associated with latent seasonal-trend representations.
+Table 8 presents experimental results on 30 datasets for
+classification and clustering tasks. It can be observed that
+the majority of methods are constructed based on SSCL. This
+is because the learning objective of instance discrimination
+contrastive learning aligns with the goal of classification
+tasks, which is to recognize the classes of samples. Accord-
+ing to the results, no single method can achieve the best
+performance on all datasets. This indicates that extracting
+representations from time series data is complex and chal-
+lenging, and cannot be accomplished with a unified model.
+Therefore, in real-world applications, it is essential to choose
+an appropriate model based on the characteristics of the
+data. Additionally, most SSCL-based classification models
+emphasize that data augmentation also has a direct impact
+on the final classification accuracy [116], [118], [122]. On
+the other hand, introducing expert features and adversarial
+losses also benefits time series classification and clustering
+tasks, enabling the model to learn more robust representa-
+tions [65], [143].
+I.2 Correlation analysis between methods and tasks
+Different methods have different characteristics and lim-
+itations and therefore may be suitable for different
+tasks. Here we briefly summarize the correlation between
+the three methods (Generative-based, contrastive-based,
+and adversarial-based) and the four tasks. In summary,
+generative-based SSL is more suitable for anomaly detec-
+tion and forecasting tasks, while contrastive-based SSL is
+more suitable for classification and clustering tasks. This is
+because the essence of forecasting and anomaly detection
+tasks is the process of data generation, which is consistent
+with the core of generative-based SSL methods. Most of
+the pretext tasks of contrastive-based SSL are discriminative
+tasks, which is consistent with the goals of classification and
+
+=== PAGE BREAK ===
+
+IEEE TRANSACTIONS ON PATTERN ANAL YSIS AND MACHINE INTELLIGENCE 26
+TABLE 8: Quantitative comparisons of time series classification and clustering task.
+Method 15 UCR Datasets
+Beef ChCo Coffee CricketX DiPOA DiPOC ECG200 ECGF Car Ham Herring Wine Meat MiPOA Wafer Yoga
+TimeNet [61] - 73.1 - 70.0 77.0 81.2 - 92.6 - - - - - 79.0 - 84.0
+DCTR [65] 80.5 53.6 92.9 - 78.2 60.8 66.5 96.4 75.1 53.6 57.6 62.7 97.6 79.8 73.4 -
+USRL [105] 73.3 78.2 100.0 77.7 74.8 77.5 94.0 100.0 85.0 72.4 60.9 87.0 95.0 66.2 99.5 87.8
+SSTSC [58] - - - 68.9 - - 82.3 - - - 60.2 - - - - 91.7
+TS2Vec [118] 76.7 83.2 100.0 80.5 77.0 77.5 94.0 100.0 88.3 75.2 64.1 88.9 96.7 65.6 99.8 88.7
+DVSL [138] 90.0 77.4 100.0 - - - 83.5 97.4 83.5 - 65.6 65.0 98.8 58.2 - -
+SSP-TSC [142] 80.0 79.2 100.0 82.1 80.6 80.4 90.0 98.5 90.0 80.0 71.9 94.4 100.0 66.2 99.7 89.1
+TNC [106] 73.3 76.0 100.0 62.3 74.1 75.4 83.0 83.0 68.3 75.2 59.4 75.9 91.7 64.3 99.4 81.2
+MVTS-Trans [75] 50.0 56.2 82.1 38.5 74.1 72.8 99.9 76.3 55.0 52.4 59.4 50.0 90.0 61.7 99.1 83.0
+MuCL [122] 67.0 66.0 94.0 71.0 62.0 66.0 87.0 94.0 78.0 57.0 57.0 61.0 84.0 48.0 99.0 79.0
+Method HAR dataset and 14 UEA Datasets
+HAR AWR AF CT FD HMD Hb IWB JV LSST MI NATOPS P-S PD EW FM
+USRL [105] - 98.7 20.0 99.4 52.9 35.1 75.6 16.0 98.9 55.8 58.0 94.4 68.8 98.5 87.8 58.0
+TS2Vec [118] 90.5 98.7 20.0 99.5 50.1 33.8 68.3 46.6 98.4 53.7 51.0 92.8 68.2 98.9 84.7 48.0
+TNC [106] - 97.3 13.3 96.7 53.6 32.4 74.6 46.9 97.8 59.5 50.0 91.1 67.6 97.9 84.0 47.0
+TS-TCC [116] 89.2 95.3 26.7 98.5 54.4 24.3 75.1 26.4 93.0 47.4 61.0 82.2 73.4 97.4 77.9 46.0
+ExpCLR [143] 91.2 - - - - - - - - - - - - - - -
+MVTS-Trans [75] - 97.7 6.7 97.5 53.4 24.3 74.6 10.5 97.8 40.8 50.0 65.6 74.0 56.0 74.8 56.0
+TF-C [125] 78.2 - - - - - - - - - - - - - - -
+CLOCS [128] 47.3 - - - - - - - - - - - - - - -
+TapNet [137] - 98.7 33.3 99.7 55.6 37.8 75.1 20.8 96.6 56.8 59.0 93.9 75.1 98.0 - -
+ShapeNet [136] - 98.7 40.0 98.0 60.2 33.8 75.6 25.0 98.4 59.0 61.0 88.3 75.1 97.7 - -
+MHCCL [139] 91.6 - - - - - - - - - - - - 98.7 79.1 52.1
+MuCL [122] - 97.0 17.0 98.0 50.0 35.0 68.0 0.0 87.0 44.0 54.0 82.0 71.0 97.0 71.0 61.0
+clustering tasks. Adversarial-based methods are also widely
+used for forecasting and anomaly detection tasks, since most
+adversarial-based methods include a generator. On the other
+hand, another main role of adversarial-based methods is as
+an auxiliary regularization term to ensure that the features
+extracted by the model are more robust and informative.
+In addition to applying a kind of methods independently,
+existing results and work also show that a hybrid approach
+(mixing multiple SSL strategies) is often a better choice.
