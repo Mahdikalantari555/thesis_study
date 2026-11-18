@@ -24,19 +24,29 @@ so future agents can read them quickly.
 
 | Path in this repo | Source repo | Role |
 |---|---|---|
-| `thesis_research/SSL_Proposal/` | `Mahdikalantari555/thesis_research` | Research / background / literature / proposal framing |
+| `thesis_research/` | `Mahdikalantari555/thesis_research` | Full research repo (background, literature, proposal framing, data, notebooks, vault) |
 | `thesis_implementation/` | `Mahdikalantari555/thesis_implementation` | Full implementation (code, tests, docs, platform dashboard) |
 
-Original repos (full history, pullable):
-- `https://github.com/Mahdikalantari555/thesis_implementation.git`
-- `https://github.com/Mahdikalantari555/thesis_research.git`
+Both are integrated as **git subtrees** (not submodules, not plain copies):
 
-This repo vendors (copied) the important files from those two repos; for full
-history / updates, clone the originals above.
+| Remote | Upstream | Subtree prefix |
+|---|---|---|
+| `thesis_implementation` | `https://github.com/Mahdikalantari555/thesis_implementation.git` | `thesis_implementation/` |
+| `thesis_research` | `https://github.com/Mahdikalantari555/thesis_research.git` | `thesis_research/` |
+
+Update a subtree from its upstream:
+```bash
+git subtree pull --prefix=thesis_implementation thesis_implementation main
+git subtree pull --prefix=thesis_research thesis_research main
+```
+Push local subtree edits back upstream:
+```bash
+git subtree push --prefix=thesis_implementation thesis_implementation main
+```
 
 ---
 
-## 1. `thesis_research/SSL_Proposal/` — research & proposal
+## 1. `thesis_research/` — full research repo (incl. `SSL_Proposal/`)
 
 Key files:
 - `README.md` — index of the proposal folder.
@@ -145,9 +155,10 @@ node node_modules/vite/bin/vite.js   # dev
 - State the validation-ladder rung (L1–L5) for every model claim.
 - Use the `geo` conda env; never system Python.
 
-## (Original submodule plan — not applied)
-The task originally requested `git submodule add` for the two repos at
-`thesis_implementation/` and `thesis_research/`. This repo instead vendors the
-important files (copied) above, because the workspace is a working directory
-rather than a clean clone. For full history / future pulls, use the original
-repos listed above.
+## Subtrees (integrated)
+Both repos are now integrated as **git subtrees** (see the "Where things live"
+table above for remotes and pull/push commands). The full trees are vendored
+under `thesis_research/` and `thesis_implementation/`; upstream history is
+preserved in this repo's log. To refresh from upstream:
+`git subtree pull --prefix=thesis_research thesis_research main` and
+`git subtree pull --prefix=thesis_implementation thesis_implementation main`.
