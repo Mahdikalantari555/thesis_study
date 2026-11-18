@@ -1,3 +1,0 @@
-name: landmark
-n_bins: 36
-landmarks: [emergence, peak_canopy, senescence, harvest]
