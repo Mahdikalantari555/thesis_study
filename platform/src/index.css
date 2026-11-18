@@ -1,0 +1,216 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Self-hosted fonts ───────────────────────────────────────────────────────
+   Inter / JetBrains Mono / Vazirmatn are bundled from the repository instead of
+   loaded from Google Fonts. The platform is shipped as a single offline HTML
+   file (vite-plugin-singlefile), and the previous CDN @import silently fell
+   back to system fonts whenever the demo machine had no internet access.
+   Licence: SIL OFL 1.1 (see src/assets/fonts/*-OFL.txt).                        */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("./assets/fonts/inter-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("./assets/fonts/inter-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("./assets/fonts/inter-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("./assets/fonts/inter-latin-700-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("./assets/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("./assets/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+}
+/* Vazirmatn ships split Arabic + Latin subsets; the Arabic subset covers Persian
+   and keeps the bundle small (~87 KB for four weights).                          */
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("./assets/fonts/vazirmatn-arabic-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("./assets/fonts/vazirmatn-arabic-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("./assets/fonts/vazirmatn-arabic-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("./assets/fonts/vazirmatn-arabic-700-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  unicode-range: U+0000-00FF, U+2000-206F;
+  src: url("./assets/fonts/vazirmatn-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  unicode-range: U+0000-00FF, U+2000-206F;
+  src: url("./assets/fonts/vazirmatn-latin-600-normal.woff2") format("woff2");
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-fa: "Vazirmatn", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+/* Persian typography — applied by I18nProvider via `body.lang-fa`.
+   Vazirmatn is a little wider than Inter, so the type scale is nudged up
+   slightly to keep Persian legible at 10–12 px UI sizes. */
+body.lang-fa,
+body.lang-fa select,
+body.lang-fa input,
+body.lang-fa textarea,
+body.lang-fa button {
+  font-family: var(--font-fa);
+}
+body.lang-fa {
+  letter-spacing: 0;
+  word-spacing: 0.02em;
+  /* Persian is a cursive script: the `tracking-*` utilities used on the English
+     UI (e.g. `tracking-[0.08em]` on stat labels) break the joins between
+     letters. Neutralise letter-spacing in the Persian UI. */
+}
+
+body.lang-fa *,
+body.lang-fa *::before,
+body.lang-fa *::after {
+  letter-spacing: normal !important;
+}
+
+/* Bidi isolation — WITHOUT this, Persian UI text runs RTL while the numbers
+   glued to it (and the `-` sign) are reordered by the bidi algorithm, so a
+   statistic like -0.547 renders as "0.547-". Every numeric/figure token is
+   therefore isolated LTR: JSX <bdi> tags plus this catch-all for the many
+   inline numeric spans (`font-mono`, `tabular-nums`). */
+body.lang-fa .font-mono,
+body.lang-fa bdi,
+body.lang-fa [dir="ltr"] {
+  unicode-bidi: isolate;
+}
+body.lang-fa .font-mono {
+  direction: ltr;
+  display: inline-block;
+  text-align: start;
+}
+/* Latin model names / ISO dates keep Inter inside Persian text. */
+body.lang-fa .font-mono {
+  font-family: var(--font-mono);
+}
+/* Persian numerals are already applied by formatNumber(); avoid double-shifting. */
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+.leaflet-container {
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+
+/* Leaflet's own UI stays LTR even when the app is RTL (map tiles are not
+   mirrored, and mirrored zoom controls confuse users). */
+body.lang-fa .leaflet-container {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Recharts labels: keep axes/tooltips LTR under RTL so numbers read normally
+   and SVG text is never clipped by mirrored margins. */
+body.lang-fa .recharts-wrapper,
+body.lang-fa .recharts-tooltip-wrapper {
+  direction: ltr;
+}
+body.lang-fa .recharts-default-legend {
+  direction: rtl;
+  text-align: right;
+}
+
+::selection {
+  background: #0f766e;
+  color: white;
+}
+
+/* ── Anomaly desk scoped theme (add-halqeh-anomaly-desk, design D5) ──────────
+   Halqeh's paper/ink/cane identity survives as CSS custom properties defined
+   ONLY on .desk-root — every other view and the app shell are untouched, and
+   the platform's self-hosted fonts (Inter / Vazirmatn) stay in force. The desk
+   keeps its paper palette in dark mode on purpose: it reads as an inset
+   review document, not as part of the dashboard chrome. The source build's
+   font packages (Newsreader/Outfit) are NOT added — display headings fall
+   back to a system serif stack instead (zero new dependencies). */
+.desk-root {
+  --desk-paper: #f3eee6;
+  --desk-card: #faf7f2;
+  --desk-ink: #1c1915;
+  --desk-muted: #5c534a;
+  --desk-line: #d9d0c3;
+  --desk-cane: #2f6b45;
+  --desk-slip: #a33b32;
+  background: var(--desk-paper);
+  color: var(--desk-ink);
+}
+
+.desk-serif {
+  font-family: Georgia, "Times New Roman", ui-serif, serif;
+}
+
+@media print {
+  aside,
+  header,
+  footer {
+    display: none !important;
+  }
+}

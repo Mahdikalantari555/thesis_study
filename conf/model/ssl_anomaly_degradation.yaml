@@ -1,0 +1,11 @@
+name: ssl_anomaly_degradation
+family: ssl_transformer
+pretext_arm: anomaly_degradation
+d_model: 64
+n_heads: 4
+n_layers: 3
+d_ff: 256
+dropout: 0.1
+epochs: 30
+lr: 0.0015
+trim_q: 0.15

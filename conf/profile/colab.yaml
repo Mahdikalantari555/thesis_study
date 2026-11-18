@@ -1,0 +1,7 @@
+# Colab/GPU profile
+workers: 4
+blas_threads: 4
+min_free_gb: 4.0
+low_priority: false
+device: cuda
+batch_size: 256
