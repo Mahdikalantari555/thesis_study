@@ -1,0 +1,56 @@
+# Conda environment for ssl_anomaly (thesis_implementation).
+#
+# Create with:  conda env create -f environment.yaml
+# Activate:     conda activate ssl-anomaly
+#
+# The pip section mirrors pyproject.toml [project.dependencies] (including
+# matplotlib used by the DS1-DS5 data-scarcity diagnostics figures) plus the
+# dev/test extras. If you use uv instead, `uv sync` from pyproject.toml/uv.lock
+# is the canonical path; this file exists for conda-only machines (e.g. Colab).
+name: ssl-anomaly
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.11
+  # Numerics / scientific
+  - numpy>=1.26
+  - scipy>=1.12
+  - pandas>=2.2
+  - xarray>=2024.2
+  - numba>=0.59
+  # Geo / raster / zarr
+  - rasterio>=1.3
+  - rioxarray>=0.15
+  - geopandas>=1.0
+  - shapely>=2.0
+  - pyproj>=3.6
+  - zarr>=2.18
+  # PyTorch / Lightning
+  - pytorch>=2.2
+  - lightning>=2.2
+  - cpuonly  # use `conda install pytorch` from the pytorch channel instead if you have a GPU
+  - safetensors>=0.4
+  # Config / logging / CLI
+  - hydra-core>=1.3
+  - omegaconf>=2.3
+  - rich>=13.7
+  - tqdm>=4.66
+  - click>=8.1
+  - psutil>=5.9
+  # Eval / stats / figures
+  - scikit-learn>=1.4
+  - statsmodels>=0.14
+  - matplotlib>=3.8
+  # Tracking
+  - mlflow>=2.11
+  # Parquet
+  - pyarrow>=15.0
+  - fastparquet>=2024.2
+  - pip
+  - pip:
+      - -e .  # install the ssl_anomaly package itself (pyproject.toml)
+      - pytest>=8.0
+      - pytest-cov>=4.1
+      - ruff>=0.4

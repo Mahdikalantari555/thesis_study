@@ -1,0 +1,4 @@
+name: doy
+bin_days: 15
+max_cycle_days: 365
+n_bins: 36

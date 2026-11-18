@@ -1,0 +1,10 @@
+methods: [Integrated_Gradients, Temporal_GradCAM, Window_Occlusion, Temporal_SHAP]
+ig_steps: 24
+occlusion_window: 2
+shap_time_blocks: 6
+shap_samples: 84
+sanity_max_abs_spearman: 0.35
+stages:
+  emergence_tillering: [0, 8]
+  grand_growth: [8, 20]
+  maturation_ripening: [20, 36]

@@ -1,0 +1,15 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "ssl_anomaly_rs"
+version = "0.1.0"
+description = "PyO3 Rust acceleration backend for ssl_anomaly (Gate G3)."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "MIT" }
+
+[tool.maturin]
+features = ["extension-module"]
+module-name = "ssl_anomaly_rs"
