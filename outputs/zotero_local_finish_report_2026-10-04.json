@@ -1,0 +1,90 @@
+[
+ {
+  "id": 6,
+  "status": "created",
+  "key": "DPEZFV6X",
+  "title": "Ahmed et al. (2025). XAI for Spectroscopic Agriculture (review). Computers and E",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 10,
+  "status": "created",
+  "key": "X929DAVH",
+  "title": "Zoratipour et al. (2026). Hourly vs daily CWSI in sugarcane (proximal/satellite)",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 11,
+  "status": "created",
+  "key": "B3NHSBGE",
+  "title": "Hajeb et al. (2023). Multivariate sugarcane trait retrieval from Sentinel-2. ISP",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 12,
+  "status": "created",
+  "key": "N4US7TFU",
+  "title": "Malee et al. (2026). Sugarcane crop coefficients (local Ky). Agricultural Water ",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 13,
+  "status": "created",
+  "key": "J69UJR72",
+  "title": "Sapkota et al. (2025). Comparative analysis of ET, CWSI, and NDVI for irrigation",
+  "source": "Crossref",
+  "route": "web"
+ },
+ {
+  "id": 25,
+  "status": "created",
+  "key": "JM83U4NU",
+  "title": "Zoratipour et al. (2025). Sentinel-2 MSI vs Landsat thermal CWSI. Iranian Journa",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 35,
+  "status": "created",
+  "key": "K3MFRT2I",
+  "title": "Hornero et al. (2026). CWSI for oak trees using high-resolution thermal imaging.",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 36,
+  "status": "created",
+  "key": "V9MRJPW4",
+  "title": "Sanchez-Virosta et al. (2025). UAV-based CWSI in almond orchards. International ",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 37,
+  "status": "created",
+  "key": "HRJXJTFU",
+  "title": "Bai et al. (2017). TVDI vs CWSI for drought monitoring. Journal of Integrative A",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 59,
+  "status": "created",
+  "key": "8RS8AQPT",
+  "title": "Chen, B., et al. (2025-26). REMSA: Foundation Model Selection for Remote Sensing",
+  "source": "manual",
+  "route": "web"
+ },
+ {
+  "id": 77,
+  "status": "created",
+  "key": "T8MF3CMT",
+  "title": "Waters et al. (2024). Sugarcane crop health monitoring review (arXiv:2404.16844 ",
+  "source": "manual",
+  "route": "web"
+ }
+]

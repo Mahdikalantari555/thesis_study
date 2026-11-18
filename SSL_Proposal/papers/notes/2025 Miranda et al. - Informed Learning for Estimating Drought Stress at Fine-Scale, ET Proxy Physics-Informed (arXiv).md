@@ -1,0 +1,27 @@
+# Informed Learning for Estimating Drought Stress at Fine-Scale Resolution Enables Accurate Yield Prediction
+
+- **Full citation**: Miranda, M., Charfuelan, M., Valdenegro Toro, M., & Dengel, A. (2025). "Informed Learning for Estimating Drought Stress at Fine-Scale Resolution Enables Accurate Yield Prediction." arXiv:2510.18648v1 [cs.LG], 21 Oct 2025. DFKI / Univ. Kaiserslautern-Landau / Univ. Groningen. Code: https://github.com/mmiranda-l/Yield-Loss.
+
+- **Problem & setting**: Predict crop drought stress (actual evapotranspiration, ETa) and sensitivity to water scarcity (yield response factor Ky) at 10x10 m pixel resolution, and use them to sequentially solve the FAO yield-response-to-water function for pixel-level yield prediction. Study area: Switzerland, cereal crops, 54 harvester yield-map fields, seasons 2017-2021. Sensors: Sentinel-2 multispectral time series (16-55 time steps per season, ~5-day revisit, 10 m) + daily ERA5 reanalysis weather (precipitation, Tmin, Tmax) aggregated between S2 acquisitions (input-level fusion; 14 features).
+
+- **Method** (supervised, physics-informed — not SSL): Formulate yield as a function of temporal water scarcity using the FAO-33/Doorenbos-Kassam relation yl = Ky*(1 - ETa/ETx); cumulative yield loss is a discrete integral of Ky_t*(1 - ETa_t/ETx_t) over the season; Yx = max yield over dataset. Two-component loss: L_total = λ1*||ŷa - ya||² + λ2*L_phys, where L_phys = indicator-weighted sum of (i) lower-bound penalty (ETa<0), (ii) upper-bound penalty (ETa>ETx), and (iii) within-bounds MSE pulling ETa toward ETx. ETx (maximum ET) is simulated with FAO-56/pyfao56 from ERA5 + SoilGrids + Hihydrosoil soil data + crop coefficients and used only as a physics regularizer, not a spatial product. Architecture: 2-layer LSTM backbone (128 hidden units, per-time-step linear+BN+dropout-0.2 heads), two linear output heads predicting ETa_t and Ky_t per time step (PG-LSTM); optional scaled dot-product temporal attention (PG-LSTM_attn). Uncertainty via deep ensemble of 10 members (±2σ bands). Pixel-wise training, K=10-fold CV + Leaf-One-Year-Out (LOYO).
+
+- **Data & labels**: SwissYield dataset (Perich et al. 2023): 54,098 georeferenced combine-harvester yield samples from 54 yield maps, rasterized to 10 m; yield in t/ha as the only label. Labels are required (supervised); ETa/Ky are never directly labeled — they are latent quantities learned indirectly through the physics-constrained yield objective. Weather + simulated ETx are unlabeled covariates/regularizers.
+
+- **Results**: PG-LSTM_attn R2 = 0.82 (MAE 0.59 t/ha, RMSE 0.86, MAPE 11%), beating Transformer (0.73), plain LSTM (0.80), Linear Regression (0.70). Physics loss is what drives gains. Ablation (fixed literature Ky = 1.05, only ETa learned): R2 drops to 0.74 (PG-LSTM) — estimating Ky matters, though a constant Ky still yields competitive performance. LOYO temporal transfer collapses for all models (best R2 0.41 in 2019; several negative years) — cross-year generalization is the open problem. Predicted yield loss anti-correlates with ET deficit (Pearson -0.45); learned Ky rises toward flowering (matching FAO-662 agronomy), ETa tracks NDVI, ETa stays bounded below ETx as physically required.
+
+- **What transfers to our thesis**:
+  - Directly validates ETa as an estimable drought/water-stress proxy at pixel level from multispectral SITS + coarse weather — supports using ETa/ETx deficit (CWSI-like) as the stress target signal in sugarcane water-stress work, and shows LST/energy-balance-free ET modeling is feasible when paired with a physics constraint.
+  - The physics-informed loss bounding ETa in [0, ETx] and pulling toward ETx is a ready template for embedding FAO-56/CWSI prior knowledge into our supervised or SSL fine-tuning heads without ETa ground truth.
+  - Estimating Ky (stage-varying water sensitivity) as a free latent parameter mirrors sugarcane's growth-stage-dependent stress susceptibility; Ky uncertainty > ETa uncertainty in their ensemble — an XAI/uncertainty angle.
+  - Deep ensembles (10 members) as lightweight uncertainty quantification for in-field stress maps.
+  - Their LOYO failure quantifies exactly the cross-year generalization gap our SSL approach (label-free, year-agnostic pretraining) targets; no SSL is used here — a clear positioning opportunity.
+
+- **Limitations / caveats**: Single country, single crop group (cereals), only 54 fields / 5 years; supervised pixel-level yield labels required; no true ETa ground truth (validated only qualitatively by experts and via yield correlation); LOYO R2 often negative — temporal transfer unsolved; ETx from FAO-56 simulation assumed accurate and coarse (field-level, not pixel-level); ETa/Ky jointly estimated is ill-posed (hence the ensemble); Sentinel-2, not Landsat; salinity stress not considered.
+
+- **Key numbers to quote in lit review**:
+  - R2 = 0.82 pixel-level cereal yield prediction (PG-LSTM_attn) vs 0.73 Transformer, 0.80 plain LSTM — physics-informed loss adds +9 p.p. over Transformer.
+  - ETa estimated at 10 m resolution where simulation models are field-level/coarse.
+  - Ablation: fixing Ky = 1.05 (literature value) drops R2 from 0.81/0.82 to 0.74 — stage-varying water sensitivity is worth ~8 p.p.
+  - LOYO: best unseen-year R2 only 0.41 (2019), several negative — cross-year temporal transfer is the bottleneck.
+  - Predicted yield loss vs ET deficit Pearson correlation = -0.45; deep ensemble of 10 for uncertainty.

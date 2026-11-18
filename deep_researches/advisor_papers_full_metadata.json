@@ -1,0 +1,50 @@
+[
+  {
+    "name": "SITSMamba",
+    "doi": "https://doi.org/10.48550/arXiv.2409.09673",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "name": "DL_SITS_review",
+    "doi": "https://doi.org/10.48550/arXiv.2404.03936",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "name": "SSL_Cookbook",
+    "doi": "https://doi.org/10.48550/arXiv.2304.12210",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "name": "XAI_RS_review",
+    "doi": "https://doi.org/10.48550/arXiv.2402.13791",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "name": "SelfAttention_SITS",
+    "doi": "https://doi.org/10.5194/isprs-annals-X-1-W1-2020-301-2020",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "name": "XAI_agriculture",
+    "doi": "https://doi.org/10.1016/j.compag.2025.108835",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "name": "Combined_drought_salinity",
+    "doi": "https://doi.org/10.3390/plants11212884",
+    "title": "How Do Plants Respond to Combined Drought and Salinity Stress?—A Systematic Review",
+    "authors": "Angon, Prodipto Bishnu, Tahjib-Ul-Arif, Md., Samin, Samia Islam, Habiba, Ummya, Hossain, M. Afzal",
+    "year": 2022,
+    "journal": "Plants",
+    "abstract": "<jats:p>Plants are frequently exposed to one or more abiotic stresses, including combined salinity-drought, which significantly lowers plant growth. Many studies have been conducted to evaluate the responses of plants to combined salinity and drought stress. However, a meta-analysis-based systematic review has not been conducted yet. Therefore, this study analyzed how plants respond differently to combined salinity-drought stress compared to either stress alone. We initially retrieved 536 public"
+  },
+  {
+    "name": "Salinity_water_satellite",
+    "doi": "https://doi.org/10.1007/s11119-025-10279-5",
+    "title": "Salinity stress and water availability inferred from satellite leaf area index assimilated into a water-energy-crop model",
+    "authors": "Paciolla, Nicola, Corbari, Chiara, Gabrieli, Davide, Rossi, Greta, Teatini, Pietro",
+    "year": 2025,
+    "journal": "Precision Agriculture",
+    "abstract": "<jats:title>Abstract</jats:title>\n                  <jats:sec>\n                    <jats:title>Purpose</jats:title>\n                    <jats:p>Climate change, increasing aridity, water scarcity and population growth, enhancing food demand and irrigated land expansion, are expected to increase the extent of salinity-affected areas. This study aims to combine the crop-energy-water balance model FEST-EWB-SAFY with Leaf Area Index (LAI) and Land Surface Temperature (LST) data from remote sensing to"
+  }
+]

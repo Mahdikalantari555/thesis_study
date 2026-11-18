@@ -1,0 +1,360 @@
+[
+ {
+  "id": 1,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 2,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 3,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 4,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 5,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 6,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 7,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 8,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 9,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 10,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 11,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 12,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 13,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 14,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 15,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 16,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 17,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 18,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 19,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 20,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 21,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 22,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 23,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 24,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 25,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 26,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 27,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 28,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 29,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 30,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 31,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 32,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 33,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 34,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 35,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 36,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 37,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 38,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 39,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 40,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 41,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 42,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 43,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 44,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 45,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 46,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 47,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 48,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 49,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 50,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 51,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 52,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 53,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 54,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 55,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 56,
+  "status": "META-FAIL",
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "id": 57,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 58,
+  "status": "META-FAIL",
+  "error": "HTTP Error 429: Too Many Requests"
+ },
+ {
+  "id": 59,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 60,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 61,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 62,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 63,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 64,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 65,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 66,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 67,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 68,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 69,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 70,
+  "status": "CREATE-FAIL",
+  "error": "{\"0\": {\"code\": 400, \"message\": \"Tag must be an object\"}}"
+ },
+ {
+  "id": 71,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 72,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 73,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 74,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 75,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 76,
+  "status": "SKIP-EXISTS"
+ },
+ {
+  "id": 77,
+  "status": "created",
+  "key": "KACHVIDV",
+  "title": "Waters et al. (2024). Sugarcane crop health monitoring review (arXiv:2404.16844 ",
+  "source": "manual"
+ },
+ {
+  "id": 78,
+  "status": "SKIP-EXISTS"
+ }
+]
