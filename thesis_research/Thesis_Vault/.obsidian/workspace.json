@@ -1,0 +1,221 @@
+{
+  "main": {
+    "id": "e07f51b2f66557f1",
+    "type": "split",
+    "children": [
+      {
+        "id": "465f5826d716cb8e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7ed918f90bece90e",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Literature-Matrix.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Literature-Matrix"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "b075b1d84503bb24",
+    "type": "split",
+    "children": [
+      {
+        "id": "341552b685e983a5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "900b6d95e82472c8",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "a6fe2f48afeaa0ff",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "e64bfe0d01274969",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "1adb5210d1969d2f",
+    "type": "split",
+    "children": [
+      {
+        "id": "6658a9a957bb3495",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5f8a9e9d886795b4",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Welcome.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "d8b0c06ef9b665f5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Welcome.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "05b916c21ddbb6ac",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "1c850682fba08cd5",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "99199aec619efbef",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Welcome.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "obsidian-git:Open Git source control": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "7ed918f90bece90e",
+  "lastOpenFiles": [
+    "papers/78-Virnodkar-2020-WaterStress-ML-Review.md",
+    "papers/75-Olawoyin-2026-Volta-ET-CWSI.md",
+    "papers/74-GraciaRojas-2026-ML-DL-AgriForestry-SLR.md",
+    "papers/73-Gokul-2026-UAV-CropWaterStress-Review.md",
+    "papers/42-Gerhards-2019-TIR-WaterStress.md",
+    "papers/68-Ahmad-2021-CropWaterStress-Review.md",
+    "papers/54-Earth-Agent-Pro-2026-FullChain-EO.md",
+    "papers/41-Tardieu-2018-Drought-Tolerance-Scenarios.md",
+    "papers/46-Smanov-2026-SaltTolerance-Salinity-RS.md",
+    "papers/58-GeoArbiter-2026-Verifiability-Grounding.md",
+    "papers/53-RSMeM-2026-Memory-Evolution.md",
+    "papers/40-Feller-2014-Drought-Heat-Physiology.md",
+    "papers/45-Shen-2025-Broadacre-Resilience.md",
+    "papers/50-AgriWorld-2026-Verifiable-Agri-Agents.md",
+    "papers/57-ExpertsRS-2026-MultiAgent-RS.md",
+    "papers/52-BSCTR-2026-Tool-Retrieval.md",
+    "papers/43-Wang-2021-S2-Salinity-Arid-ML.md",
+    "papers/63-Sun-2026-SelfEvolution-RS-Agents.md",
+    "papers/56-Munir-2026-Agentic-AI-RS-Position.md",
+    "papers/39-Maes-2012-CWSI-Ground-Thermal.md",
+    "papers/49-Talemi-2026-Agentic-RS-Survey.md",
+    "papers/67-CottonBot-2025-LLM-RAG-Irrigation.md",
+    "papers/62-Khamseh-2026-IWU-Uncertainty.md",
+    "papers/51-Xiao-2026-GeoMMBench-GeoMMAgent.md",
+    "papers/55-Feng-2025-Spatial-Intelligence-Survey.md",
+    "papers/48-ThinkGeo-2025-ToolAgent-Benchmark.md"
+  ]
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "name": "SelfAttention_raw_SITS_Russwurm",
+    "title": "Self-attention for raw optical Satellite Time Series Classification",
+    "authors": "Rußwurm Marc, Körner Marco",
+    "year": 2020
+  },
+  {
+    "name": "XAI_agriculture_Ahmed",
+    "title": "Explainable artificial intelligence in electrocardiography: A systematic review",
+    "authors": "Taleban Amirsajjad, Sparapani Rodney, Noffke Patrick",
+    "year": 2026
+  },
+  {
+    "name": "Combined_drought_salinity_Angon",
+    "title": "Identification of drought-salinity combined stress in tomato plants by vegetation indices",
+    "authors": "Biglia Alessandro, Gresta Francesco, Patono Davide Lucien",
+    "year": 2024
+  },
+  {
+    "name": "Salinity_water_satellite_Paciolla",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  }
+]

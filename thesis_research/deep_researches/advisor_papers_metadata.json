@@ -1,0 +1,42 @@
+[
+  {
+    "name": "SITSMamba",
+    "arxiv_id": "2409.09673v2",
+    "title": "SITSMamba for Crop Classification based on Satellite Image Time Series",
+    "authors": "Xiaolei Qin, Xin Su, Liangpei Zhang",
+    "year": "2024",
+    "abstract": "Satellite image time series (SITS) data provides continuous observations over time, allowing for the tracking of vegetation changes and growth patterns throughout the seasons and years. Numerous deep learning (DL) approaches using SITS for crop classification have emerged recently, with the latest approaches adopting Transformer for SITS classification. However, the quadratic complexity of self-attention in Transformer poses challenges for classifying long time series. While the cutting-edge Mamba architecture has demonstrated strength in various domains, including remote sensing image interpretation, its capacity to learn temporal representations in SITS data remains unexplored. Moreover, the existing SITS classification methods often depend solely on crop labels as supervision signals, which fails to fully exploit the temporal information. In this paper, we proposed a Satellite Image Time Series Mamba (SITSMamba) method for crop classification based on remote sensing time series data. The proposed SITSMamba contains a spatial encoder based on Convolutional Neural Networks (CNN) and a Mamba-based temporal encoder. To exploit richer temporal information from SITS, we design two branches of decoder used for different tasks. The first branch is a crop Classification Branch (CBranch), which includes a ConvBlock to decode the feature to a crop map. The second branch is a SITS Reconstruction Branch that uses a Linear layer to transform the encoded feature to predict the original input values. Furthermore, we design a Positional Weight (PW) applied to the RBranch to help the model learn rich latent knowledge from SITS. We also design two weighting factors to control the balance of the two branches during training. The code of SITSMamba is available at: https://github.com/XiaoleiQinn/SITSMamba.",
+    "url": "https://arxiv.org/abs/2409.09673v2",
+    "source": "arxiv"
+  },
+  {
+    "name": "DL_for_SITS_review",
+    "arxiv_id": "2404.03936v2",
+    "title": "Deep Learning for Satellite Image Time Series Analysis: A Review",
+    "authors": "Lynn Miller, Charlotte Pelletier, Geoffrey I. Webb",
+    "year": "2024",
+    "abstract": "Earth observation (EO) satellite missions have been providing detailed images about the state of the Earth and its land cover for over 50 years. Long term missions, such as NASA's Landsat, Terra, and Aqua satellites, and more recently, the ESA's Sentinel missions, record images of the entire world every few days. Although single images provide point-in-time data, repeated images of the same area, or satellite image time series (SITS) provide information about the changing state of vegetation and land use. These SITS are useful for modeling dynamic processes and seasonal changes such as plant phenology. They have potential benefits for many aspects of land and natural resource management, including applications in agricultural, forest, water, and disaster management, urban planning, and mining. However, the resulting satellite image time series (SITS) are complex, incorporating information from the temporal, spatial, and spectral dimensions. Therefore, deep learning methods are often deployed as they can analyze these complex relationships. This review presents a summary of the state-of-the-art methods of modelling environmental, agricultural, and other Earth observation variables from SITS data using deep learning methods. We aim to provide a resource for remote sensing experts interested in using deep learning techniques to enhance Earth observation models with temporal information.",
+    "url": "https://arxiv.org/abs/2404.03936v2",
+    "source": "arxiv"
+  },
+  {
+    "name": "SSL_Cookbook",
+    "arxiv_id": "2304.12210v2",
+    "title": "A Cookbook of Self-Supervised Learning",
+    "authors": "Randall Balestriero, Mark Ibrahim, Vlad Sobal, Ari Morcos, Shashank Shekhar, Tom Goldstein, Florian Bordes, Adrien Bardes, Gregoire Mialon, Yuandong Tian, Avi Schwarzschild, Andrew Gordon Wilson, Jonas Geiping, Quentin Garrido, Pierre Fernandez, Amir Bar, Hamed Pirsiavash, Yann LeCun, Micah Goldblum",
+    "year": "2023",
+    "abstract": "Self-supervised learning, dubbed the dark matter of intelligence, is a promising path to advance machine learning. Yet, much like cooking, training SSL methods is a delicate art with a high barrier to entry. While many components are familiar, successfully training a SSL method involves a dizzying set of choices from the pretext tasks to training hyper-parameters. Our goal is to lower the barrier to entry into SSL research by laying the foundations and latest SSL recipes in the style of a cookbook. We hope to empower the curious researcher to navigate the terrain of methods, understand the role of the various knobs, and gain the know-how required to explore how delicious SSL can be.",
+    "url": "https://arxiv.org/abs/2304.12210v2",
+    "source": "arxiv"
+  },
+  {
+    "name": "XAI_RV_RS",
+    "arxiv_id": "2402.13791v2",
+    "title": "Opening the Black-Box: A Systematic Review on Explainable AI in Remote Sensing",
+    "authors": "Adrian Höhl, Ivica Obadic, Miguel Ángel Fernández Torres, Hiba Najjar, Dario Oliveira, Zeynep Akata, Andreas Dengel, Xiao Xiang Zhu",
+    "year": "2024",
+    "abstract": "In recent years, black-box machine learning approaches have become a dominant modeling paradigm for knowledge extraction in remote sensing. Despite the potential benefits of uncovering the inner workings of these models with explainable AI, a comprehensive overview summarizing the explainable AI methods used and their objectives, findings, and challenges in remote sensing applications is still missing. In this paper, we address this gap by performing a systematic review to identify the key trends in the field and shed light on novel explainable AI approaches and emerging directions that tackle specific remote sensing challenges. We also reveal the common patterns of explanation interpretation, discuss the extracted scientific insights, and reflect on the approaches used for the evaluation of explainable AI methods. As such, our review provides a complete summary of the state-of-the-art of explainable AI in remote sensing. Further, we give a detailed outlook on the challenges and promising research directions, representing a basis for novel methodological development and a useful starting point for new researchers in the field.",
+    "url": "https://arxiv.org/abs/2402.13791v2",
+    "source": "arxiv"
+  }
+]

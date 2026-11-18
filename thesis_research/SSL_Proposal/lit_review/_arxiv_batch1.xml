@@ -1,0 +1,1204 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/so5S83KtnUsL+Xi5213rUbiiwEs</id>
+  <title>arXiv Query: search_query=&amp;id_list=2103.16607,2211.07044,2306.09424,2212.14532,2310.18660,2305.16018,2407.06431,2311.07113,2109.12534,2303.04767,2107.07333,2012.01555,2403.06006,2502.00040,2106.11279,2101.05968,2308.17221,2403.15356,2405.08758,2106.10466,2106.14111,2302.00772,2111.09886,2105.04906,2104.14294,2111.06377,2106.08254,2103.00020,2103.03230,2002.05709,1911.05722,2011.10566,2004.11362&amp;start=0&amp;max_results=40</title>
+  <updated>2026-10-24T08:47:57Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=40&amp;id_list=2103.16607,2211.07044,2306.09424,2212.14532,2310.18660,2305.16018,2407.06431,2311.07113,2109.12534,2303.04767,2107.07333,2012.01555,2403.06006,2502.00040,2106.11279,2101.05968,2308.17221,2403.15356,2405.08758,2106.10466,2106.14111,2302.00772,2111.09886,2105.04906,2104.14294,2111.06377,2106.08254,2103.00020,2103.03230,2002.05709,1911.05722,2011.10566,2004.11362" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>40</opensearch:itemsPerPage>
+  <opensearch:totalResults>32</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2211.07044v2</id>
+    <title>SSL4EO-S12: A Large-Scale Multi-Modal, Multi-Temporal Dataset for Self-Supervised Learning in Earth Observation</title>
+    <updated>2023-05-29T13:57:01Z</updated>
+    <link href="https://arxiv.org/abs/2211.07044v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2211.07044v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Self-supervised pre-training bears potential to generate expressive representations without human annotation. Most pre-training in Earth observation (EO) are based on ImageNet or medium-size, labeled remote sensing (RS) datasets. We share an unlabeled RS dataset SSL4EO-S12 (Self-Supervised Learning for Earth Observation - Sentinel-1/2) to assemble a large-scale, global, multimodal, and multi-seasonal corpus of satellite imagery from the ESA Sentinel-1 \&amp; -2 satellite missions. For EO applications we demonstrate SSL4EO-S12 to succeed in self-supervised pre-training for a set of methods: MoCo-v2, DINO, MAE, and data2vec. Resulting models yield downstream performance close to, or surpassing accuracy measures of supervised learning. In addition, pre-training on SSL4EO-S12 excels compared to existing datasets. We make openly available the dataset, related source code, and pre-trained models at https://github.com/zhu-xlab/SSL4EO-S12.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-11-13T23:38:27Z</published>
+    <arxiv:comment>Accepted by IEEE Geoscience and Remote Sensing Magazine. 18 pages</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Yi Wang</name>
+    </author>
+    <author>
+      <name>Nassim Ait Ali Braham</name>
+    </author>
+    <author>
+      <name>Zhitong Xiong</name>
+    </author>
+    <author>
+      <name>Chenying Liu</name>
+    </author>
+    <author>
+      <name>Conrad M Albrecht</name>
+    </author>
+    <author>
+      <name>Xiao Xiang Zhu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2212.14532v4</id>
+    <title>Scale-MAE: A Scale-Aware Masked Autoencoder for Multiscale Geospatial Representation Learning</title>
+    <updated>2023-09-22T02:34:12Z</updated>
+    <link href="https://arxiv.org/abs/2212.14532v4" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2212.14532v4" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large, pretrained models are commonly finetuned with imagery that is heavily augmented to mimic different conditions and scales, with the resulting models used for various tasks with imagery from a range of spatial scales. Such models overlook scale-specific information in the data for scale-dependent domains, such as remote sensing. In this paper, we present Scale-MAE, a pretraining method that explicitly learns relationships between data at different, known scales throughout the pretraining process. Scale-MAE pretrains a network by masking an input image at a known input scale, where the area of the Earth covered by the image determines the scale of the ViT positional encoding, not the image resolution. Scale-MAE encodes the masked image with a standard ViT backbone, and then decodes the masked image through a bandpass filter to reconstruct low/high frequency images at lower/higher scales. We find that tasking the network with reconstructing both low/high frequency images leads to robust multiscale representations for remote sensing imagery. Scale-MAE achieves an average of a $2.4 - 5.6\%$ non-parametric kNN classification improvement across eight remote sensing datasets compared to current state-of-the-art and obtains a $0.9$ mIoU to $1.7$ mIoU improvement on the SpaceNet building segmentation transfer task for a range of evaluation scales.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-12-30T03:15:34Z</published>
+    <arxiv:comment>International Conference on Computer Vision 2023</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Colorado J. Reed</name>
+    </author>
+    <author>
+      <name>Ritwik Gupta</name>
+    </author>
+    <author>
+      <name>Shufan Li</name>
+    </author>
+    <author>
+      <name>Sarah Brockman</name>
+    </author>
+    <author>
+      <name>Christopher Funk</name>
+    </author>
+    <author>
+      <name>Brian Clipp</name>
+    </author>
+    <author>
+      <name>Kurt Keutzer</name>
+    </author>
+    <author>
+      <name>Salvatore Candido</name>
+    </author>
+    <author>
+      <name>Matt Uyttendaele</name>
+    </author>
+    <author>
+      <name>Trevor Darrell</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2302.00772v1</id>
+    <title>Meta-Analytic Operation of Threshold-independent Filtering (MOTiF) Reveals Sub-threshold Genomic Robustness in Trisomy</title>
+    <updated>2023-02-01T22:03:42Z</updated>
+    <link href="https://arxiv.org/abs/2302.00772v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2302.00772v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Trisomy, a form of aneuploidy wherein the cell possesses an additional copy of a specific chromosome, exhibits a high correlation with cancer. Studies from across different hosts, cell-lines, and labs into the cellular effects induced by aneuploidy have conflicted, ranging from small, chaotic global changes to large instances of either overexpression or underexpression throughout the trisomic chromosome. We ascertained that conflicting findings may be correct but miss the overarching ground truth due to careless use of thresholds. To correct this deficiency, we introduce the Meta-analytic Operation of Threshold-independent Filtering (MOTiF) method, which begins by providing a panoramic view of all thresholds, transforms the data to eliminate the effects accounted for by known mechanisms, and then reconstructs an explanation of the mechanisms that underly the difference between the baseline and the uncharacterized effects observed. As a proof of concept, we applied MOTiF to human colonic epithelial cells, discovering a uniform decrease in gene expression levels throughout the genome, which while significant, is beneath most common thresholds. Using Hi-C data we identified the structural correlate, wherein the physical genomic architecture condenses, compactifying in a uniform, genome-wide manner, which we hypothesize is a robustness mechanism counteracting the addition of a chromosome. We were able to decompose the gene expression alterations into three overlapping mechanisms: the raw chromosome content, the genomic compartmentalization, and the global structural condensation. While further studies must be conducted to corroborate the hypothesized robustness mechanism, MOTiF presents a useful meta-analytic tool in the realm of gene expression and beyond.</summary>
+    <category term="q-bio.QM" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-02-01T22:03:42Z</published>
+    <arxiv:comment>20 pages including bibliography, tables, appendices, and five figures</arxiv:comment>
+    <arxiv:primary_category term="q-bio.QM"/>
+    <author>
+      <name>Roy Siegelmann</name>
+    </author>
+    <author>
+      <name>Hava Siegelmann</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2306.09424v2</id>
+    <title>SSL4EO-L: Datasets and Foundation Models for Landsat Imagery</title>
+    <updated>2023-10-22T13:59:26Z</updated>
+    <link href="https://arxiv.org/abs/2306.09424v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2306.09424v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The Landsat program is the longest-running Earth observation program in history, with 50+ years of data acquisition by 8 satellites. The multispectral imagery captured by sensors onboard these satellites is critical for a wide range of scientific fields. Despite the increasing popularity of deep learning and remote sensing, the majority of researchers still use decision trees and random forests for Landsat image analysis due to the prevalence of small labeled datasets and lack of foundation models. In this paper, we introduce SSL4EO-L, the first ever dataset designed for Self-Supervised Learning for Earth Observation for the Landsat family of satellites (including 3 sensors and 2 product levels) and the largest Landsat dataset in history (5M image patches). Additionally, we modernize and re-release the L7 Irish and L8 Biome cloud detection datasets, and introduce the first ML benchmark datasets for Landsats 4-5 TM and Landsat 7 ETM+ SR. Finally, we pre-train the first foundation models for Landsat imagery using SSL4EO-L and evaluate their performance on multiple semantic segmentation tasks. All datasets and model weights are available via the TorchGeo (https://github.com/microsoft/torchgeo) library, making reproducibility and experimentation easy, and enabling scientific advancements in the burgeoning field of remote sensing for a multitude of downstream applications.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="eess.IV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-06-15T18:11:20Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Adam J. Stewart</name>
+    </author>
+    <author>
+      <name>Nils Lehmann</name>
+    </author>
+    <author>
+      <name>Isaac A. Corley</name>
+    </author>
+    <author>
+      <name>Yi Wang</name>
+    </author>
+    <author>
+      <name>Yi-Chia Chang</name>
+    </author>
+    <author>
+      <name>Nassim Ait Ali Braham</name>
+    </author>
+    <author>
+      <name>Shradha Sehgal</name>
+    </author>
+    <author>
+      <name>Caleb Robinson</name>
+    </author>
+    <author>
+      <name>Arindam Banerjee</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2002.05709v3</id>
+    <title>A Simple Framework for Contrastive Learning of Visual Representations</title>
+    <updated>2020-07-01T00:09:08Z</updated>
+    <link href="https://arxiv.org/abs/2002.05709v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2002.05709v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents SimCLR: a simple framework for contrastive learning of visual representations. We simplify recently proposed contrastive self-supervised learning algorithms without requiring specialized architectures or a memory bank. In order to understand what enables the contrastive prediction tasks to learn useful representations, we systematically study the major components of our framework. We show that (1) composition of data augmentations plays a critical role in defining effective predictive tasks, (2) introducing a learnable nonlinear transformation between the representation and the contrastive loss substantially improves the quality of the learned representations, and (3) contrastive learning benefits from larger batch sizes and more training steps compared to supervised learning. By combining these findings, we are able to considerably outperform previous methods for self-supervised and semi-supervised learning on ImageNet. A linear classifier trained on self-supervised representations learned by SimCLR achieves 76.5% top-1 accuracy, which is a 7% relative improvement over previous state-of-the-art, matching the performance of a supervised ResNet-50. When fine-tuned on only 1% of the labels, we achieve 85.8% top-5 accuracy, outperforming AlexNet with 100X fewer labels.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-02-13T18:50:45Z</published>
+    <arxiv:comment>ICML'2020. Code and pretrained models at https://github.com/google-research/simclr</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Ting Chen</name>
+    </author>
+    <author>
+      <name>Simon Kornblith</name>
+    </author>
+    <author>
+      <name>Mohammad Norouzi</name>
+    </author>
+    <author>
+      <name>Geoffrey Hinton</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2103.00020v1</id>
+    <title>Learning Transferable Visual Models From Natural Language Supervision</title>
+    <updated>2021-02-26T19:04:58Z</updated>
+    <link href="https://arxiv.org/abs/2103.00020v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2103.00020v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>State-of-the-art computer vision systems are trained to predict a fixed set of predetermined object categories. This restricted form of supervision limits their generality and usability since additional labeled data is needed to specify any other visual concept. Learning directly from raw text about images is a promising alternative which leverages a much broader source of supervision. We demonstrate that the simple pre-training task of predicting which caption goes with which image is an efficient and scalable way to learn SOTA image representations from scratch on a dataset of 400 million (image, text) pairs collected from the internet. After pre-training, natural language is used to reference learned visual concepts (or describe new ones) enabling zero-shot transfer of the model to downstream tasks. We study the performance of this approach by benchmarking on over 30 different existing computer vision datasets, spanning tasks such as OCR, action recognition in videos, geo-localization, and many types of fine-grained object classification. The model transfers non-trivially to most tasks and is often competitive with a fully supervised baseline without the need for any dataset specific training. For instance, we match the accuracy of the original ResNet-50 on ImageNet zero-shot without needing to use any of the 1.28 million training examples it was trained on. We release our code and pre-trained model weights at https://github.com/OpenAI/CLIP.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-02-26T19:04:58Z</published>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Alec Radford</name>
+    </author>
+    <author>
+      <name>Jong Wook Kim</name>
+    </author>
+    <author>
+      <name>Chris Hallacy</name>
+    </author>
+    <author>
+      <name>Aditya Ramesh</name>
+    </author>
+    <author>
+      <name>Gabriel Goh</name>
+    </author>
+    <author>
+      <name>Sandhini Agarwal</name>
+    </author>
+    <author>
+      <name>Girish Sastry</name>
+    </author>
+    <author>
+      <name>Amanda Askell</name>
+    </author>
+    <author>
+      <name>Pamela Mishkin</name>
+    </author>
+    <author>
+      <name>Jack Clark</name>
+    </author>
+    <author>
+      <name>Gretchen Krueger</name>
+    </author>
+    <author>
+      <name>Ilya Sutskever</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2310.18660v2</id>
+    <title>Foundation Models for Generalist Geospatial Artificial Intelligence</title>
+    <updated>2023-11-08T18:25:24Z</updated>
+    <link href="https://arxiv.org/abs/2310.18660v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2310.18660v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Significant progress in the development of highly adaptable and reusable Artificial Intelligence (AI) models is expected to have a significant impact on Earth science and remote sensing. Foundation models are pre-trained on large unlabeled datasets through self-supervision, and then fine-tuned for various downstream tasks with small labeled datasets. This paper introduces a first-of-a-kind framework for the efficient pre-training and fine-tuning of foundational models on extensive geospatial data. We have utilized this framework to create Prithvi, a transformer-based geospatial foundational model pre-trained on more than 1TB of multispectral satellite imagery from the Harmonized Landsat-Sentinel 2 (HLS) dataset. Our study demonstrates the efficacy of our framework in successfully fine-tuning Prithvi to a range of Earth observation tasks that have not been tackled by previous work on foundation models involving multi-temporal cloud gap imputation, flood mapping, wildfire scar segmentation, and multi-temporal crop segmentation. Our experiments show that the pre-trained model accelerates the fine-tuning process compared to leveraging randomly initialized weights. In addition, pre-trained Prithvi compares well against the state-of-the-art, e.g., outperforming a conditional GAN model in multi-temporal cloud imputation by up to 5pp (or 5.7%) in the structural similarity index. Finally, due to the limited availability of labeled data in the field of Earth observation, we gradually reduce the quantity of available labeled data for refining the model to evaluate data efficiency and demonstrate that data can be decreased significantly without affecting the model's accuracy. The pre-trained 100 million parameter model and corresponding fine-tuning workflows have been released publicly as open source contributions to the global Earth sciences community through Hugging Face.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-10-28T10:19:55Z</published>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Johannes Jakubik</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Sujit Roy</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>C. E. Phillips</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Paolo Fraccaro</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Denys Godwin</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Bianca Zadrozny</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Daniela Szwarcman</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Carlos Gomes</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Gabby Nyirjesy</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Blair Edwards</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Daiki Kimura</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Naomi Simumba</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Linsong Chu</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>S. Karthik Mukkavilli</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Devyani Lambhate</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Kamal Das</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Ranjini Bangalore</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Dario Oliveira</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Michal Muszynski</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Kumar Ankur</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Muthukumaran Ramasubramanian</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Iksha Gurung</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Sam Khallaghi</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name> Hanxi</name>
+      <arxiv:affiliation>Steve</arxiv:affiliation>
+    </author>
+    <author>
+      <name> Li</name>
+    </author>
+    <author>
+      <name>Michael Cecil</name>
+    </author>
+    <author>
+      <name>Maryam Ahmadi</name>
+    </author>
+    <author>
+      <name>Fatemeh Kordi</name>
+    </author>
+    <author>
+      <name>Hamed Alemohammad</name>
+    </author>
+    <author>
+      <name>Manil Maskey</name>
+    </author>
+    <author>
+      <name>Raghu Ganti</name>
+    </author>
+    <author>
+      <name>Kommy Weldemariam</name>
+    </author>
+    <author>
+      <name>Rahul Ramachandran</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2106.11279v1</id>
+    <title>Weighted Davis inequalities for martingale square functions</title>
+    <updated>2021-06-21T17:27:32Z</updated>
+    <link href="https://arxiv.org/abs/2106.11279v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2106.11279v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>For a Hilbert space valued martingale $(f_n)$ and an adapted sequence of positive random variables $(w_n)$, we show the weighted Davis type inequality \[ \mathbb{E} \Bigl( |f_0| w_0 + \frac{1}{4} \sum_{n=1}^{N} \frac{|df_n|^2}{f^*_n} w_n \Bigr) \leq \mathbb{E} ( f^*_N w^*_N). \] This inequality is sharp and implies several results about the martingale square function. We also obtain a variant of this inequality for martingales with values in uniformly convex Banach spaces.</summary>
+    <category term="math.PR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-06-21T17:27:32Z</published>
+    <arxiv:comment>9 pages</arxiv:comment>
+    <arxiv:primary_category term="math.PR"/>
+    <author>
+      <name>Dennis Wollgast</name>
+    </author>
+    <author>
+      <name>Pavel Zorin-Kranich</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2103.16607v2</id>
+    <title>Seasonal Contrast: Unsupervised Pre-Training from Uncurated Remote Sensing Data</title>
+    <updated>2021-05-03T16:27:08Z</updated>
+    <link href="https://arxiv.org/abs/2103.16607v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2103.16607v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Remote sensing and automatic earth monitoring are key to solve global-scale challenges such as disaster prevention, land use monitoring, or tackling climate change. Although there exist vast amounts of remote sensing data, most of it remains unlabeled and thus inaccessible for supervised learning algorithms. Transfer learning approaches can reduce the data requirements of deep learning algorithms. However, most of these methods are pre-trained on ImageNet and their generalization to remote sensing imagery is not guaranteed due to the domain gap. In this work, we propose Seasonal Contrast (SeCo), an effective pipeline to leverage unlabeled data for in-domain pre-training of remote sensing representations. The SeCo pipeline is composed of two parts. First, a principled procedure to gather large-scale, unlabeled and uncurated remote sensing datasets containing images from multiple Earth locations at different timestamps. Second, a self-supervised algorithm that takes advantage of time and position invariance to learn transferable representations for remote sensing applications. We empirically show that models trained with SeCo achieve better performance than their ImageNet pre-trained counterparts and state-of-the-art self-supervised learning methods on multiple downstream tasks. The datasets and models in SeCo will be made public to facilitate transfer learning and enable rapid progress in remote sensing applications.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-03-30T18:26:39Z</published>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Oscar Mañas</name>
+    </author>
+    <author>
+      <name>Alexandre Lacoste</name>
+    </author>
+    <author>
+      <name>Xavier Giro-i-Nieto</name>
+    </author>
+    <author>
+      <name>David Vazquez</name>
+    </author>
+    <author>
+      <name>Pau Rodriguez</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2103.03230v3</id>
+    <title>Barlow Twins: Self-Supervised Learning via Redundancy Reduction</title>
+    <updated>2021-06-14T14:09:43Z</updated>
+    <link href="https://arxiv.org/abs/2103.03230v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2103.03230v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Self-supervised learning (SSL) is rapidly closing the gap with supervised methods on large computer vision benchmarks. A successful approach to SSL is to learn embeddings which are invariant to distortions of the input sample. However, a recurring issue with this approach is the existence of trivial constant solutions. Most current methods avoid such solutions by careful implementation details. We propose an objective function that naturally avoids collapse by measuring the cross-correlation matrix between the outputs of two identical networks fed with distorted versions of a sample, and making it as close to the identity matrix as possible. This causes the embedding vectors of distorted versions of a sample to be similar, while minimizing the redundancy between the components of these vectors. The method is called Barlow Twins, owing to neuroscientist H. Barlow's redundancy-reduction principle applied to a pair of identical networks. Barlow Twins does not require large batches nor asymmetry between the network twins such as a predictor network, gradient stopping, or a moving average on the weight updates. Intriguingly it benefits from very high-dimensional output vectors. Barlow Twins outperforms previous methods on ImageNet for semi-supervised classification in the low-data regime, and is on par with current state of the art for ImageNet classification with a linear classifier head, and for transfer tasks of classification and object detection.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-bio.NC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-03-04T18:55:09Z</published>
+    <arxiv:comment>13 pages, 6 figures, to appear at ICML 2021</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Jure Zbontar</name>
+    </author>
+    <author>
+      <name>Li Jing</name>
+    </author>
+    <author>
+      <name>Ishan Misra</name>
+    </author>
+    <author>
+      <name>Yann LeCun</name>
+    </author>
+    <author>
+      <name>Stéphane Deny</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2101.05968v1</id>
+    <title>Enhanced spin coherence while displacing electron in a 2D array of quantum dots</title>
+    <updated>2021-01-15T05:11:34Z</updated>
+    <link href="https://arxiv.org/abs/2101.05968v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2101.05968v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The ability to shuttle coherently individual electron spins in arrays of quantum dots is a key procedure for the development of scalable quantum information platforms. It allows the use of sparsely populated electron spin arrays, envisioned to efficiently tackle the one- and two-qubit gate challenges. When the electrons are displaced in an array, they are submitted to site-dependent environment interactions such as hyperfine coupling with substrate nuclear spins. Here, we demonstrate that the electron multi-directional displacement in a $3\times 3$ array of tunnel coupled quantum dots enhances the spin coherence time via the motional narrowing phenomenon. More specifically, up to 10 configurations are explored by the electrons to study the impact of the displacement on spin dynamics. An increase of the coherence time by a factor up to 10 is observed in case of fast and repetitive displacement. The physical mechanism responsible for the loss of coherence induced by displacement is quantitatively captured by a simple model and its implications on spin coherence properties during the electron displacement are discussed in the context of large-scale quantum circuits.</summary>
+    <category term="cond-mat.mes-hall" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-01-15T05:11:34Z</published>
+    <arxiv:comment>8 pages, 5 figures, 6 supplementary figures</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.mes-hall"/>
+    <arxiv:journal_ref>PRX Quantum 2, 030331 (2021)</arxiv:journal_ref>
+    <author>
+      <name>Pierre-André Mortemousque</name>
+    </author>
+    <author>
+      <name>Baptiste Jadot</name>
+    </author>
+    <author>
+      <name>Emmanuel Chanrion</name>
+    </author>
+    <author>
+      <name>Vivien Thiney</name>
+    </author>
+    <author>
+      <name>Christopher Bäuerle</name>
+    </author>
+    <author>
+      <name>Arne Ludwig</name>
+    </author>
+    <author>
+      <name>Andreas D. Wieck</name>
+    </author>
+    <author>
+      <name>Matias Urdampilleta</name>
+    </author>
+    <author>
+      <name>Tristan Meunier</name>
+    </author>
+    <arxiv:doi>10.1103/PRXQuantum.2.030331</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1103/PRXQuantum.2.030331" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2303.04767v1</id>
+    <title>The Atacama Cosmology Telescope: Systematic Transient Search of 3-Day Maps</title>
+    <updated>2023-03-08T18:05:02Z</updated>
+    <link href="https://arxiv.org/abs/2303.04767v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2303.04767v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We conduct a systematic search for transients in three years of data (2017-2019) from the Atacama Cosmology Telescope (ACT). ACT covers 40 percent of the sky at three bands spanning from 77 GHz to 277 GHz. Analysis of 3-day mean-subtracted sky maps, which were match-filtered for point sources, yielded 29 transients detections. Eight of these transients are due to known asteroids, and three others were previously published. Four of these events occur in areas of with poor noise models and thus we cannot be confident they are real transients. We are left with 14 new transient events occurring at 11 unique locations. All of these events are associated with either rotationally variable stars or cool stars. Ten events have flat or falling spectra indicating radiation from synchrotron emission. One event has a rising spectrum indicating a different engine for the flare.</summary>
+    <category term="astro-ph.SR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="astro-ph.EP" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="astro-ph.IM" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-03-08T18:05:02Z</published>
+    <arxiv:primary_category term="astro-ph.SR"/>
+    <author>
+      <name>Yaqiong Li</name>
+    </author>
+    <author>
+      <name>Emily Biermann</name>
+    </author>
+    <author>
+      <name>Sigurd Naess</name>
+    </author>
+    <author>
+      <name>Simone Aiola</name>
+    </author>
+    <author>
+      <name>Rui An</name>
+    </author>
+    <author>
+      <name>Nicholas Battaglia</name>
+    </author>
+    <author>
+      <name>Tanay Bhandarkar</name>
+    </author>
+    <author>
+      <name>Erminia Calabrese</name>
+    </author>
+    <author>
+      <name>Steve K. Choi</name>
+    </author>
+    <author>
+      <name>Kevin T. Crowley</name>
+    </author>
+    <author>
+      <name>Mark Devlin</name>
+    </author>
+    <author>
+      <name>Cody J. Duell</name>
+    </author>
+    <author>
+      <name>Shannon M. Duff</name>
+    </author>
+    <author>
+      <name>Jo Dunkley</name>
+    </author>
+    <author>
+      <name>Rolando Dunner</name>
+    </author>
+    <author>
+      <name>Patricio A. Gallardo</name>
+    </author>
+    <author>
+      <name>Yilun Guan</name>
+    </author>
+    <author>
+      <name>Carlos Hervias-Caimapo</name>
+    </author>
+    <author>
+      <name>Adam D. Hincks</name>
+    </author>
+    <author>
+      <name>Johannes Hubmayr</name>
+    </author>
+    <author>
+      <name>Kevin M. Huffenberger</name>
+    </author>
+    <author>
+      <name>John P. Hughes</name>
+    </author>
+    <author>
+      <name>Arthur Kosowsky</name>
+    </author>
+    <author>
+      <name>Thibaut Louis</name>
+    </author>
+    <author>
+      <name>Maya Mallaby-Kay</name>
+    </author>
+    <author>
+      <name>Jeff McMahon</name>
+    </author>
+    <author>
+      <name>Federico Nati</name>
+    </author>
+    <author>
+      <name>Michael D. Niemack</name>
+    </author>
+    <author>
+      <name>John Orlowski-Scherer</name>
+    </author>
+    <author>
+      <name>Lyman Page</name>
+    </author>
+    <author>
+      <name>Cristobal Sifon</name>
+    </author>
+    <author>
+      <name>Maria Salatino</name>
+    </author>
+    <author>
+      <name>Suzanne T. Staggs</name>
+    </author>
+    <author>
+      <name>Cristian Vargas</name>
+    </author>
+    <author>
+      <name>Eve M. Vavagiakis</name>
+    </author>
+    <author>
+      <name>Yuhan Wang</name>
+    </author>
+    <author>
+      <name>Edward J. Wollack</name>
+    </author>
+    <arxiv:doi>10.3847/1538-4357/ace599</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.3847/1538-4357/ace599" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2311.07113v3</id>
+    <title>SpectralGPT: Spectral Remote Sensing Foundation Model</title>
+    <updated>2024-02-12T14:06:41Z</updated>
+    <link href="https://arxiv.org/abs/2311.07113v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2311.07113v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The foundation model has recently garnered significant attention due to its potential to revolutionize the field of visual representation learning in a self-supervised manner. While most foundation models are tailored to effectively process RGB images for various visual tasks, there is a noticeable gap in research focused on spectral data, which offers valuable information for scene understanding, especially in remote sensing (RS) applications. To fill this gap, we created for the first time a universal RS foundation model, named SpectralGPT, which is purpose-built to handle spectral RS images using a novel 3D generative pretrained transformer (GPT). Compared to existing foundation models, SpectralGPT 1) accommodates input images with varying sizes, resolutions, time series, and regions in a progressive training fashion, enabling full utilization of extensive RS big data; 2) leverages 3D token generation for spatial-spectral coupling; 3) captures spectrally sequential patterns via multi-target reconstruction; 4) trains on one million spectral RS images, yielding models with over 600 million parameters. Our evaluation highlights significant performance improvements with pretrained SpectralGPT models, signifying substantial potential in advancing spectral RS big data applications within the field of geoscience across four downstream tasks: single/multi-label scene classification, semantic segmentation, and change detection.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-11-13T07:09:30Z</published>
+    <arxiv:comment>Accepted by IEEE TPAMI</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Danfeng Hong</name>
+    </author>
+    <author>
+      <name>Bing Zhang</name>
+    </author>
+    <author>
+      <name>Xuyang Li</name>
+    </author>
+    <author>
+      <name>Yuxuan Li</name>
+    </author>
+    <author>
+      <name>Chenyu Li</name>
+    </author>
+    <author>
+      <name>Jing Yao</name>
+    </author>
+    <author>
+      <name>Naoto Yokoya</name>
+    </author>
+    <author>
+      <name>Hao Li</name>
+    </author>
+    <author>
+      <name>Pedram Ghamisi</name>
+    </author>
+    <author>
+      <name>Xiuping Jia</name>
+    </author>
+    <author>
+      <name>Antonio Plaza</name>
+    </author>
+    <author>
+      <name>Paolo Gamba</name>
+    </author>
+    <author>
+      <name>Jon Atli Benediktsson</name>
+    </author>
+    <author>
+      <name>Jocelyn Chanussot</name>
+    </author>
+    <arxiv:doi>10.1109/TPAMI.2024.3362475</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1109/TPAMI.2024.3362475" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2305.16018v2</id>
+    <title>Accommodating informative visit times for analysing irregular longitudinal data: a sensitivity analysis approach with balancing weights estimators</title>
+    <updated>2024-06-24T15:10:10Z</updated>
+    <link href="https://arxiv.org/abs/2305.16018v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2305.16018v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Irregular longitudinal data with informative visit times arise when patients' visits are partly driven by concurrent disease outcomes. However, existing methods such as inverse intensity weighting (IIW), often overlook or have not adequately assess the influence of informative visit times on estimation and inference. Based on novel balancing weights estimators, we propose a new sensitivity analysis approach to addressing informative visit times within the IIW framework. The balancing weights are obtained by balancing observed history variable distributions over time and including a selection function with specified sensitivity parameters to characterise the additional influence of the concurrent outcome on the visit process. A calibration procedure is proposed to anchor the range of the sensitivity parameters to the amount of variation in the visit process that could be additionally explained by the concurrent outcome given the observed history and time. Simulations demonstrate that our balancing weights estimators outperform existing weighted estimators for robustness and efficiency. We provide an R Markdown tutorial of the proposed methods and apply them to analyse data from a clinic-based cohort of psoriatic arthritis.</summary>
+    <category term="stat.ME" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-05-25T12:58:30Z</published>
+    <arxiv:comment>39 pages, 2 figures</arxiv:comment>
+    <arxiv:primary_category term="stat.ME"/>
+    <author>
+      <name>Sean Yiu</name>
+    </author>
+    <author>
+      <name>Li Su</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2502.00040v2</id>
+    <title>Multi-Objective Reinforcement Learning for Power Grid Topology Control</title>
+    <updated>2025-05-01T13:45:05Z</updated>
+    <link href="https://arxiv.org/abs/2502.00040v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2502.00040v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Transmission grid congestion increases as the electrification of various sectors requires transmitting more power. Topology control, through substation reconfiguration, can reduce congestion but its potential remains under-exploited in operations. A challenge is modeling the topology control problem to align well with the objectives and constraints of operators. Addressing this challenge, this paper investigates the application of multi-objective reinforcement learning (MORL) to integrate multiple conflicting objectives for power grid topology control. We develop a MORL approach using deep optimistic linear support (DOL) and multi-objective proximal policy optimization (MOPPO) to generate a set of Pareto-optimal policies that balance objectives such as minimizing line loading, topological deviation, and switching frequency. Initial case studies show that the MORL approach can provide valuable insights into objective trade-offs and improve Pareto front approximation compared to a random search baseline. The generated multi-objective RL policies are 30% more successful in preventing grid failure under contingencies and 20% more effective when training budget is reduced - compared to the common single objective RL policy.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-01-27T12:23:03Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Thomas Lautenbacher</name>
+    </author>
+    <author>
+      <name>Ali Rajaei</name>
+    </author>
+    <author>
+      <name>Davide Barbieri</name>
+    </author>
+    <author>
+      <name>Jan Viebahn</name>
+    </author>
+    <author>
+      <name>Jochen L. Cremer</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2104.14294v2</id>
+    <title>Emerging Properties in Self-Supervised Vision Transformers</title>
+    <updated>2021-05-24T17:49:18Z</updated>
+    <link href="https://arxiv.org/abs/2104.14294v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2104.14294v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>In this paper, we question if self-supervised learning provides new properties to Vision Transformer (ViT) that stand out compared to convolutional networks (convnets). Beyond the fact that adapting self-supervised methods to this architecture works particularly well, we make the following observations: first, self-supervised ViT features contain explicit information about the semantic segmentation of an image, which does not emerge as clearly with supervised ViTs, nor with convnets. Second, these features are also excellent k-NN classifiers, reaching 78.3% top-1 on ImageNet with a small ViT. Our study also underlines the importance of momentum encoder, multi-crop training, and the use of small patches with ViTs. We implement our findings into a simple self-supervised method, called DINO, which we interpret as a form of self-distillation with no labels. We show the synergy between DINO and ViTs by achieving 80.1% top-1 on ImageNet in linear evaluation with ViT-Base.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-04-29T12:28:51Z</published>
+    <arxiv:comment>21 pages</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Mathilde Caron</name>
+    </author>
+    <author>
+      <name>Hugo Touvron</name>
+    </author>
+    <author>
+      <name>Ishan Misra</name>
+    </author>
+    <author>
+      <name>Hervé Jégou</name>
+    </author>
+    <author>
+      <name>Julien Mairal</name>
+    </author>
+    <author>
+      <name>Piotr Bojanowski</name>
+    </author>
+    <author>
+      <name>Armand Joulin</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2109.12534v1</id>
+    <title>Data Summarization via Bilevel Optimization</title>
+    <updated>2021-09-26T09:08:38Z</updated>
+    <link href="https://arxiv.org/abs/2109.12534v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2109.12534v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The increasing availability of massive data sets poses a series of challenges for machine learning. Prominent among these is the need to learn models under hardware or human resource constraints. In such resource-constrained settings, a simple yet powerful approach is to operate on small subsets of the data. Coresets are weighted subsets of the data that provide approximation guarantees for the optimization objective. However, existing coreset constructions are highly model-specific and are limited to simple models such as linear regression, logistic regression, and $k$-means. In this work, we propose a generic coreset construction framework that formulates the coreset selection as a cardinality-constrained bilevel optimization problem. In contrast to existing approaches, our framework does not require model-specific adaptations and applies to any twice differentiable model, including neural networks. We show the effectiveness of our framework for a wide range of models in various settings, including training non-convex models online and batch active learning.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-09-26T09:08:38Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Zalán Borsos</name>
+    </author>
+    <author>
+      <name>Mojmír Mutný</name>
+    </author>
+    <author>
+      <name>Marco Tagliasacchi</name>
+    </author>
+    <author>
+      <name>Andreas Krause</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2106.08254v2</id>
+    <title>BEiT: BERT Pre-Training of Image Transformers</title>
+    <updated>2022-09-03T14:11:33Z</updated>
+    <link href="https://arxiv.org/abs/2106.08254v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2106.08254v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We introduce a self-supervised vision representation model BEiT, which stands for Bidirectional Encoder representation from Image Transformers. Following BERT developed in the natural language processing area, we propose a masked image modeling task to pretrain vision Transformers. Specifically, each image has two views in our pre-training, i.e, image patches (such as 16x16 pixels), and visual tokens (i.e., discrete tokens). We first "tokenize" the original image into visual tokens. Then we randomly mask some image patches and fed them into the backbone Transformer. The pre-training objective is to recover the original visual tokens based on the corrupted image patches. After pre-training BEiT, we directly fine-tune the model parameters on downstream tasks by appending task layers upon the pretrained encoder. Experimental results on image classification and semantic segmentation show that our model achieves competitive results with previous pre-training methods. For example, base-size BEiT achieves 83.2% top-1 accuracy on ImageNet-1K, significantly outperforming from-scratch DeiT training (81.8%) with the same setup. Moreover, large-size BEiT obtains 86.3% only using ImageNet-1K, even outperforming ViT-L with supervised pre-training on ImageNet-22K (85.2%). The code and pretrained models are available at https://aka.ms/beit.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-06-15T16:02:37Z</published>
+    <arxiv:comment>A Path to the BERT Moment of CV</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Hangbo Bao</name>
+    </author>
+    <author>
+      <name>Li Dong</name>
+    </author>
+    <author>
+      <name>Songhao Piao</name>
+    </author>
+    <author>
+      <name>Furu Wei</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2407.06431v1</id>
+    <title>A Lossless Deamortization for Dynamic Greedy Set Cover</title>
+    <updated>2024-07-08T22:21:58Z</updated>
+    <link href="https://arxiv.org/abs/2407.06431v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2407.06431v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The dynamic set cover problem has been subject to growing research attention in recent years. In this problem, we are given as input a dynamic universe of at most $n$ elements and a fixed collection of $m$ sets, where each element appears in a most $f$ sets and the cost of each set is in $[1/C, 1]$, and the goal is to efficiently maintain an approximate minimum set cover under element updates.
+  Two algorithms that dynamize the classic greedy algorithm are known, providing $O(\log n)$ and $((1+ε)\ln n)$-approximation with amortized update times $O(f \log n)$ and $O(\frac{f \log n}{ε^5})$, respectively [GKKP (STOC'17); SU (STOC'23)]. The question of whether one can get approximation $O(\log n)$ (or even worse) with low worst-case update time has remained open -- only the naive $O(f \cdot n)$ time bound is known, even for unweighted instances.
+  In this work we devise the first amortized greedy algorithm that is amenable to an efficient deamortization, and also develop a lossless deamortization approach suitable for the set cover problem, the combination of which yields a $((1+ε)\ln n)$-approximation algorithm with a worst-case update time of $O(\frac{f\log n}{ε^2})$. Our worst-case time bound -- the first to break the naive $O(f \cdot n)$ bound -- matches the previous best amortized bound, and actually improves its $ε$-dependence.
+  Further, to demonstrate the applicability of our deamortization approach, we employ it, in conjunction with the primal-dual amortized algorithm of [BHN (FOCS'19)], to obtain a $((1+ε)f)$-approximation algorithm with a worst-case update time of $O(\frac{f\log n}{ε^2})$, improving over the previous best bound of $O(\frac{f \cdot \log^2(Cn)}{ε^3})$ [BHNW (SODA'21)].
+  Finally, as direct implications of our results for set cover, we [...]</summary>
+    <category term="cs.DS" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-07-08T22:21:58Z</published>
+    <arxiv:comment>Accepted to FOCS 2024</arxiv:comment>
+    <arxiv:primary_category term="cs.DS"/>
+    <author>
+      <name>Shay Solomon</name>
+    </author>
+    <author>
+      <name>Amitai Uzrad</name>
+    </author>
+    <author>
+      <name>Tianyi Zhang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1911.05722v3</id>
+    <title>Momentum Contrast for Unsupervised Visual Representation Learning</title>
+    <updated>2020-03-23T18:36:55Z</updated>
+    <link href="https://arxiv.org/abs/1911.05722v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1911.05722v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We present Momentum Contrast (MoCo) for unsupervised visual representation learning. From a perspective on contrastive learning as dictionary look-up, we build a dynamic dictionary with a queue and a moving-averaged encoder. This enables building a large and consistent dictionary on-the-fly that facilitates contrastive unsupervised learning. MoCo provides competitive results under the common linear protocol on ImageNet classification. More importantly, the representations learned by MoCo transfer well to downstream tasks. MoCo can outperform its supervised pre-training counterpart in 7 detection/segmentation tasks on PASCAL VOC, COCO, and other datasets, sometimes surpassing it by large margins. This suggests that the gap between unsupervised and supervised representation learning has been largely closed in many vision tasks.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2019-11-13T18:53:26Z</published>
+    <arxiv:comment>CVPR 2020 camera-ready. Code: https://github.com/facebookresearch/moco</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Kaiming He</name>
+    </author>
+    <author>
+      <name>Haoqi Fan</name>
+    </author>
+    <author>
+      <name>Yuxin Wu</name>
+    </author>
+    <author>
+      <name>Saining Xie</name>
+    </author>
+    <author>
+      <name>Ross Girshick</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2111.06377v3</id>
+    <title>Masked Autoencoders Are Scalable Vision Learners</title>
+    <updated>2021-12-19T19:23:25Z</updated>
+    <link href="https://arxiv.org/abs/2111.06377v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2111.06377v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper shows that masked autoencoders (MAE) are scalable self-supervised learners for computer vision. Our MAE approach is simple: we mask random patches of the input image and reconstruct the missing pixels. It is based on two core designs. First, we develop an asymmetric encoder-decoder architecture, with an encoder that operates only on the visible subset of patches (without mask tokens), along with a lightweight decoder that reconstructs the original image from the latent representation and mask tokens. Second, we find that masking a high proportion of the input image, e.g., 75%, yields a nontrivial and meaningful self-supervisory task. Coupling these two designs enables us to train large models efficiently and effectively: we accelerate training (by 3x or more) and improve accuracy. Our scalable approach allows for learning high-capacity models that generalize well: e.g., a vanilla ViT-Huge model achieves the best accuracy (87.8%) among methods that use only ImageNet-1K data. Transfer performance in downstream tasks outperforms supervised pre-training and shows promising scaling behavior.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-11-11T18:46:40Z</published>
+    <arxiv:comment>Tech report. arXiv v2: add more transfer learning results; v3: add robustness evaluation</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Kaiming He</name>
+    </author>
+    <author>
+      <name>Xinlei Chen</name>
+    </author>
+    <author>
+      <name>Saining Xie</name>
+    </author>
+    <author>
+      <name>Yanghao Li</name>
+    </author>
+    <author>
+      <name>Piotr Dollár</name>
+    </author>
+    <author>
+      <name>Ross Girshick</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2105.04906v3</id>
+    <title>VICReg: Variance-Invariance-Covariance Regularization for Self-Supervised Learning</title>
+    <updated>2022-01-28T12:23:37Z</updated>
+    <link href="https://arxiv.org/abs/2105.04906v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2105.04906v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Recent self-supervised methods for image representation learning are based on maximizing the agreement between embedding vectors from different views of the same image. A trivial solution is obtained when the encoder outputs constant vectors. This collapse problem is often avoided through implicit biases in the learning architecture, that often lack a clear justification or interpretation. In this paper, we introduce VICReg (Variance-Invariance-Covariance Regularization), a method that explicitly avoids the collapse problem with a simple regularization term on the variance of the embeddings along each dimension individually. VICReg combines the variance term with a decorrelation mechanism based on redundancy reduction and covariance regularization, and achieves results on par with the state of the art on several downstream tasks. In addition, we show that incorporating our new variance term into other methods helps stabilize the training and leads to performance improvements.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-05-11T09:53:21Z</published>
+    <arxiv:comment>Accepted at ICLR 2022</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Adrien Bardes</name>
+    </author>
+    <author>
+      <name>Jean Ponce</name>
+    </author>
+    <author>
+      <name>Yann LeCun</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2106.10466v4</id>
+    <title>TS2Vec: Towards Universal Representation of Time Series</title>
+    <updated>2022-02-03T15:41:22Z</updated>
+    <link href="https://arxiv.org/abs/2106.10466v4" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2106.10466v4" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents TS2Vec, a universal framework for learning representations of time series in an arbitrary semantic level. Unlike existing methods, TS2Vec performs contrastive learning in a hierarchical way over augmented context views, which enables a robust contextual representation for each timestamp. Furthermore, to obtain the representation of an arbitrary sub-sequence in the time series, we can apply a simple aggregation over the representations of corresponding timestamps. We conduct extensive experiments on time series classification tasks to evaluate the quality of time series representations. As a result, TS2Vec achieves significant improvement over existing SOTAs of unsupervised time series representation on 125 UCR datasets and 29 UEA datasets. The learned timestamp-level representations also achieve superior results in time series forecasting and anomaly detection tasks. A linear regression trained on top of the learned representations outperforms previous SOTAs of time series forecasting. Furthermore, we present a simple way to apply the learned representations for unsupervised anomaly detection, which establishes SOTA results in the literature. The source code is publicly available at https://github.com/yuezhihan/ts2vec.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-06-19T10:24:13Z</published>
+    <arxiv:comment>Appears in AAAI-2022</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Zhihan Yue</name>
+    </author>
+    <author>
+      <name>Yujing Wang</name>
+    </author>
+    <author>
+      <name>Juanyong Duan</name>
+    </author>
+    <author>
+      <name>Tianmeng Yang</name>
+    </author>
+    <author>
+      <name>Congrui Huang</name>
+    </author>
+    <author>
+      <name>Yunhai Tong</name>
+    </author>
+    <author>
+      <name>Bixiong Xu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2107.07333v2</id>
+    <title>Unsupervised Anomaly Instance Segmentation for Baggage Threat Recognition</title>
+    <updated>2021-07-16T18:24:14Z</updated>
+    <link href="https://arxiv.org/abs/2107.07333v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2107.07333v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Identifying potential threats concealed within the baggage is of prime concern for the security staff. Many researchers have developed frameworks that can detect baggage threats from X-ray scans. However, to the best of our knowledge, all of these frameworks require extensive training on large-scale and well-annotated datasets, which are hard to procure in the real world. This paper presents a novel unsupervised anomaly instance segmentation framework that recognizes baggage threats, in X-ray scans, as anomalies without requiring any ground truth labels. Furthermore, thanks to its stylization capacity, the framework is trained only once, and at the inference stage, it detects and extracts contraband items regardless of their scanner specifications. Our one-staged approach initially learns to reconstruct normal baggage content via an encoder-decoder network utilizing a proposed stylization loss function. The model subsequently identifies the abnormal regions by analyzing the disparities within the original and the reconstructed scans. The anomalous regions are then clustered and post-processed to fit a bounding box for their localization. In addition, an optional classifier can also be appended with the proposed framework to recognize the categories of these extracted anomalies. A thorough evaluation of the proposed system on four public baggage X-ray datasets, without any re-training, demonstrates that it achieves competitive performance as compared to the conventional fully supervised methods (i.e., the mean average precision score of 0.7941 on SIXray, 0.8591 on GDXray, 0.7483 on OPIXray, and 0.5439 on COMPASS-XP dataset) while outperforming state-of-the-art semi-supervised and unsupervised baggage threat detection frameworks by 67.37%, 32.32%, 47.19%, and 45.81% in terms of F1 score across SIXray, GDXray, OPIXray, and COMPASS-XP datasets, respectively.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="eess.IV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-07-15T13:56:55Z</published>
+    <arxiv:comment>Accepted in J-AIHC, Source Code is available at https://github.com/taimurhassan/anomaly</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Taimur Hassan</name>
+    </author>
+    <author>
+      <name>Samet Akcay</name>
+    </author>
+    <author>
+      <name>Mohammed Bennamoun</name>
+    </author>
+    <author>
+      <name>Salman Khan</name>
+    </author>
+    <author>
+      <name>Naoufel Werghi</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2011.10566v1</id>
+    <title>Exploring Simple Siamese Representation Learning</title>
+    <updated>2020-11-20T18:59:33Z</updated>
+    <link href="https://arxiv.org/abs/2011.10566v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2011.10566v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Siamese networks have become a common structure in various recent models for unsupervised visual representation learning. These models maximize the similarity between two augmentations of one image, subject to certain conditions for avoiding collapsing solutions. In this paper, we report surprising empirical results that simple Siamese networks can learn meaningful representations even using none of the following: (i) negative sample pairs, (ii) large batches, (iii) momentum encoders. Our experiments show that collapsing solutions do exist for the loss and structure, but a stop-gradient operation plays an essential role in preventing collapsing. We provide a hypothesis on the implication of stop-gradient, and further show proof-of-concept experiments verifying it. Our "SimSiam" method achieves competitive results on ImageNet and downstream tasks. We hope this simple baseline will motivate people to rethink the roles of Siamese architectures for unsupervised representation learning. Code will be made available.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-11-20T18:59:33Z</published>
+    <arxiv:comment>Technical report, 10 pages</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Xinlei Chen</name>
+    </author>
+    <author>
+      <name>Kaiming He</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2004.11362v5</id>
+    <title>Supervised Contrastive Learning</title>
+    <updated>2021-03-10T19:11:45Z</updated>
+    <link href="https://arxiv.org/abs/2004.11362v5" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2004.11362v5" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Contrastive learning applied to self-supervised representation learning has seen a resurgence in recent years, leading to state of the art performance in the unsupervised training of deep image models. Modern batch contrastive approaches subsume or significantly outperform traditional contrastive losses such as triplet, max-margin and the N-pairs loss. In this work, we extend the self-supervised batch contrastive approach to the fully-supervised setting, allowing us to effectively leverage label information. Clusters of points belonging to the same class are pulled together in embedding space, while simultaneously pushing apart clusters of samples from different classes. We analyze two possible versions of the supervised contrastive (SupCon) loss, identifying the best-performing formulation of the loss. On ResNet-200, we achieve top-1 accuracy of 81.4% on the ImageNet dataset, which is 0.8% above the best number reported for this architecture. We show consistent outperformance over cross-entropy on other datasets and two ResNet variants. The loss shows benefits for robustness to natural corruptions and is more stable to hyperparameter settings such as optimizers and data augmentations. Our loss function is simple to implement, and reference TensorFlow code is released at https://t.ly/supcon.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-04-23T17:58:56Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Prannay Khosla</name>
+    </author>
+    <author>
+      <name>Piotr Teterwak</name>
+    </author>
+    <author>
+      <name>Chen Wang</name>
+    </author>
+    <author>
+      <name>Aaron Sarna</name>
+    </author>
+    <author>
+      <name>Yonglong Tian</name>
+    </author>
+    <author>
+      <name>Phillip Isola</name>
+    </author>
+    <author>
+      <name>Aaron Maschinot</name>
+    </author>
+    <author>
+      <name>Ce Liu</name>
+    </author>
+    <author>
+      <name>Dilip Krishnan</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2106.14111v1</id>
+    <title>Mentorship Network Structure: How Relationships Emerge Online and What They Mean for Amateur Creators</title>
+    <updated>2021-06-26T23:53:41Z</updated>
+    <link href="https://arxiv.org/abs/2106.14111v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2106.14111v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Relationships form the core of connected learning. In this study, we apply and extend social network analysis methods to uncover the layered network structure of relationships among Fanfiction.net authors and reviewers. Fanfiction.net, one of the world's largest fanfiction communities, is a space where millions of young people engage with written media, connect over shared interests, and receive support and mentoring from a distributed audience. Does an affinity space such as Fanfiction.net have the same structure as social networks Facebook and Twitter? We applied k-means clustering on millions of relationships to determine that Fanfiction.net has 2 to 3 layers, in contrast with the 4-layer structure of Facebook and 5-layer structure of Twitter. In addition, we conducted a large-scale machine classification of Fanfiction.net reviews to reveal the types of mentoring exchanged in each layer. Our findings show that the relationships where reviews are exchanged most frequently are most likely to contain substantive reviews. We discuss implications of these findings for the theory of distributed mentoring as well as the design of online affinity networks.</summary>
+    <category term="cs.SI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-06-26T23:53:41Z</published>
+    <arxiv:comment>10 pages, 2 figures, published in The Proceedings of the 2020 Connected Learning Summit</arxiv:comment>
+    <arxiv:primary_category term="cs.SI"/>
+    <arxiv:journal_ref>Jeremiah H. Kalir and Danielle Filipiak. 2021. Proceedings of the 2020 Connected Learning Summit. 36-45</arxiv:journal_ref>
+    <author>
+      <name>Ruby Davis</name>
+    </author>
+    <author>
+      <name>Jenna Frens</name>
+    </author>
+    <author>
+      <name>Niharika Sharma</name>
+    </author>
+    <author>
+      <name>Meena Devii Muralikumar</name>
+    </author>
+    <author>
+      <name>Cecilia Aragon</name>
+    </author>
+    <author>
+      <name>Sarah Evans</name>
+    </author>
+    <arxiv:doi>10.1184/R1/13530038.v2</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1184/R1/13530038.v2" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2111.09886v2</id>
+    <title>SimMIM: A Simple Framework for Masked Image Modeling</title>
+    <updated>2022-04-17T11:29:52Z</updated>
+    <link href="https://arxiv.org/abs/2111.09886v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2111.09886v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents SimMIM, a simple framework for masked image modeling. We simplify recently proposed related approaches without special designs such as block-wise masking and tokenization via discrete VAE or clustering. To study what let the masked image modeling task learn good representations, we systematically study the major components in our framework, and find that simple designs of each component have revealed very strong representation learning performance: 1) random masking of the input image with a moderately large masked patch size (e.g., 32) makes a strong pre-text task; 2) predicting raw pixels of RGB values by direct regression performs no worse than the patch classification approaches with complex designs; 3) the prediction head can be as light as a linear layer, with no worse performance than heavier ones. Using ViT-B, our approach achieves 83.8% top-1 fine-tuning accuracy on ImageNet-1K by pre-training also on this dataset, surpassing previous best approach by +0.6%. When applied on a larger model of about 650 million parameters, SwinV2-H, it achieves 87.1% top-1 accuracy on ImageNet-1K using only ImageNet-1K data. We also leverage this approach to facilitate the training of a 3B model (SwinV2-G), that by $40\times$ less data than that in previous practice, we achieve the state-of-the-art on four representative vision benchmarks. The code and models will be publicly available at https://github.com/microsoft/SimMIM.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-11-18T18:59:45Z</published>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Zhenda Xie</name>
+    </author>
+    <author>
+      <name>Zheng Zhang</name>
+    </author>
+    <author>
+      <name>Yue Cao</name>
+    </author>
+    <author>
+      <name>Yutong Lin</name>
+    </author>
+    <author>
+      <name>Jianmin Bao</name>
+    </author>
+    <author>
+      <name>Zhuliang Yao</name>
+    </author>
+    <author>
+      <name>Qi Dai</name>
+    </author>
+    <author>
+      <name>Han Hu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2012.01555v3</id>
+    <title>Single pair of Weyl nodes in the spin-canted structure of EuCd$_2$As$_2$</title>
+    <updated>2022-06-29T12:11:32Z</updated>
+    <link href="https://arxiv.org/abs/2012.01555v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2012.01555v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Time reversal symmetry breaking Weyl semimetals are unique among Weyl materials in allowing the minimal number of Weyl points thus offering the clearest signatures of the associated physics. Here we present neutron diffraction, density functional theory and transport measurement results which indicate that EuCd$_2$As$_2$ , under ambient field, strain and pressure, is such a material with a single pair of Weyl points. Our work reveals a magnetic structure (magnetic space group $C2'/m'$) with Eu moments pointing along the [210] direction in-plane and canted $\sim$ 30$^{\circ}$ out-of-plane. Density functional theory calculations using this structure show that the observed canting drastically alters the relevant electronic bands, relative to the in-plane order, leading to a single set of well defined Weyl points. Furthermore, we find the canting angle can tune the distance of the Weyl points above the Fermi level, with the smallest distance at low canting angles. Finally, transport measurements of the anomalous Hall Effect and longitudinal magnetoresistance exhibit properties indicative of a chiral anomaly, thus supporting the neutron scattering and DFT results suggesting EuCd$_2$As$_2$ is close to the ideal situation of the Weyl "Hydrogen atom".</summary>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-12-02T21:57:39Z</published>
+    <arxiv:comment>8 pages, 4 figures</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.str-el"/>
+    <author>
+      <name>K. M. Taddei</name>
+    </author>
+    <author>
+      <name>L. Yin</name>
+    </author>
+    <author>
+      <name>L. D. Sanjeewa</name>
+    </author>
+    <author>
+      <name>Y. Li</name>
+    </author>
+    <author>
+      <name>J. Xing</name>
+    </author>
+    <author>
+      <name>C. dela Cruz</name>
+    </author>
+    <author>
+      <name>D. Phelan</name>
+    </author>
+    <author>
+      <name>A. S. Sefat</name>
+    </author>
+    <author>
+      <name>D. Parker</name>
+    </author>
+    <arxiv:doi>10.1103/PhysRevB.105.L140401</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1103/PhysRevB.105.L140401" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2405.08758v2</id>
+    <title>Low Mass Naked Singularities from Dark Core Collapse</title>
+    <updated>2024-07-22T11:29:51Z</updated>
+    <link href="https://arxiv.org/abs/2405.08758v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2405.08758v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Near-solar mass black holes (BHs) could have been involved in the two recent gravitational wave events, GW190425 and GW190814. Since such a low mass BH cannot be formed via stellar evolution, a model has been proposed based on the core collapse of a neutron star initiated by a certain number of dark matter (DM) particles. In this process, the accumulated DM particles collapse to form a tiny BH inside the neutron star, and the entire neutron star is transmuted into a BH after a certain time due to the accretion of matter by the endoparasitic BH from its host. Here, we argue that, depending on the initial conditions, a dark core collapse could give rise to either a BH or a naked singularity. For example, if the accumulated cloud of DM particles in the core of a neutron star can be modeled as an anisotropic fluid and it fulfils the criterion for collapse, an endoparasitic naked singularity could form instead of an endoparasitic BH. Immediately after its formation, the naked singularity should begin accreting matter from the host neutron star, thus eventually transmuting the entire host into a near-solar mass, relatively slowly-spinning naked singularity. We also propose a general technique to constrain the DM particle--neutron scattering cross section using the lack of pulsars near the Galactic centre and assuming that these missing pulsars have already been transmuted into BHs and/or naked singularities. Thus, the missing pulsars also indicate the existence of many such singularities near the Galactic center.</summary>
+    <category term="astro-ph.HE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="gr-qc" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="hep-th" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-05-14T16:45:01Z</published>
+    <arxiv:comment>20 pages, 8 figures, matches published version</arxiv:comment>
+    <arxiv:primary_category term="astro-ph.HE"/>
+    <arxiv:journal_ref>JCAP07(2024)053</arxiv:journal_ref>
+    <author>
+      <name>Chandrachur Chakraborty</name>
+      <arxiv:affiliation>MCNS, India</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Sudip Bhattacharyya</name>
+      <arxiv:affiliation>TIFR, India</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Pankaj S. Joshi</name>
+      <arxiv:affiliation>Ahmedabad U., India</arxiv:affiliation>
+    </author>
+    <arxiv:doi>10.1088/1475-7516/2024/07/053</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1088/1475-7516/2024/07/053" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2403.06006v3</id>
+    <title>Real-time observables in de Sitter thermodynamics</title>
+    <updated>2025-10-08T05:06:12Z</updated>
+    <link href="https://arxiv.org/abs/2403.06006v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2403.06006v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We study real-time finite-temperature correlators for free scalars of any mass in a $dS_{d+1}$ static patch in any dimension. We show that whenever the inverse temperature is a rational multiple of the inverse de Sitter temperature, certain Matsubara poles of the symmetric Wightman function disappear. At the de Sitter temperature, we explicitly show how the Lorentzian thermal correlators can all be obtained by analytic continuations from the round $S^{d+1}$. We establish the precise relation between the Harish-Chandra character for $SO(1,d+1)$ and the integrated spectral function, providing a novel dynamical perspective on the former and enabling generalizations. Furthermore, we study scalars with exceptional non-positive masses. We provide a physical picture for the distinctive structures of their characters. For the massless case, we perform a consistent static patch quantization, and find the unique $S^{d+1}$ correlator that analytically continues to the correlators in the quantum theory.</summary>
+    <category term="hep-th" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="gr-qc" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-03-09T20:59:57Z</published>
+    <arxiv:comment>32 pages (+ appendices), 8 figures. Published version</arxiv:comment>
+    <arxiv:primary_category term="hep-th"/>
+    <author>
+      <name>Manvir Grewal</name>
+    </author>
+    <author>
+      <name>Y. T. Albert Law</name>
+    </author>
+    <arxiv:doi>10.1007/JHEP10(2025)052</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1007/JHEP10(2025)052" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2403.15356v3</id>
+    <title>Neural Plasticity-Inspired Multimodal Foundation Model for Earth Observation</title>
+    <updated>2025-10-15T22:11:23Z</updated>
+    <link href="https://arxiv.org/abs/2403.15356v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2403.15356v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Earth observation (EO) in open-world settings presents a unique challenge: different applications rely on diverse sensor modalities, each with varying ground sampling distances, spectral ranges, and numbers of spectral bands. However, existing EO foundation models are typically tailored to specific sensor types, making them inflexible when generalizing across the heterogeneous landscape of EO data. To address this, we propose the Dynamic One-For-All (DOFA) model, a unified, multimodal foundation framework designed for diverse vision tasks in EO. Inspired by neural plasticity, DOFA utilizes a wavelength-conditioned dynamic hypernetwork to process inputs from five distinct satellite sensors flexibly. By continually pretraining on five EO modalities, DOFA achieves state-of-the-art performance across multiple downstream tasks and generalizes well to unseen modalities. Enhanced with hybrid continual pretraining, DOFA+ requires significantly fewer computational resources while outperforming counterparts trained with extensive GPU budgets. Experiments on diverse datasets highlight DOFA's potential as a foundation for general-purpose vision models in the sensor-diverse EO domain. The code and pre-trained weights are publicly available at https://github.com/zhu-xlab/DOFA.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-03-22T17:11:47Z</published>
+    <arxiv:comment>18 pages, 8 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Zhitong Xiong</name>
+    </author>
+    <author>
+      <name>Yi Wang</name>
+    </author>
+    <author>
+      <name>Fahong Zhang</name>
+    </author>
+    <author>
+      <name>Adam J. Stewart</name>
+    </author>
+    <author>
+      <name>Joëlle Hanna</name>
+    </author>
+    <author>
+      <name>Damian Borth</name>
+    </author>
+    <author>
+      <name>Ioannis Papoutsis</name>
+    </author>
+    <author>
+      <name>Bertrand Le Saux</name>
+    </author>
+    <author>
+      <name>Gustau Camps-Valls</name>
+    </author>
+    <author>
+      <name>Xiao Xiang Zhu</name>
+    </author>
+  </entry>
+</feed>
